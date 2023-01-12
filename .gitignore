@@ -3,3 +3,4 @@ logs/*
 ffandown
 node_modules
 dist/**
+media/*

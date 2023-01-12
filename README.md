@@ -11,6 +11,7 @@ lib文件加下面是ffmpeg的可执行文件，默认程序自带了ffmpeg，�
 
 release 下面打包之后的文件，没有带lib, 需要自行去code里面下载对应的lib
 如果你的电脑有ffmpeg环境变量则不需要
+`config.yml`文件可以自行从code下载,放到可执行文件同目录下
 
 
 ## 关于配置文件`config.yml`

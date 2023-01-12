@@ -59,9 +59,9 @@ jobs:
          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
          upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: config.yml
+         asset_path: ./config.yml
          asset_name:  config.yml
-         asset_content_type: application/x-www-form-urlencoded
+         asset_content_type: application/yml
 
       - name: Upload Release Windows Asset
         id: upload-release-window-asset

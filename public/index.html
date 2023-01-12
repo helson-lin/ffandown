@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFanDown</title>
+    <script src="https://pic.kblue.site/notyf.min.js"></script>
+    <link rel="stylesheet" href="https://pic.kblue.site/notyf.min.css" />
+</head>
+
+<body>
+    <header>
+        <h3>FFanDown M3U8下载</h3>
+    </header>
+    <div class="center"> 
+        <div class="upload">
+            <input id="name" class="name" type="text" placeholder="请输入名称" />
+            <input id="url" class="url" type="text" placeholder="请输入M3U8" />
+            <button id="down">下载</button>
+        </div>
+    </div>
+    <script>
+        var notyf = new Notyf();
+        const getData = () => {
+            const name = document.getElementById('name').value;
+            const url = document.getElementById('url').value;
+            if (!url) {
+                notyf.error("请输入地址")
+            }
+            return { name, url };
+        }
+        const btn = document.getElementById('down');
+        const postData = (data) => {
+            fetch('/down', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                    // 'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: JSON.stringify(data)
+            }).then(res => res.json()).then((res) => {
+                console.log(res)
+                btn.innerHTML = "下载"
+                if (res.code === 1 || res.code === 2) {
+                    notyf.error(res.message)
+                } else {
+                    notyf.success('downloaded!');
+                }
+            })
+        }
+        btn.addEventListener('click', () => {
+            btn.innerHTML = '下载中'
+            const data = getData();
+            if (!data.url) {
+                btn.innerHTML = "下载"
+                return;
+            } else {
+                postData(data)
+            }
+        })
+    </script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #141417;
+            width: 100vw;
+            height: 100vh;
+            user-select: none;
+        }
+
+        header {
+            with: 100%;
+            background: #000;
+        }
+
+        header h3 {
+            text-align: center;
+            background: #000;
+            color: #fff;
+            margin: 0;
+            line-height: 60px;
+        }
+
+        .center {
+            width: 100%;
+            padding-top: 10%;
+            box-sizing: border-box;
+        }
+
+        .upload {
+            margin: 0 auto;
+            width: max-content;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px 40px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            backdrop-filter: blur(20px);
+        }
+
+        .upload input {
+            height: 40px;
+            color: #000;
+            outline: none;
+            border: 1px solid #333;
+            padding: 5px 10px;
+            box-sizing: border-box;
+            margin-right: 30px;
+        }
+
+        .upload .url {
+            width: 400px;
+        }
+
+        .upload button {
+            padding: 10px 20px;
+            color: #fafafa;
+            background: #057feb;
+            border-radius: 3px;
+            outline: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        @media screen and (max-width: 428px) {
+           .upload {flex-direction: column;background-color: transparent !important;width: 100% !important;align-content: center;}
+           .upload input { width: 100% !important;margin: 0 0 1rem 0!important;border-radius: 0.1rem;}
+           #down {width: 100% !important;}
+        }
+    </style>
+</body>
+
+</html>

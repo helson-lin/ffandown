@@ -1,0 +1,46 @@
+{
+  "name": "ffandown",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "build-pro": "pkg ./ -t  --debug=true",
+    "build": "pkg ./ --debug=true",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "express": "^4.18.2",
+    "forever-monitor": "^3.0.3",
+    "fs-extra": "^11.1.0",
+    "m3u8-to-mp4": "^1.0.0",
+    "winston": "^3.8.2",
+    "yamljs": "^0.3.0",
+    "colors": "^1.4.0"
+  },
+  "pkg": {
+    "scripts": [
+      "index.js",
+      "bootstrap.js",
+      "./bin/utils.js",
+      "./bin/m3u8.js",
+      "./bin/log.js",
+      "./bin/app.js"
+    ],
+    "assets": [
+      "./public/**/*",
+      "./public/*",
+      "./runtime/**/*.js",
+      "./runtime/**/**/*.js",
+      "./runtime/*.js"
+    ],
+    "outputPath": "dist"
+  },
+  "devDependencies": {
+  }
+}

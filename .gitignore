@@ -1,0 +1,5 @@
+.vscode
+logs/*
+ffandown
+node_modules
+dist/**

@@ -1,5 +1,6 @@
 port: 8081
 path: /media/
-webhooks: 'https://jn.oimi.space/bark/ri6NfTdYAqEMU5ahRJYqeZ/$TEXT/downloaded?icon=https://pic.kblue.site//crdownload.png'
+webhookType: 'feishu'
+webhooks: 'https://open.feishu.cn/open-apis/bot/v2/hook/1a574278-1c35-4b7a-9084-0844d4bd0603'
 thread: true
 useFFmpegLib: true

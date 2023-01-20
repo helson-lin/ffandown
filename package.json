@@ -22,6 +22,7 @@
     "winston": "^3.8.2",
     "yamljs": "^0.3.0",
     "colors": "^1.4.0",
+    "request": "^2.88.2",
     "pkg": "^5.8.0"
   },
   "pkg": {
@@ -42,6 +43,5 @@
     ],
     "outputPath": "dist"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

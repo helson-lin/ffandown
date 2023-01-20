@@ -23,7 +23,7 @@ const createServer = (option) => {
         } else {
             try {
                 res.send(`{"code": 0, "message": "${name}.mp4 is download !!!!"}`)
-                download(url, name, filePath, option.webhooks).then(res => {
+                download(url, name, filePath, option).then(res => {
                     logger.info(`${name}.mp4 is finish !!!!`);
                     console.log(`${name}.mp4 is finish !!!!`)
                 }).catch(err => {

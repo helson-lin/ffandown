@@ -2,9 +2,9 @@
 const path = require("path");
 const YAML = require('yamljs');
 const colors = require('colors');
+const request = require('request')
 const fs = require("fs");
 const fse = require('fs-extra');
-const { exec } = require("child_process");
 const m3u8ToMp4 = require("./m3u8");
 const converter = new m3u8ToMp4();
 const getConfigPath = () => {
@@ -25,23 +25,66 @@ const EnsureDonwloadPath = (_path) => {
 }
 
 const readConfig = (option =
-    { port: 8080, downloadDir: path.join(process.cwd(), 'media'), webhooks: '', thread: true, useFFmpegLib: true }) => {
+    { port: 8080, downloadDir: path.join(process.cwd(), 'media'), webhooks: '', webhookType: 'bark', thread: true, useFFmpegLib: true }) => {
     const configPath = getConfigPath()
     if (!configPath) {
         logger.info(`not found config file`);
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString());
-        const { port, path, webhooks, thread, useFFmpegLib } = data;
+        const { port, path, webhooks, webhookType, thread, useFFmpegLib } = data;
         if (port) option.port = port
         if (path) option.downloadDir = EnsureDonwloadPath(path)
         if (webhooks) option.webhooks = webhooks
-        if(thread !== undefined) option.thread = thread
-        if(useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
+        if (webhookType) option.webhookType = webhookType
+        if (thread !== undefined) option.thread = thread
+        if (useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
     }
     return option;
 }
 
-const download = (url, name, filePath, webhooks, ffmpegPath) => {
+const getFeiShuBody = (text, More) => {
+    const content = []
+    if(text) {
+        content.push([{
+            "tag": "text",
+            "text": `${text}`
+        }])
+    }
+    if(More) {
+        content.push([{
+            "tag": "text",
+            "text": `${More}`
+        }])
+    }
+    return {
+        msg_type: 'post',
+        content: {
+            post: {
+                "zh_cn": {
+                    "title": "文件下载通知",
+                    "content": content
+                }
+            }
+        }
+    }
+}
+
+const getBarkUrl = (url, text) => url.replace('$TEXT', `${encodeURIComponent(text)}`)
+
+const msg = (url, type, Text, More) => {
+    const URL = type === 'bark' ? getBarkUrl(url, Text) : url
+    const method = type === 'bark' ? 'GET' : 'POST'
+    const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody };
+    const data = bodyHanler[type](Text, More)
+    console.log(type, data)
+    request({
+        url: URL,
+        method,
+        body: JSON.stringify(data)
+    })
+}
+
+const download = (url, name, filePath, { webhooks, webhookType }) => {
     return new Promise((resolve, reject) => {
         converter
             .setInputFile(url)
@@ -50,17 +93,15 @@ const download = (url, name, filePath, webhooks, ffmpegPath) => {
             .then(res => {
                 if (webhooks) {
                     console.log("下载成功：" + name)
-                    const curlURl = webhooks.replace('$TEXT', '${name}.mp4')
-                    console.log(`curl ${curlURl}`)
-                    exec(`curl ${curlURl}`)
+                    msg(webhooks, webhookType, `${name}.mp4 下载成功`)
                 }
                 resolve()
             }).catch(err => {
+                console.log("下载失败", webhooks)
                 console.log("下载失败：" + err)
                 if (webhooks) {
-                    const curlURl = webhooks.replace('$TEXT', '${name}.mp4 Failed')
-                    console.log(`curl ${curlURl}`)
-                    exec(`curl ${curlURl}`)
+                    console.log("we", webhooks, webhookType)
+                    msg(webhooks, webhookType, `${name}.mp4 下载失败！`, err + '')
                 }
                 reject(err)
             })
@@ -90,14 +131,15 @@ const setFfmpegEnv = function () {
     } else {
         baseURL = 'ffmpeg'
     }
-    if(process.env.FFMPEG_PATH !== baseURL ) {
+    if (process.env.FFMPEG_PATH !== baseURL) {
         process.env.FFMPEG_PATH = baseURL
-        console.log( colors.italic.cyan("[ffdown] ffmpeg: 环境变量设置成功 \n"))
+        console.log(colors.italic.cyan("[ffdown] ffmpeg: 环境变量设置成功 \n"))
     }
 };
 
 module.exports = {
     readConfig,
     download,
+    msg,
     setFfmpegEnv
 }

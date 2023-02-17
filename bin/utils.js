@@ -7,6 +7,8 @@ const fs = require("fs");
 const fse = require('fs-extra');
 const m3u8ToMp4 = require("./m3u8");
 const converter = new m3u8ToMp4();
+const downAndExtra = require('download');
+const { platform } = require("os");
 const getConfigPath = () => {
     const configPathList = [path.join(process.cwd(), 'config.yml'), path.join(process.cwd(), '../config.yml')]
     return configPathList.find(_path => fse.pathExistsSync(_path));
@@ -44,13 +46,13 @@ const readConfig = (option =
 
 const getFeiShuBody = (text, More) => {
     const content = []
-    if(text) {
+    if (text) {
         content.push([{
             "tag": "text",
             "text": `${text}`
         }])
     }
-    if(More) {
+    if (More) {
         content.push([{
             "tag": "text",
             "text": `${More}`
@@ -82,6 +84,26 @@ const msg = (url, type, Text, More) => {
         method,
         body: JSON.stringify(data)
     })
+}
+
+const downloadFFmpeg = async (flatform) => {
+    const baseURL = 'https://nn.oimi.space/https://github.com/helson-lin/ffmpeg_binary/releases/download/4120399275/'
+    const link = {
+        win32: 'ffmpeg-win',
+        darwin: 'ffmpeg-darwin',
+        linux: 'ffmpeg-linux'
+    }
+    const isExist = fs.existsSync(path.join(process.cwd(), `/libs/${link[platform]}`))
+    if (isExist) {
+        return Promise.resolve()
+    } else {
+        try {
+            await downAndExtra(baseURL + link[platform] + '.zip', './libs', { extract: true })
+        } catch(e) {
+            return Promise.reject(e)
+        }
+        return Promise.resolve();
+    }
 }
 
 const download = (url, name, filePath, { webhooks, webhookType }) => {
@@ -120,14 +142,18 @@ const FFMPEGPath = (suffx) => {
     }
 }
 
-const setFfmpegEnv = function () {
+const setFfmpegEnv = async () => {
     let baseURL = ''
+    console.log("platform", process.platform)
     if (process.platform === 'win32') {
-        baseURL = FFMPEGPath('/lib/ffmpeg-win/ffmpeg.exe');
+        await downloadFFmpeg('win32')
+        baseURL = FFMPEGPath('/libs/ffmpeg-win/ffmpeg.exe');
     } else if (process.platform === 'darwin') {
-        baseURL = FFMPEGPath('/lib/ffmpeg-mac/ffmpeg');
+        await downloadFFmpeg('darwin')
+        baseURL = FFMPEGPath('/libs/ffmpeg-darwin/ffmpeg');
     } else if (process.platform === 'linux') {
-        baseURL = FFMPEGPath('/lib/ffmpeg-linux/ffmpeg');
+        await downloadFFmpeg('linux')
+        baseURL = FFMPEGPath('/libs/ffmpeg-linux/ffmpeg');
     } else {
         baseURL = 'ffmpeg'
     }

@@ -4,3 +4,4 @@ ffandown
 node_modules
 dist/**
 media/*
+libs/*

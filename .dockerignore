@@ -1,0 +1,9 @@
+lib/*
+libs/*
+libs
+media
+media/*
+node_modules
+node_modules/*
+.github
+.vscode

@@ -21,12 +21,14 @@ const threadRun = () => {
         createServer(option)
     }
 }
-if(option.useFFmpegLib) {
-    setFfmpegEnv()
-}
 
-if (option.thread) {
-    threadRun()
-} else {
-    createServer(option)
-}
+(async () => {
+    if (option.useFFmpegLib) {
+        await setFfmpegEnv()
+    } 
+    if (option.thread) {
+        threadRun()
+    } else {
+        createServer(option)
+    }
+})()

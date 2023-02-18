@@ -43,7 +43,6 @@ class m3u8ToMp4Converter {
         reject(new Error("You must specify the input and the output files"));
         return;
       }
-
       ffmpeg(this.M3U8_FILE)
         .on("error", error => {
           reject(new Error(error));

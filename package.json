@@ -5,8 +5,9 @@
   "main": "index.js",
   "bin": "index.js",
   "scripts": {
+    "start": "node index.js",
     "dev": "nodemon index.js",
-    "build-pro": "pkg ./ -t  --debug=true",
+    "build-pro": "pkg ./ -t node14-linux-arm64 --debug=true",
     "build": "pkg ./ --debug=true",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,15 +16,15 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.1",
-    "express": "^4.18.2",
-    "forever-monitor": "^3.0.3",
-    "fs-extra": "^11.1.0",
-    "m3u8-to-mp4": "^1.0.0",
-    "winston": "^3.8.2",
-    "yamljs": "^0.3.0",
     "colors": "^1.4.0",
+    "download": "^8.0.0",
+    "express": "^4.18.2",
+    "fluent-ffmpeg": "^2.1.2",
+    "fs-extra": "^11.1.0",
+    "pkg": "^5.8.0",
     "request": "^2.88.2",
-    "pkg": "^5.8.0"
+    "winston": "^3.8.2",
+    "yamljs": "^0.3.0"
   },
   "pkg": {
     "scripts": [
@@ -40,6 +41,12 @@
       "./runtime/**/*.js",
       "./runtime/**/**/*.js",
       "./runtime/*.js"
+    ],
+    "targets": [
+      "node14-linux-arm64",
+      "node14-linux-x64",
+      "node14-win-x64",
+      "node14-macos-x64"
     ],
     "outputPath": "dist"
   },

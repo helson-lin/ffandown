@@ -7,9 +7,12 @@ const cpuNum = os.cpus().length
 
 const option = readConfig()
 
-const threadRun = () => {
+const threadRun = async () => {
     if (cluster.isMaster) {
         console.log(colors.blue(`Master ${process.pid} is running`));
+        if (option.useFFmpegLib) {
+            await setFfmpegEnv()
+        } 
         for (let i = 0; i < cpuNum; i++) {
             cluster.fork();
         }
@@ -23,12 +26,12 @@ const threadRun = () => {
 }
 
 (async () => {
-    if (option.useFFmpegLib) {
-        await setFfmpegEnv()
-    } 
     if (option.thread) {
-        threadRun()
+        await threadRun()
     } else {
+        if (option.useFFmpegLib) {
+            await setFfmpegEnv()
+        } 
         createServer(option)
     }
 })()

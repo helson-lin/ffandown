@@ -7,7 +7,6 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build-pro": "pkg ./ -t node14-linux-arm64 --debug=true",
     "build": "pkg ./ --debug=true",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

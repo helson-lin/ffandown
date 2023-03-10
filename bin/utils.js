@@ -5,12 +5,13 @@ const colors = require('colors');
 const request = require('request')
 const fs = require("fs");
 const fse = require('fs-extra');
+const childProcess = require('child_process');
 const DOWNLOADZIP = require('download');
 const m3u8ToMp4 = require("./m3u8");
 const converter = new m3u8ToMp4();
 
 // const GITHUBURL = 'https://nn.oimi.space/https://github.com/helson-lin/ffmpeg_binary/releases/download/4208999990'
-const GITHUBURL =  'https://pic.kblue.site/ffmpeg-binary'
+const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
 /**
  * @description: find config.yaml location
  * @return {string}
@@ -121,17 +122,42 @@ const msg = (url, type, Text, More) => {
     })
 }
 
+const execCmd = (cmd) => {
+    return new Promise((resolve, reject) => {
+        childProcess.exec(
+            cmd,
+            (error, stdout, stderr) => {
+                console.log(stdout);
+                console.log(error);
+                console.log(stderr);
+                if (error) {
+                    reject(error)
+                } else {
+                    reject()
+                }
+            },
+        );
+    })
+}
+
+const chmod = (file) => {
+    // if(process.platform !== 'linux') return
+    // if(process.platform === 'darwin') return
+    const cmd = `chmod +x ${file}`
+    execCmd(cmd)
+}
+
 const downloadFfmpeg = async (type) => {
     const typeLink = {
-        'win32': 'ffmpeg-win32',
-        'darwin': 'ffmpeg-darwin',
-        'linux-x64': 'ffmpeg-linux-x86_64',
-        'linux-arm64': 'ffmpeg-linux-arm64',
-        'linux-amd64': 'ffmpeg-linux-amd64'
+        'win32': 'ffmpeg-4.4.1-win-64',
+        'darwin': 'ffmpeg-4.4.1-osx-64',
+        'linux-x64': 'ffmpeg-4.4.1-linux-64',
+        'linux-arm64': 'ffmpeg-4.4.1-linux-arm-64',
+        'linux-amd64': 'ffmpeg-4.4.1-linux-armel-32'
     }
     const suffix = typeLink[type];
     const executableFileSuffix = typeLink[type].startsWith('win') ? 'ffmpeg.exe' : 'ffmpeg';
-    const libPath = path.join(process.cwd(), `lib/${suffix}/${executableFileSuffix}`)
+    const libPath = path.join(process.cwd(), `lib/${executableFileSuffix}`)
     const isExist = isFile(libPath)
     if (isExist) {
         return Promise.resolve(libPath)
@@ -144,6 +170,7 @@ const downloadFfmpeg = async (type) => {
     try {
         console.log(colors.italic.green("[ffdown]  downloading ffmpeg:" + `${GITHUBURL}/${suffix}.zip`))
         await DOWNLOADZIP(`${GITHUBURL}/${suffix}.zip`, 'lib', { extract: true })
+        chmod(libPath)
         return Promise.resolve(libPath)
     } catch (e) {
         return Promise.reject(e)

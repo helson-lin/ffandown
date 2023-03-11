@@ -12,7 +12,7 @@ const threadRun = async () => {
         console.log(colors.blue(`Master ${process.pid} is running`));
         if (option.useFFmpegLib) {
             await setFfmpegEnv()
-        }
+        } 
         for (let i = 0; i < cpuNum; i++) {
             cluster.fork();
         }
@@ -27,11 +27,11 @@ const threadRun = async () => {
 
 (async () => {
     if (option.thread) {
-        threadRun()
+        await threadRun()
     } else {
         if (option.useFFmpegLib) {
             await setFfmpegEnv()
-        }
+        } 
         createServer(option)
     }
 })()

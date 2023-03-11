@@ -13,6 +13,12 @@ release 下面打包之后的文件，没有带lib, 需要自行去code里面下
 如果你的电脑有ffmpeg环境变量则不需要
 `config.yml`文件可以自行从code下载,放到可执行文件同目录下
 
+## docker安装
+
+`docker run -d -p 8081:80801 -v /home/media/app/media h55205l/ffandown:v2`
+
+`/home/media`为下载媒体的目录、默认8081端口
+
 
 ## 关于配置文件`config.yml`
 

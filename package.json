@@ -5,9 +5,11 @@
   "main": "index.js",
   "bin": "index.js",
   "scripts": {
+    "start": "node index.js",
     "dev": "nodemon index.js",
-    "build-pro": "pkg ./ -t  --debug=true",
-    "build": "pkg ./ --debug=true",
+    "clean": "rimraf dist",
+    "pkg": "pkg ./ --debug=true",
+    "build": "npm run clean && npm run pkg",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -41,6 +43,14 @@
       "./runtime/**/**/*.js",
       "./runtime/*.js"
     ],
+    "targets": [
+      "node14-macos-x64",
+      "node14-windows-x64",
+      "node14-linux-x64"
+    ],
     "outputPath": "dist"
+  },
+  "devDependencies": {
+    "rimraf": "^4.4.0"
   }
 }

@@ -4,4 +4,5 @@ ffandown
 node_modules
 dist/**
 media/*
-libs/*
+lib/*
+*.mp4

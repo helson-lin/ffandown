@@ -5,15 +5,27 @@ const colors = require('colors');
 const request = require('request')
 const fs = require("fs");
 const fse = require('fs-extra');
+const childProcess = require('child_process');
+const DOWNLOADZIP = require('download');
 const m3u8ToMp4 = require("./m3u8");
 const converter = new m3u8ToMp4();
-const downAndExtra = require('download');
-const { platform } = require("os");
+
+// const GITHUBURL = 'https://nn.oimi.space/https://github.com/helson-lin/ffmpeg_binary/releases/download/4208999990'
+const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
+/**
+ * @description: find config.yaml location
+ * @return {string}
+ */
 const getConfigPath = () => {
     const configPathList = [path.join(process.cwd(), 'config.yml'), path.join(process.cwd(), '../config.yml')]
     return configPathList.find(_path => fse.pathExistsSync(_path));
 }
 
+/**
+ * @description: make sure download directory exists
+ * @param {string} _path configuration path
+ * @return {string} real download directory
+ */
 const EnsureDonwloadPath = (_path) => {
     if (_path.startsWith('@')) {
         const relPath = _path.replace('@', '');
@@ -23,9 +35,12 @@ const EnsureDonwloadPath = (_path) => {
     const relPath = path.join(process.cwd(), _path);
     fse.ensureDirSync(relPath);
     return relPath
-
 }
 
+/**
+ * @description: read configuration file and return configuration
+ * @return {object} configuration object
+ */
 const readConfig = (option =
     { port: 8080, downloadDir: path.join(process.cwd(), 'media'), webhooks: '', webhookType: 'bark', thread: true, useFFmpegLib: true }) => {
     const configPath = getConfigPath()
@@ -44,6 +59,12 @@ const readConfig = (option =
     return option;
 }
 
+/**
+ * @description: generate feishu hooks request body
+ * @param {string} text  title
+ * @param {string} More   body 
+ * @return {object} Request body
+ */
 const getFeiShuBody = (text, More) => {
     const content = []
     if (text) {
@@ -73,12 +94,27 @@ const getFeiShuBody = (text, More) => {
 
 const getBarkUrl = (url, text) => url.replace('$TEXT', `${encodeURIComponent(text)}`)
 
+/**
+ * @description: judege input path is a directory
+ * @param {string} pathDir path 
+ * @return {boolean} true: path is a file
+ */
+const isFile = (pathDir) => fse.pathExistsSync(pathDir)
+
+/**
+ * @description: send message notice to user
+ * @param {string} url hooks url
+ * @param {string} type hooks type
+ * @param {string} Text title text
+ * @param {string} More body text
+ * @return {void}
+ */
 const msg = (url, type, Text, More) => {
     const URL = type === 'bark' ? getBarkUrl(url, Text) : url
     const method = type === 'bark' ? 'GET' : 'POST'
     const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody };
     const data = bodyHanler[type](Text, More)
-    console.log(type, data)
+    // console.log(type, data)
     request({
         url: URL,
         method,
@@ -86,26 +122,70 @@ const msg = (url, type, Text, More) => {
     })
 }
 
-const downloadFFmpeg = async (flatform) => {
-    const baseURL = 'https://nn.oimi.space/https://github.com/helson-lin/ffmpeg_binary/releases/download/4120399275/'
-    const link = {
-        win32: 'ffmpeg-win',
-        darwin: 'ffmpeg-darwin',
-        linux: 'ffmpeg-linux'
+const execCmd = (cmd) => {
+    return new Promise((resolve, reject) => {
+        childProcess.exec(
+            cmd,
+            (error, stdout, stderr) => {
+                console.log(stdout);
+                console.log(error);
+                console.log(stderr);
+                if (error) {
+                    reject(error)
+                } else {
+                    reject()
+                }
+            },
+        );
+    })
+}
+
+const chmod = (file) => {
+    // if(process.platform !== 'linux') return
+    // if(process.platform === 'darwin') return
+    const cmd = `chmod +x ${file}`
+    execCmd(cmd)
+}
+
+const downloadFfmpeg = async (type) => {
+    const typeLink = {
+        'win32': 'ffmpeg-4.4.1-win-64',
+        'darwin': 'ffmpeg-4.4.1-osx-64',
+        'linux-x64': 'ffmpeg-4.4.1-linux-64',
+        'linux-arm64': 'ffmpeg-4.4.1-linux-arm-64',
+        'linux-amd64': 'ffmpeg-4.4.1-linux-armel-32'
     }
-    const isExist = fs.existsSync(path.join(process.cwd(), `/libs/${link[platform]}`))
+    const suffix = typeLink[type];
+    const executableFileSuffix = typeLink[type].startsWith('win') ? 'ffmpeg.exe' : 'ffmpeg';
+    const libPath = path.join(process.cwd(), `lib/${executableFileSuffix}`)
+    const isExist = isFile(libPath)
     if (isExist) {
-        return Promise.resolve()
-    } else {
-        try {
-            await downAndExtra(baseURL + link[platform] + '.zip', './libs', { extract: true })
-        } catch(e) {
-            return Promise.reject(e)
-        }
-        return Promise.resolve();
+        return Promise.resolve(libPath)
+    }
+    // judge file is exists
+    if (!suffix) {
+        console.log(colors.italic.red("[ffdown] can't auto download ffmpeg \n"))
+        return Promise.reject(new Error("can't download ffmpeg"))
+    }
+    try {
+        console.log(colors.italic.green("[ffdown]  downloading ffmpeg:" + `${GITHUBURL}/${suffix}.zip`))
+        await DOWNLOADZIP(`${GITHUBURL}/${suffix}.zip`, 'lib', { extract: true })
+        chmod(libPath)
+        return Promise.resolve(libPath)
+    } catch (e) {
+        return Promise.reject(e)
     }
 }
 
+/**
+ * @description: download m3u8 video to local storage
+ * @param {string} url m3u8 url
+ * @param {string} name fielName
+ * @param {string} filePath file output path
+ * @param {string} webhooks webhooks url
+ * @param {string} webhookType webhooks type
+ * @return {Promise}
+ */
 const download = (url, name, filePath, { webhooks, webhookType }) => {
     return new Promise((resolve, reject) => {
         converter
@@ -130,11 +210,15 @@ const download = (url, name, filePath, { webhooks, webhookType }) => {
     })
 }
 
-const isFile = (pathDir) => fse.statSync(pathDir).isFile()
 
-const FFMPEGPath = (suffx) => {
-    const cwdPath = process.cwd() + suffx;
-    const cdPath = path.join(process.cwd(), '..' + suffx)
+/**
+ * @description: find ffmpeg executable file path
+ * @param {string} suffixPath
+ * @return {string} ffmpeg path
+ */
+const FFMPEGPath = (suffixPath) => {
+    const cwdPath = process.cwd() + suffixPath;
+    const cdPath = path.join(process.cwd(), '..' + suffixPath)
     try {
         return isFile(cwdPath) ? cwdPath : cdPath
     } catch (e) {
@@ -142,24 +226,24 @@ const FFMPEGPath = (suffx) => {
     }
 }
 
+/**
+ * @description: setting ffmpeg environment variables
+ * @return {void}
+ */
 const setFfmpegEnv = async () => {
+    const platform = process.platform;
+    const arch = process.arch;
+    const type = platform + (platform === 'linux' ? `-${arch}` : '')
     let baseURL = ''
-    console.log("platform", process.platform)
-    if (process.platform === 'win32') {
-        await downloadFFmpeg('win32')
-        baseURL = FFMPEGPath('/libs/ffmpeg-win/ffmpeg.exe');
-    } else if (process.platform === 'darwin') {
-        await downloadFFmpeg('darwin')
-        baseURL = FFMPEGPath('/libs/ffmpeg-darwin/ffmpeg');
-    } else if (process.platform === 'linux') {
-        await downloadFFmpeg('linux')
-        baseURL = FFMPEGPath('/libs/ffmpeg-linux/ffmpeg');
-    } else {
-        baseURL = 'ffmpeg'
-    }
-    if (process.env.FFMPEG_PATH !== baseURL) {
+    try {
+        baseURL = await downloadFfmpeg(type)
         process.env.FFMPEG_PATH = baseURL
-        console.log(colors.italic.cyan("[ffdown] ffmpeg: 环境变量设置成功 \n"))
+        // console.log("Setting FFMPEG_PATH:" + baseURL)
+        if (process.env.FFMPEG_PATH !== baseURL) {
+            console.log(colors.italic.cyan("[ffdown] ffmpeg: 环境变量设置成功"))
+        }
+    } catch (e) {
+        console.log('download Failed', e)
     }
 };
 

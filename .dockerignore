@@ -1,20 +1,13 @@
-<<<<<<< HEAD
 lib/*
 libs/*
 libs
 media
-media/*
-node_modules
 node_modules/*
 .github
 .vscode
-=======
 libs/*
 lib/*
 logs/*
 dist/*
-node_modules/*
-.vscode/*
-.github/*
 *.zip
->>>>>>> develop
+*.mp4

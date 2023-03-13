@@ -9,13 +9,11 @@ lib文件加下面是ffmpeg的可执行文件，默认程序自带了ffmpeg，�
 
 ## releas说明
 
-release 下面打包之后的文件，没有带lib, 需要自行去code里面下载对应的lib
-如果你的电脑有ffmpeg环境变量则不需要
-`config.yml`文件可以自行从code下载,放到可执行文件同目录下
+release平台可执行文件需要配置config.yml使用，请一同下载
 
 ## docker安装
 
-`docker run -d -p 8081:80801 -v /home/media/app/media h55205l/ffandown:v2`
+`docker run -d -p 8081:80801 -v /home/media:/app/media  -v $PWD/config.yml:/app/config.yml h55205l/ffandown:v2`
 
 `/home/media`为下载媒体的目录、默认8081端口
 
@@ -24,9 +22,10 @@ release 下面打包之后的文件，没有带lib, 需要自行去code里面下
 
 - port: 服务监听的端口
 - path: 下载目录，相对于执行文件位置，或者使用绝对路径（在地址前面加载@）
-- webhooks: webhook通知地址，可以使用钉钉或者bark之类软件,`$TEXT`为变量：下载文件的名称
+- webhookType: bark | 'feishu'
+- webhooks: webhook通知地址，使用bark的时候支持变量`$TEXT`：下载文件的名称；使用飞书直接填写webhook地址即可
 - thread: 是否开启多线程
-- useFFmpegLib: 是否使用自带lib, 将code里面的lib文件夹目录下载复制到可执行文件同级目录，不是本平台的ffmpeg包可以删除
+- useFFmpegLib: 是否使用自带lib, 默认true，可以自动下载对应的依赖
 
 
 ## 使用

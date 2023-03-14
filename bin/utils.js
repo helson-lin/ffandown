@@ -1,14 +1,16 @@
 
-const path = require("path");
-const YAML = require('yamljs');
-const colors = require('colors');
+const path = require('path')
+const YAML = require('yamljs')
+const json2yaml = require('js-yaml')
+const colors = require('colors')
 const request = require('request')
-const fs = require("fs");
-const fse = require('fs-extra');
-const childProcess = require('child_process');
-const DOWNLOADZIP = require('download');
-const m3u8ToMp4 = require("./m3u8");
-const converter = new m3u8ToMp4();
+const fs = require('fs')
+const fse = require('fs-extra')
+const childProcess = require('child_process')
+const DOWNLOADZIP = require('download')
+const m3u8ToMp4 = require('./m3u8')
+const converter = new m3u8ToMp4()
+const logger = require('./log')
 
 // const GITHUBURL = 'https://nn.oimi.space/https://github.com/helson-lin/ffmpeg_binary/releases/download/4208999990'
 const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
@@ -18,7 +20,18 @@ const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinarie
  */
 const getConfigPath = () => {
     const configPathList = [path.join(process.cwd(), 'config.yml'), path.join(process.cwd(), '../config.yml')]
-    return configPathList.find(_path => fse.pathExistsSync(_path));
+    return configPathList.find(_path => fse.pathExistsSync(_path))
+}
+
+/**
+ * @description create yml option file
+ * @date 3/14/2023 - 6:01:54 PM
+ * @param {object} obj
+ */
+const createYml = (obj) => {
+    const yamlString = json2yaml.dump(obj, { lineWidth: -1 })
+    const filePath = path.join(process.cwd(), 'config.yml')
+    fse.outputFileSync(filePath, yamlString)
 }
 
 /**
@@ -28,12 +41,12 @@ const getConfigPath = () => {
  */
 const EnsureDonwloadPath = (_path) => {
     if (_path.startsWith('@')) {
-        const relPath = _path.replace('@', '');
-        fse.ensureDirSync(relPath);
-        return relPath;
+        const relPath = _path.replace('@', '')
+        fse.ensureDirSync(relPath)
+        return relPath
     }
-    const relPath = path.join(process.cwd(), _path);
-    fse.ensureDirSync(relPath);
+    const relPath = path.join(process.cwd(), _path)
+    fse.ensureDirSync(relPath)
     return relPath
 }
 
@@ -41,14 +54,20 @@ const EnsureDonwloadPath = (_path) => {
  * @description: read configuration file and return configuration
  * @return {object} configuration object
  */
-const readConfig = (option =
-    { port: 8080, downloadDir: path.join(process.cwd(), 'media'), webhooks: '', webhookType: 'bark', thread: true, useFFmpegLib: true }) => {
+const readConfig = (option = { 
+    port: 8080,
+    downloadDir: path.join(process.cwd(), 'media'), 
+    webhooks: '',
+    webhookType: 'bark',
+    thread: true,
+    useFFmpegLib: true }) => {
     const configPath = getConfigPath()
     if (!configPath) {
-        logger.info(`not found config file`);
+        logger.info('not found config file, auto create config.yml')
+        createYml({ ...option, downloadDir: '/media/' })
     } else {
-        const data = YAML.parse(fs.readFileSync(configPath).toString());
-        const { port, path, webhooks, webhookType, thread, useFFmpegLib } = data;
+        const data = YAML.parse(fs.readFileSync(configPath).toString())
+        const { port, path, webhooks, webhookType, thread, useFFmpegLib } = data
         if (port) option.port = port
         if (path) option.downloadDir = EnsureDonwloadPath(path)
         if (webhooks) option.webhooks = webhooks
@@ -56,7 +75,7 @@ const readConfig = (option =
         if (thread !== undefined) option.thread = thread
         if (useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
     }
-    return option;
+    return option
 }
 
 /**
@@ -69,26 +88,26 @@ const getFeiShuBody = (text, More) => {
     const content = []
     if (text) {
         content.push([{
-            "tag": "text",
-            "text": `${text}`
+            tag: 'text',
+            text: `${text}`,
         }])
     }
     if (More) {
         content.push([{
-            "tag": "text",
-            "text": `${More}`
+            tag: 'text',
+            text: `${More}`,
         }])
     }
     return {
         msg_type: 'post',
         content: {
             post: {
-                "zh_cn": {
-                    "title": "文件下载通知",
-                    "content": content
-                }
-            }
-        }
+                zh_cn: {
+                    title: '文件下载通知',
+                    content,
+                },
+            },
+        },
     }
 }
 
@@ -112,13 +131,12 @@ const isFile = (pathDir) => fse.pathExistsSync(pathDir)
 const msg = (url, type, Text, More) => {
     const URL = type === 'bark' ? getBarkUrl(url, Text) : url
     const method = type === 'bark' ? 'GET' : 'POST'
-    const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody };
+    const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody }
     const data = bodyHanler[type](Text, More)
-    // console.log(type, data)
     request({
         url: URL,
         method,
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
     })
 }
 
@@ -126,17 +144,15 @@ const execCmd = (cmd) => {
     return new Promise((resolve, reject) => {
         childProcess.exec(
             cmd,
-            (error, stdout, stderr) => {
-                console.log(stdout);
-                console.log(error);
-                console.log(stderr);
+            (error) => {
                 if (error) {
+                    logger.warn(error)
                     reject(error)
                 } else {
-                    reject()
+                    resolve()
                 }
             },
-        );
+        )
     })
 }
 
@@ -149,14 +165,14 @@ const chmod = (file) => {
 
 const downloadFfmpeg = async (type) => {
     const typeLink = {
-        'win32': 'ffmpeg-4.4.1-win-64',
-        'darwin': 'ffmpeg-4.4.1-osx-64',
+        win32: 'ffmpeg-4.4.1-win-64',
+        darwin: 'ffmpeg-4.4.1-osx-64',
         'linux-x64': 'ffmpeg-4.4.1-linux-64',
         'linux-arm64': 'ffmpeg-4.4.1-linux-arm-64',
-        'linux-amd64': 'ffmpeg-4.4.1-linux-armel-32'
+        'linux-amd64': 'ffmpeg-4.4.1-linux-armel-32',
     }
-    const suffix = typeLink[type];
-    const executableFileSuffix = typeLink[type].startsWith('win') ? 'ffmpeg.exe' : 'ffmpeg';
+    const suffix = typeLink[type]
+    const executableFileSuffix = typeLink[type].startsWith('win') ? 'ffmpeg.exe' : 'ffmpeg'
     const libPath = path.join(process.cwd(), `lib/${executableFileSuffix}`)
     const isExist = isFile(libPath)
     if (isExist) {
@@ -164,11 +180,11 @@ const downloadFfmpeg = async (type) => {
     }
     // judge file is exists
     if (!suffix) {
-        console.log(colors.italic.red("[ffdown] can't auto download ffmpeg \n"))
-        return Promise.reject(new Error("can't download ffmpeg"))
+        console.log(colors.italic.red('[ffdown] can\'t auto download ffmpeg \n'))
+        return Promise.reject(new Error('can\'t download ffmpeg'))
     }
     try {
-        console.log(colors.italic.green("[ffdown]  downloading ffmpeg:" + `${GITHUBURL}/${suffix}.zip`))
+        console.log(colors.italic.green('[ffdown]  downloading ffmpeg:' + `${GITHUBURL}/${suffix}.zip`))
         await DOWNLOADZIP(`${GITHUBURL}/${suffix}.zip`, 'lib', { extract: true })
         chmod(libPath)
         return Promise.resolve(libPath)
@@ -189,27 +205,26 @@ const downloadFfmpeg = async (type) => {
 const download = (url, name, filePath, { webhooks, webhookType }) => {
     return new Promise((resolve, reject) => {
         converter
-            .setInputFile(url)
-            .setOutputFile(filePath)
-            .start()
-            .then(res => {
-                if (webhooks) {
-                    console.log("下载成功：" + name)
-                    msg(webhooks, webhookType, `${name}.mp4 下载成功`)
-                }
-                resolve()
-            }).catch(err => {
-                console.log("下载失败", webhooks)
-                console.log("下载失败：" + err)
-                if (webhooks) {
-                    console.log("we", webhooks, webhookType)
-                    msg(webhooks, webhookType, `${name}.mp4 下载失败！`, err + '')
-                }
-                reject(err)
-            })
+        .setInputFile(url)
+        .setOutputFile(filePath)
+        .start()
+        .then(res => {
+            if (webhooks) {
+                console.log('下载成功：' + name)
+                msg(webhooks, webhookType, `${name}.mp4 下载成功`)
+            }
+            resolve()
+        }).catch(err => {
+            console.log('下载失败', webhooks)
+            console.log('下载失败：' + err)
+            if (webhooks) {
+                console.log('we', webhooks, webhookType)
+                msg(webhooks, webhookType, `${name}.mp4 下载失败！`, err + '')
+            }
+            reject(err)
+        })
     })
 }
-
 
 /**
  * @description: find ffmpeg executable file path
@@ -217,7 +232,7 @@ const download = (url, name, filePath, { webhooks, webhookType }) => {
  * @return {string} ffmpeg path
  */
 const FFMPEGPath = (suffixPath) => {
-    const cwdPath = process.cwd() + suffixPath;
+    const cwdPath = process.cwd() + suffixPath
     const cdPath = path.join(process.cwd(), '..' + suffixPath)
     try {
         return isFile(cwdPath) ? cwdPath : cdPath
@@ -231,25 +246,28 @@ const FFMPEGPath = (suffixPath) => {
  * @return {void}
  */
 const setFfmpegEnv = async () => {
-    const platform = process.platform;
-    const arch = process.arch;
+    const platform = process.platform
+    const arch = process.arch
     const type = platform + (platform === 'linux' ? `-${arch}` : '')
     let baseURL = ''
     try {
         baseURL = await downloadFfmpeg(type)
         process.env.FFMPEG_PATH = baseURL
+        logger.debug('Setting FFMPEG_PATH:' + baseURL)
+        logger.warn('Setting FFMPEG_PATH:' + baseURL)
         // console.log("Setting FFMPEG_PATH:" + baseURL)
         if (process.env.FFMPEG_PATH !== baseURL) {
-            console.log(colors.italic.cyan("[ffdown] ffmpeg: 环境变量设置成功"))
+            console.log(colors.italic.cyan('[ffdown] ffmpeg: 环境变量设置成功'))
         }
     } catch (e) {
         console.log('download Failed', e)
     }
-};
+}
 
 module.exports = {
     readConfig,
     download,
     msg,
-    setFfmpegEnv
+    setFfmpegEnv,
+    FFMPEGPath,
 }

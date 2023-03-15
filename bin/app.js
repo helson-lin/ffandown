@@ -6,7 +6,7 @@ const colors = require('colors')
 const bodyParser = require('body-parser')
 const logger = require('./log')
 const app = express()
-const { download } = require('./utils.js')
+const { download, getNetwork } = require('./utils.js')
 
 app.use(express.static(path.join(__dirname, '../public')))
 const jsonParser = bodyParser.json()
@@ -34,11 +34,15 @@ const createServer = (option) => {
         }
     })
 
-    app.listen(option.port, () => {
-        logger.info(`server running on port: ${option.port}`)
+    app.listen(option.port, async () => {
+        const list = await getNetwork()
+        const listenString = list.reduce((pre, val) => {
+            return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + option.port + '/')}`
+        }, colors.white('[ffandown] server running at:\n'))
+        logger.info(listenString)
         const isWorker = cluster.isWorker
         if (isWorker && cluster.worker.id === 1 || !isWorker) {
-            console.log(colors.green(`server running on port: ${option.port}`))
+            console.log(colors.green(listenString))
         }
     })
 }

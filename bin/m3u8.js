@@ -5,7 +5,6 @@
  */
 
 let ffmpeg = require('fluent-ffmpeg')
-
 /**
  * A class to convert M3U8 to MP4
  * @class
@@ -36,6 +35,18 @@ class m3u8ToMp4Converter {
     }
 
     /**
+   * Sets the thread
+   * @param {Number} number thread number
+   * @returns {Function}
+   */
+    setThreads (number) {
+        if (number) {
+            this.THREADS = number
+        }
+        return this
+    }
+
+    /**
    * Starts the process
    */
     start () {
@@ -44,17 +55,21 @@ class m3u8ToMp4Converter {
                 reject(new Error('You must specify the input and the output files'))
                 return
             }
-            ffmpeg(this.M3U8_FILE)
+            const ffmpegCmd = ffmpeg(this.M3U8_FILE)
             .on('error', error => {
                 reject(new Error(error))
             })
             .on('end', () => {
                 resolve()
             })
-            .outputOptions('-c copy')
+            if (this.THREADS) {
+                ffmpegCmd.outputOptions(`-threads ${this.THREADS}`)
+                ffmpegCmd.outputOptions('-preset ultrafast')
+            }
+            ffmpegCmd.outputOptions('-c copy')
             .outputOptions('-bsf:a aac_adtstoasc')
             .output(this.OUTPUT_FILE)
-            .run()
+            ffmpegCmd.run()
         })
     }
 }

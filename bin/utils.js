@@ -6,12 +6,14 @@ const colors = require('colors')
 const request = require('request')
 const fs = require('fs')
 const fse = require('fs-extra')
+const si = require('systeminformation')
 const childProcess = require('child_process')
 const DOWNLOADZIP = require('download')
+const os = require('os')
 const m3u8ToMp4 = require('./m3u8')
 const converter = new m3u8ToMp4()
 const logger = require('./log')
-
+const cpuNum = os.cpus().length
 // const GITHUBURL = 'https://nn.oimi.space/https://github.com/helson-lin/ffmpeg_binary/releases/download/4208999990'
 const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
 /**
@@ -21,6 +23,17 @@ const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinarie
 const getConfigPath = () => {
     const configPathList = [path.join(process.cwd(), 'config.yml'), path.join(process.cwd(), '../config.yml')]
     return configPathList.find(_path => fse.pathExistsSync(_path))
+}
+
+const getNetwork = () => {
+    return new Promise((resolve, reject) => {
+        si.networkInterfaces().then(data => {
+            const list = data.filter(i => i.ip4).map(i => i.ip4)
+            resolve(list || [])
+        }).catch(error => {
+            reject(error)
+        })
+    })
 }
 
 /**
@@ -59,7 +72,8 @@ const readConfig = (option = {
     downloadDir: path.join(process.cwd(), 'media'), 
     webhooks: '',
     webhookType: 'bark',
-    thread: true,
+    thread: false,
+    downloadThread: true,
     useFFmpegLib: true }) => {
     const configPath = getConfigPath()
     if (!configPath) {
@@ -67,12 +81,13 @@ const readConfig = (option = {
         createYml({ ...option, downloadDir: '/media/' })
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString())
-        const { port, path, webhooks, webhookType, thread, useFFmpegLib } = data
+        const { port, path, webhooks, webhookType, thread, useFFmpegLib, downloadThread } = data
         if (port) option.port = port
         if (path) option.downloadDir = EnsureDonwloadPath(path)
         if (webhooks) option.webhooks = webhooks
         if (webhookType) option.webhookType = webhookType
         if (thread !== undefined) option.thread = thread
+        if (downloadThread !== undefined) option.downloadThread = downloadThread
         if (useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
     }
     return option
@@ -133,6 +148,10 @@ const msg = (url, type, Text, More) => {
     const method = type === 'bark' ? 'GET' : 'POST'
     const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody }
     const data = bodyHanler[type](Text, More)
+    logger.info(
+        'URL:' + URL, 
+        'METHOD:' + method, 
+        'DATA:' + JSON.stringify(data))  
     request({
         url: URL,
         method,
@@ -202,10 +221,11 @@ const downloadFfmpeg = async (type) => {
  * @param {string} webhookType webhooks type
  * @return {Promise}
  */
-const download = (url, name, filePath, { webhooks, webhookType }) => {
+const download = (url, name, filePath, { webhooks, webhookType, downloadThread }) => {
     return new Promise((resolve, reject) => {
         converter
         .setInputFile(url)
+        .setThreads(downloadThread ? cpuNum : 0)
         .setOutputFile(filePath)
         .start()
         .then(res => {
@@ -270,4 +290,5 @@ module.exports = {
     msg,
     setFfmpegEnv,
     FFMPEGPath,
+    getNetwork,
 }

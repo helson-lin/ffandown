@@ -16,6 +16,7 @@ specifiers:
   pkg: ^5.8.0
   request: ^2.88.2
   rimraf: ^4.4.0
+  systeminformation: ^5.17.12
   winston: ^3.8.2
   yamljs: ^0.3.0
 
@@ -29,6 +30,7 @@ dependencies:
   js-yaml: registry.npmmirror.com/js-yaml/4.1.0
   pkg: registry.npmmirror.com/pkg/5.8.1
   request: registry.npmmirror.com/request/2.88.2
+  systeminformation: registry.npmmirror.com/systeminformation/5.17.12
   winston: registry.npmmirror.com/winston/3.8.2
   yamljs: registry.npmmirror.com/yamljs/0.3.0
 
@@ -3877,6 +3879,15 @@ packages:
     name: supports-preserve-symlinks-flag
     version: 1.0.0
     engines: {node: '>= 0.4'}
+
+  registry.npmmirror.com/systeminformation/5.17.12:
+    resolution: {integrity: sha512-I3pfMW2vue53u+X08BNxaJieaHkRoMMKjWetY9lbYJeWFaeWPO6P4FkNc4XOCX8F9vbQ0HqQ25RJoz3U/B7liw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/systeminformation/-/systeminformation-5.17.12.tgz}
+    name: systeminformation
+    version: 5.17.12
+    engines: {node: '>=8.0.0'}
+    os: [darwin, linux, win32, freebsd, openbsd, netbsd, sunos, android]
+    hasBin: true
+    dev: false
 
   registry.npmmirror.com/tar-fs/2.1.1:
     resolution: {integrity: sha512-V0r2Y9scmbDRLCNex/+hYzvp/zyYjvFbHPNgVTKfQvVrb6guiE/fxP+XblDNR011utopbkex2nM4dHNV6GDsng==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/tar-fs/-/tar-fs-2.1.1.tgz}

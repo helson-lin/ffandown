@@ -6,7 +6,6 @@ const colors = require('colors')
 const cpuNum = os.cpus().length
 // read local config options
 const option = readConfig()
-
 /**
  * Description create cluster
  * @date 3/14/2023 - 5:33:53 PM

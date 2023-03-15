@@ -25,6 +25,7 @@
     "js-yaml": "^4.1.0",
     "pkg": "^5.8.0",
     "request": "^2.88.2",
+    "systeminformation": "^5.17.12",
     "winston": "^3.8.2",
     "yamljs": "^0.3.0"
   },

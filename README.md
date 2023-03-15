@@ -1,6 +1,8 @@
-# ffandown 
+# <p align="center">FFandown
 
-ffandown是一个m3u8视频下载器，基于ffmpeg实现视频的下载。
+<p align="center">ffandown是一个m3u8视频下载器，基于ffmpeg实现视频的下载。
+<p align="center">Base on ffmpeg</p>
+
 
 ## lib文件
 
@@ -12,13 +14,17 @@ lib文件加下面是ffmpeg的可执行文件，默认程序自带了ffmpeg，�
 release平台可执行文件需要配置config.yml使用，请一同下载
 
 ## docker安装
+[doceker hub site🔗](https://hub.docker.com/r/h55205l/ffandown)
 
-`docker run -d -p 8081:80801 -v /home/media:/app/media  -v $PWD/config.yml:/app/config.yml h55205l/ffandown:v2`
+CMD:  `docker run -d -p 8081:80801 -v /home/media:/app/media  -v $PWD/config.yml:/app/config.yml h55205l/ffandown:v2`
 
 `/home/media`为下载媒体的目录、默认8081端口
 
 
 ## 关于配置文件`config.yml`
+
+如果没有config.yml配置文件会采用默认配置，并自动创建配置文件（运行目录下面）。
+
 
 - port: 服务监听的端口
 - path: 下载目录，相对于执行文件位置，或者使用绝对路径（在地址前面加载@）

@@ -1,4 +1,4 @@
-FROM node:14
+FROM centos:7
 COPY ./dist/ffandown-linux /app/
 workdir /app
 CMD chmod +x ffandown-linux

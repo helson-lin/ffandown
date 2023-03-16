@@ -9,8 +9,9 @@
     "dev": "nodemon index.js",
     "clean": "rimraf dist",
     "pkg": "pkg ./ --debug=true",
-    "auto": "npm run build && npm run build:dockerimage",
+    "auto": "npm run build && npm run rmi && npm run build:dockerimage",
     "build": "npm run clean && npm run pkg",
+    "rmi": "docker rmi h55205l/ffandown:v3",
     "build:dockerimage": "docker build . -t h55205l/ffandown:v3",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -14,14 +14,16 @@ const m3u8ToMp4 = require('./m3u8')
 const converter = new m3u8ToMp4()
 const logger = require('./log')
 const cpuNum = os.cpus().length
-// const GITHUBURL = 'https://nn.oimi.space/https://github.com/helson-lin/ffmpeg_binary/releases/download/4208999990'
+// this is a temporary file used to store downloaded files, https://nn.oimi.space/ is a cfworker
 const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
 /**
  * @description: find config.yaml location
  * @return {string}
  */
 const getConfigPath = () => {
-    const configPathList = [path.join(process.cwd(), 'config.yml'), path.join(process.cwd(), '../config.yml')]
+    const configPathList = [
+        path.join(process.cwd(), './config/config.yml'), 
+        path.join(process.cwd(), '../config/config.yml')]
     return configPathList.find(_path => fse.pathExistsSync(_path))
 }
 
@@ -43,7 +45,7 @@ const getNetwork = () => {
  */
 const createYml = (obj) => {
     const yamlString = json2yaml.dump(obj, { lineWidth: -1 })
-    const filePath = path.join(process.cwd(), 'config.yml')
+    const filePath = path.join(process.cwd(), './config/config.yml')
     fse.outputFileSync(filePath, yamlString)
 }
 
@@ -79,12 +81,13 @@ const readConfig = (option = {
     if (!configPath) {
         logger.info('not found config file, auto create config.yml')
         // make sure download dir is exists
-        createYml({ ...option, downloadDir: EnsureDonwloadPath('/media/') })
+        EnsureDonwloadPath('/media/')
+        createYml({ ...option, downloadDir: '/media/' })
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString())
-        const { port, path, webhooks, webhookType, thread, useFFmpegLib, downloadThread } = data
+        const { port, downloadDir, webhooks, webhookType, thread, useFFmpegLib, downloadThread } = data
         if (port) option.port = port
-        if (path) option.downloadDir = EnsureDonwloadPath(path)
+        if (downloadDir) option.downloadDir = EnsureDonwloadPath(downloadDir)
         if (webhooks) option.webhooks = webhooks
         if (webhookType) option.webhookType = webhookType
         if (thread !== undefined) option.thread = thread
@@ -124,6 +127,19 @@ const getFeiShuBody = (text, More) => {
             },
         },
     }
+}
+
+const getDingDingBody = (text, More) => {
+    const obj = {
+        msgtype: 'text',
+        text: {
+            content: '文件下载通知 \n' + More,
+        },
+        at: {
+            isAtAll: true,
+        },
+    }
+    return obj
 }
 
 /**
@@ -166,15 +182,31 @@ const isFile = (pathDir) => fse.pathExistsSync(pathDir)
 const msg = (url, type, Text, More) => {
     const URL = type === 'bark' ? getBarkUrl(url, Text) : url
     const method = type === 'bark' ? 'GET' : 'POST'
-    const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody }
+    const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody, dingding: getDingDingBody }
     const data = bodyHanler[type](Text, More)
     request({
         url: URL,
         method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
+    }, (error, _, body) => {
+        if (error) {
+            logger.error(error + '')
+        }
+        if (body) {
+            logger.info('notification success !')
+        }
     })
 }
 
+/**
+ * @description exec command
+ * @date 3/16/2023 - 11:52:03 AM
+ * @param {string} cmd
+ * @returns {*}
+ */
 const execCmd = (cmd) => {
     return new Promise((resolve, reject) => {
         childProcess.exec(
@@ -191,13 +223,24 @@ const execCmd = (cmd) => {
     })
 }
 
+/**
+ * @description File authorization
+ * @date 3/16/2023 - 11:52:33 AM
+ * @param {string} file
+ */
 const chmod = (file) => {
-    // if(process.platform !== 'linux') return
-    // if(process.platform === 'darwin') return
+    // if(process.platform !== 'linux' || process.platform !== 'darwin') return
     const cmd = `chmod +x ${file}`
     execCmd(cmd)
 }
 
+/**
+ * @description auto donwload ffmpeg file
+ * @date 3/16/2023 - 11:53:57 AM
+ * @async
+ * @param {string} type
+ * @returns {Promise<string>}
+ */
 const downloadFfmpeg = async (type) => {
     const typeLink = {
         win32: 'ffmpeg-4.4.1-win-64',
@@ -254,8 +297,7 @@ const download = (url, name, filePath, { webhooks, webhookType, downloadThread }
             console.log('下载失败', webhooks)
             console.log('下载失败：' + err)
             if (webhooks) {
-                console.log('we', webhooks, webhookType)
-                msg(webhooks, webhookType, `${name}.mp4 下载失败！`, err + '')
+                msg(webhooks, webhookType, `${name}.mp4 下载失败`, err + '')
             }
             reject(err)
         })

@@ -17,31 +17,26 @@
     </a>
 </p>
 
-## lib文件
-
-lib文件加下面是ffmpeg的可执行文件，默认程序自带了ffmpeg，并且使用的是本地自带的ffmpeg,如果你的电脑存在ffmpeg环境变量
-可以自行在`config.yml`文件内关闭`useFFmpegLib: flase`
-
 ## releas说明
 
-release平台可执行文件需要配置config.yml使用，请一同下载
+release平台可执行文件，打包仅打包了常用平台，其他平台架构请使用docker或自行打包
 
 ## docker安装
 
-CMD:  `docker run -d -p 8081:80801 -v /home/media:/app/media  -v $PWD/config.yml:/app/config.yml h55205l/ffandown:v2`
+CMD:  `docker run -d -p 8081:80801 -v /home/media:/app/media  -v /Uses/helson/config:/app/config h55205l/ffandown:v3`
 
 `/home/media`为下载媒体的目录、默认8081端口
-
+`/Uses/helson/config`为配置文件目录
 
 ## 关于配置文件`config.yml`
 
-如果没有config.yml配置文件会采用默认配置，并自动创建配置文件（运行目录下面）。
+如果没有config.yml配置文件会采用默认配置，并自动创建配置文件（运行目录config文件夹下面）。
 
 
 - port: 服务监听的端口
-- path: 下载目录，相对于执行文件位置，或者使用绝对路径（在地址前面加载@）
-- webhooks: webhook通知地址，可以使用钉钉或者bark之类软件,`$TEXT`为变量：下载文件的名称（注意变量是纯大写的）！！！请大家手动修改地址⚠️
-- webhookType: bark | 'feishu'
+- downloadDir: 下载目录，相对于执行文件位置，或者使用绝对路径（在地址前面加载@）
+- webhooks: webhook通知地址，可以使用钉钉或者bark之类软件,`$TEXT`为变量：下载文件的名称（注意变量是纯大写的，仅支持bark）！！！请大家手动修改地址⚠️
+- webhookType: bark | 'feishu' ｜ 'dingding'
 - thread: 是否开启express 多线程服务（默认不开启）
 - downloadThread: 是否开启`ffmpeg`多线程转码
 - useFFmpegLib: 是否自动内置ffmpeg，启动服务会自动去下载对应平台的ffmpeg，不启动默认采用本地环境的

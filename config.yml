@@ -1,6 +1,0 @@
-port: 8081
-path: '/media/'
-webhookType: 'feishu'
-webhooks: 'https://open.feishu.cn/open-apis/bot/v2/hook/1a574278-1c35-4b7a-9084-0844d4bd0603'
-thread: true
-useFFmpegLib: true

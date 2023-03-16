@@ -1,0 +1,7 @@
+port: 8081
+downloadDir: /media/
+webhooks: 'https://api.day.app/wmKLMC4xdxL9djWCMc3SWP/文件下载通知/$TEXT'
+webhookType: 'bark'
+thread: false
+downloadThread: true
+useFFmpegLib: true

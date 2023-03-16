@@ -1,9 +1,7 @@
-FROM node:14
-COPY . /app/
+FROM centos:7
+COPY ./dist/ffandown-linux /app/
 workdir /app
-RUN npm config set registry https://registry.npm.taobao.org
-RUN npm i cnpm -g
-RUN cnpm i
+CMD chmod +x ffandown-linux
 EXPOSE 8081
 
-ENTRYPOINT ["node", "index.js"]
+ENTRYPOINT ["./ffandown-linux"]

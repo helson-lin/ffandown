@@ -133,7 +133,7 @@ const getDingDingBody = (text, More) => {
     const obj = {
         msgtype: 'text',
         text: {
-            content: '文件下载通知 \n' + More,
+            content: `文件下载通知: \n ${text} ${More || ''}`,
         },
         at: {
             isAtAll: true,

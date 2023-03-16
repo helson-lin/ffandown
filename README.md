@@ -23,7 +23,7 @@ release平台可执行文件，打包仅打包了常用平台，其他平台架�
 
 ## docker安装
 
-CMD:  `docker run -d -p 8081:80801 -v /home/media:/app/media  -v /Uses/helson/config:/app/config h55205l/ffandown:v3`
+CMD:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/config:/app/config h55205l/ffandown:v3`
 
 `/home/media`为下载媒体的目录、默认8081端口
 `/Uses/helson/config`为配置文件目录

@@ -1,7 +1,6 @@
 libs/*
 lib/*
 logs/*
-dist/*
 node_modules/*
 .vscode/*
 .github/*

@@ -1,8 +1,21 @@
-# <p align="center">FFandown
+# <p align="center" style="display: flex;justify-content: center;"><img style="margin-right: 20px; width: 40px;" src="https://pic.kblue.site/picgo/ffandown.svg"/> FFandown</p>
 
 <p align="center">ffandown是一个m3u8视频下载器，基于ffmpeg实现视频的下载。
-<p align="center">Base on ffmpeg</p>
-
+<p align="center">ffandown is a m3u8 video downloader,that base on ffmpeg</p>
+<p align="center">
+    <a href="https://hub.docker.com/r/h55205l/ffandown">
+        <img alt="docker image size" src="https://img.shields.io/docker/image-size/h55205l/ffandown"/>
+    </a>
+    <a href="https://hub.docker.com/r/h55205l/ffandown">
+        <img alt="docker pulls" src="https://img.shields.io/docker/pulls/h55205l/ffandown?style=social"/>
+    </a>
+    <a href="https://github.com/helson-lin/ffandown">
+        <img alt="docker image size" src="https://img.shields.io/badge/platform-macos%7Clinux%7Cwin-brightgreen"/>
+    </a>
+     <a href="https://github.com/helson-lin/ffandown">
+        <img alt="docker image size" src="https://img.shields.io/github/last-commit/helson-lin/ffandown"/>
+    </a>
+</p>
 
 ## lib文件
 
@@ -14,7 +27,6 @@ lib文件加下面是ffmpeg的可执行文件，默认程序自带了ffmpeg，�
 release平台可执行文件需要配置config.yml使用，请一同下载
 
 ## docker安装
-[doceker hub site🔗](https://hub.docker.com/r/h55205l/ffandown)
 
 CMD:  `docker run -d -p 8081:80801 -v /home/media:/app/media  -v $PWD/config.yml:/app/config.yml h55205l/ffandown:v2`
 
@@ -30,21 +42,31 @@ CMD:  `docker run -d -p 8081:80801 -v /home/media:/app/media  -v $PWD/config.yml
 - path: 下载目录，相对于执行文件位置，或者使用绝对路径（在地址前面加载@）
 - webhooks: webhook通知地址，可以使用钉钉或者bark之类软件,`$TEXT`为变量：下载文件的名称（注意变量是纯大写的）！！！请大家手动修改地址⚠️
 - webhookType: bark | 'feishu'
-- thread: 是否开启多线程
-- useFFmpegLib: 是否使用自带lib, 将code里面的lib文件夹目录下载复制到可执行文件同级目录，不是本平台的ffmpeg包可以删除
+- thread: 是否开启express 多线程服务（默认不开启）
+- downloadThread: 是否开启`ffmpeg`多线程转码
+- useFFmpegLib: 是否自动内置ffmpeg，启动服务会自动去下载对应平台的ffmpeg，不启动默认采用本地环境的
 
 
 ## 使用
 
 服务启动之后，可以看到`server runing on port: 8081`的字样
 直接在浏览器打开`localhost:8081`就可以看到下载页面
-或者自己使用接口创建下载，接口地址：`http://localhost:8081/down`, 请求方式：`post`,  `Content-Type`: `application/json`,参数: 
-```js
-{
-    name: "videoname",
-    url: "http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8"
-}
-```
+
+![](https://pic.kblue.site/picgo/localhost_8081_.png)
+
+
+或者自己使用API接口创建下载
+- 接口地址：`http://localhost:8081/down`
+- 请求方式：`post`
+- 请求头： `Content-Type`: `application/json`
+- 参数: 
+    ```js
+    {
+        name: "videoname",
+        url: "http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8"
+    }
+    ```
+
 
 ## 配置ios快捷指令使用
 

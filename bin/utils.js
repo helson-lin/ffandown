@@ -68,7 +68,7 @@ const EnsureDonwloadPath = (_path) => {
  * @return {object} configuration object
  */
 const readConfig = (option = { 
-    port: 8080,
+    port: 8081,
     downloadDir: path.join(process.cwd(), 'media'), 
     webhooks: '',
     webhookType: 'bark',
@@ -78,7 +78,8 @@ const readConfig = (option = {
     const configPath = getConfigPath()
     if (!configPath) {
         logger.info('not found config file, auto create config.yml')
-        createYml({ ...option, downloadDir: '/media/' })
+        // make sure download dir is exists
+        createYml({ ...option, downloadDir: EnsureDonwloadPath('/media/') })
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString())
         const { port, path, webhooks, webhookType, thread, useFFmpegLib, downloadThread } = data
@@ -92,7 +93,6 @@ const readConfig = (option = {
     }
     return option
 }
-
 /**
  * @description: generate feishu hooks request body
  * @param {string} text  title
@@ -126,7 +126,28 @@ const getFeiShuBody = (text, More) => {
     }
 }
 
-const getBarkUrl = (url, text) => url.replace('$TEXT', `${encodeURIComponent(text)}`)
+/**
+ * @description handler url  contains unescaped characters
+ * @date 3/16/2023 - 11:46:23 AM
+ * @param {string} url
+ * @returns {*}
+ */
+const handlerURL = (url) => {
+    const cnList = Array.from(url.matchAll(/[\u4e00-\u9fa5]+/g))
+    for (let match of cnList) {
+        url = url.replace(match[0], encodeURIComponent(match[0]))
+    }
+    return url
+}
+
+/**
+ * @description get bark request url
+ * @date 3/16/2023 - 11:45:35 AM
+ * @param {string} url bark URL
+ * @param {string} text video name
+ * @returns {*}
+ */
+const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, text))
 
 /**
  * @description: judege input path is a directory
@@ -134,7 +155,6 @@ const getBarkUrl = (url, text) => url.replace('$TEXT', `${encodeURIComponent(tex
  * @return {boolean} true: path is a file
  */
 const isFile = (pathDir) => fse.pathExistsSync(pathDir)
-
 /**
  * @description: send message notice to user
  * @param {string} url hooks url
@@ -148,10 +168,6 @@ const msg = (url, type, Text, More) => {
     const method = type === 'bark' ? 'GET' : 'POST'
     const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody }
     const data = bodyHanler[type](Text, More)
-    logger.info(
-        'URL:' + URL, 
-        'METHOD:' + method, 
-        'DATA:' + JSON.stringify(data))  
     request({
         url: URL,
         method,
@@ -273,9 +289,7 @@ const setFfmpegEnv = async () => {
     try {
         baseURL = await downloadFfmpeg(type)
         process.env.FFMPEG_PATH = baseURL
-        logger.debug('Setting FFMPEG_PATH:' + baseURL)
-        logger.warn('Setting FFMPEG_PATH:' + baseURL)
-        // console.log("Setting FFMPEG_PATH:" + baseURL)
+        logger.info('Setting FFMPEG_PATH:' + baseURL)
         if (process.env.FFMPEG_PATH !== baseURL) {
             console.log(colors.italic.cyan('[ffdown] ffmpeg: 环境变量设置成功'))
         }

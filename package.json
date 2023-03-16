@@ -9,7 +9,9 @@
     "dev": "nodemon index.js",
     "clean": "rimraf dist",
     "pkg": "pkg ./ --debug=true",
+    "auto": "npm run build && npm run build:dockerimage",
     "build": "npm run clean && npm run pkg",
+    "build:dockerimage": "docker build . -t h55205l/ffandown:v3",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,7 +25,6 @@
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.0",
     "js-yaml": "^4.1.0",
-    "pkg": "^5.8.0",
     "request": "^2.88.2",
     "systeminformation": "^5.17.12",
     "winston": "^3.8.2",
@@ -58,6 +59,7 @@
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-n": "^15.0.0",
     "eslint-plugin-promise": "^6.0.0",
-    "rimraf": "^4.4.0"
+    "rimraf": "^4.4.0",
+    "pkg": "^5.8.0"
   }
 }

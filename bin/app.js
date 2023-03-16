@@ -39,7 +39,7 @@ const createServer = (option) => {
         const listenString = list.reduce((pre, val) => {
             return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + option.port + '/')}`
         }, colors.white('[ffandown] server running at:\n'))
-        logger.info(listenString)
+        logger.info('[ffandown] server running at port: ' + option.port)
         const isWorker = cluster.isWorker
         if (isWorker && cluster.worker.id === 1 || !isWorker) {
             console.log(colors.green(listenString))

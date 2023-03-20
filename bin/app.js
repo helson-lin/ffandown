@@ -6,7 +6,7 @@ const colors = require('colors')
 const bodyParser = require('body-parser')
 const logger = require('./log')
 const app = express()
-const { download, getNetwork } = require('./utils.js')
+const { download, getNetwork } = require('./utils/index')
 
 app.use(express.static(path.join(__dirname, '../public')))
 const jsonParser = bodyParser.json()
@@ -15,7 +15,7 @@ const createServer = (option) => {
     app.post('/down', jsonParser, (req, res) => {
         const { name, url } = req.body
         const filePath = path.join(option.downloadDir, (name || new Date().getTime()) + '.mp4')
-        logger.info(`file download path:  ${filePath}`)
+        logger.info(`online m3u8 url: ${url}, file download path:  ${filePath}`)
         if (!url) {
             res.send('{"code": 2, "message":"url cant be null"}')
         } else {

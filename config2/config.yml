@@ -1,0 +1,7 @@
+port: 8081
+downloadDir: /media/
+webhooks: 'https://oapi.dingtalk.com/robot/send?access_token=b1d3594015d5e2dfa5e0bc35ee2fe37c7b50407f30ce98a8ff0bffab6e66c379'
+webhookType: 'dingding'
+thread: false
+downloadThread: true
+useFFmpegLib: true

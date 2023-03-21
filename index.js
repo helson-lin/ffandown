@@ -1,8 +1,9 @@
 const createServer = require('./bin/app.js')
-const { setFfmpegEnv, readConfig } = require('./bin/utils.js')
+const { setFfmpegEnv, readConfig, ffmpegKiller } = require('./bin/utils/index')
 const cluster = require('cluster')
 const os = require('os')
 const colors = require('colors')
+const process = require('process')
 const cpuNum = os.cpus().length
 // read local config options
 const option = readConfig()
@@ -17,7 +18,7 @@ const createCluster = async () => {
         await setFfmpegEnv()
     } 
     for (let i = 0; i < cpuNum; i++) {
-        cluster.fork()
+        process.nextTick(() => cluster.fork())
     }
     cluster.on('exit', (worker, code, signal) => {
         console.log(colors.red(`worker ${worker.process.pid} died, code: ${code}, signal: ${signal}`))
@@ -34,6 +35,7 @@ const createCluster = async () => {
 const threadRun = async () => {
     if (cluster.isMaster) {
         console.log(colors.blue(`Master ${process.pid} is running`))
+        ffmpegKiller.killToDeathFfmeg()
         await createCluster()
     } else {
         createServer(option)
@@ -53,5 +55,14 @@ const threadRun = async () => {
             await setFfmpegEnv()
         } 
         createServer(option)
+        ffmpegKiller.killToDeathFfmeg()
     }
 })()
+
+process.on('SIGINT', function () {
+    if (cluster.isMaster) {
+        ffmpegKiller.clear()
+        console.log('\n Pressed Control-C to exit.')
+        process.exit(0)    
+    } 
+})

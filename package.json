@@ -11,8 +11,8 @@
     "pkg": "pkg ./ --debug=true",
     "auto": "npm run build && npm run rmi && npm run build:dockerimage",
     "build": "npm run clean && npm run pkg",
-    "rmi": "docker rmi h55205l/ffandown:v3",
-    "build:dockerimage": "docker build . -t h55205l/ffandown:v3",
+    "rmi": "docker rmi h55205l/ffandown:latest",
+    "build:dockerimage": "docker build . -t h55205l/ffandown:latest",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

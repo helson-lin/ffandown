@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-let ffmpeg = require('fluent-ffmpeg')
+const ffmpeg = require('fluent-ffmpeg')
 /**
  * A class to convert M3U8 to MP4
  * @class
@@ -18,7 +18,7 @@ class m3u8ToMp4Converter {
     setInputFile (filename) {
         if (!filename) throw new Error('You must specify the M3U8 file address')
         this.M3U8_FILE = filename
-
+        this.PROTOCOL_TYPE = this.getProtocol(this.M3U8_FILE)
         return this
     }
 
@@ -45,15 +45,51 @@ class m3u8ToMp4Converter {
         }
         return this
     }
+    
+    /**
+     * 获取地址协议
+     * @date 3/30/2023 - 11:50:14 AM
+     * @author hejianglin
+     * @param {*} url
+     * @returns {("live" | "m3u8" | "mp4" | "unknown")}
+     */
+    getProtocol (url) {
+        switch (true) {
+            case url.startsWith('rtmp://'):
+            case url.startsWith('rtsp://'):
+                return 'live'
+            case url.endsWith('m3u8'):
+                return 'm3u8'
+            default:
+                return 'unknown'
+        }
+    }
+    
+    setOutputOption (ffmpegCmd) {
+        const liveProtocol = this.PROTOCOL_TYPE 
+        if (liveProtocol === 'live') {
+            ffmpegCmd.outputOptions('-c:v copy')
+            .outputOptions('-c:a aac')
+            .outputOptions('-b:a 128k')
+            .output(this.OUTPUT_FILE)
+        } else if (liveProtocol === 'm3u8') {
+            ffmpegCmd.outputOptions('-c:v copy')
+            .outputOptions('-bsf:a aac_adtstoasc')
+            .output(this.OUTPUT_FILE)
+        }
+    }
 
     /**
-   * Starts the process
-   */
+     * Starts the process
+     */
     start () {
         return new Promise((resolve, reject) => {
             if (!this.M3U8_FILE || !this.OUTPUT_FILE) {
                 reject(new Error('You must specify the input and the output files'))
                 return
+            }
+            if (this.PROTOCOL_TYPE === 'unknown') {
+                reject(new Error('the protocol is not supported, please specify the protocol type: m3u8 or rtmp、 rtsp'))
             }
             const ffmpegCmd = ffmpeg(this.M3U8_FILE)
             .on('error', error => {
@@ -66,9 +102,7 @@ class m3u8ToMp4Converter {
                 ffmpegCmd.outputOptions(`-threads ${this.THREADS}`)
                 ffmpegCmd.outputOptions('-preset ultrafast')
             }
-            ffmpegCmd.outputOptions('-c copy')
-            .outputOptions('-bsf:a aac_adtstoasc')
-            .output(this.OUTPUT_FILE)
+            this.setOutputOption(ffmpegCmd)
             ffmpegCmd.run()
         })
     }

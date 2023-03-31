@@ -13,6 +13,10 @@ class FFmpegKiller {
         this.time = KILLPROCEETIMEOUT
     }
 
+    cpuUsageIsLow (usageList) {
+        return usageList.every(i => i <= 0.03)
+    }
+
     killPidAtLowusage (pid) {
         const _this = this
         pidusage(pid, function (err, result) {
@@ -25,7 +29,7 @@ class FFmpegKiller {
                     _this.pidCpu[pid] = [result.cpu]
                 }
                 if (_this.pidCpu[pid].length > 4) {
-                    const isDeadth = _this.pidCpu[pid].slice(-4).join('') === '0000'
+                    const isDeadth = _this.cpuUsageIsLow(_this.pidCpu[pid].slice(-4))
                     if (!isDeadth) return
                     console.log('CPU usage is too low, killing process:' + pid, result.cpu)
                     logger.warn('CPU usage is too low, killing process:' + pid, result.cpu)

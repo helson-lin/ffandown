@@ -7,13 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FFanDown</title>
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <script src="https://pic.kblue.site/notyf.min.js"></script>
+    <link href="https://fonts.font.im/css?family=Permanent+Marker|Righteous" rel="stylesheet">
     <link rel="stylesheet" href="https://pic.kblue.site/notyf.min.css" />
+    <script src="https://pic.kblue.site/notyf.min.js"></script>
 </head>
 
 <body>
     <header>
-        <h3>FFanDown M3U8下载</h3>
+        <h3>FFanDown</h3>
     </header>
     <div class="center"> 
         <div class="upload">
@@ -38,11 +39,9 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                    // 'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: JSON.stringify(data)
             }).then(res => res.json()).then((res) => {
-                console.log(res)
                 btn.innerHTML = "下载"
                 if (res.code === 1 || res.code === 2) {
                     notyf.error(res.message)
@@ -63,6 +62,25 @@
         })
     </script>
     <style>
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-background: #141417;
+                --color-header: #000;
+                --color-text: #fff;
+                --input-background: rgba(0, 0, 0, 0.9);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --color-background: #fafafa;
+                --color-header: #fff;
+                --color-text: #000;
+                --input-background: rgba(0, 0, 0, 0.09);
+            }
+        }
+
         html,
         body {
             margin: 0;
@@ -70,7 +88,7 @@
         }
 
         body {
-            background: #141417;
+            background: var(--color-background);
             width: 100vw;
             height: 100vh;
             user-select: none;
@@ -78,13 +96,14 @@
 
         header {
             with: 100%;
-            background: #000;
+            background: var(--color-header);
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
         }
 
         header h3 {
+            font-family: 'Permanent Marker', cursive, sans-serif;
             text-align: center;
-            background: #000;
-            color: #fff;
+            color: var(--color-text);
             margin: 0;
             line-height: 60px;
         }
@@ -98,22 +117,25 @@
         .upload {
             margin: 0 auto;
             width: max-content;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px 40px;
+            background: var(--input-background);
+            padding: 40px 40px;
             box-sizing: border-box;
             display: flex;
+            flex-direction: column;
             align-items: center;
             backdrop-filter: blur(20px);
         }
 
         .upload input {
+            width: 400px;
             height: 40px;
-            color: #000;
+            color: var(--color-text);
             outline: none;
             border: 1px solid #333;
             padding: 5px 10px;
             box-sizing: border-box;
-            margin-right: 30px;
+            margin-bottom: 30px;
+            border-radius: 3px;
         }
 
         .upload .url {
@@ -121,6 +143,7 @@
         }
 
         .upload button {
+            width: 400px;
             padding: 10px 20px;
             color: #fafafa;
             background: #057feb;
@@ -128,12 +151,29 @@
             outline: none;
             border: none;
             cursor: pointer;
+            box-sizing: border-box;
+        }
+        .upload button:hover {
+           box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, 0.1);
         }
 
         @media screen and (max-width: 428px) {
-           .upload {flex-direction: column;background-color: transparent !important;width: 100% !important;align-content: center;}
-           .upload input { width: 100% !important;margin: 0 0 1rem 0!important;border-radius: 0.1rem;}
-           #down {width: 100% !important;}
+            .upload {
+                flex-direction: column;
+                background-color: transparent !important;
+                width: 100% !important;
+                align-content: center;
+            }
+
+            .upload input {
+                width: 100% !important;
+                margin: 0 0 1rem 0 !important;
+                border-radius: 0.1rem;
+            }
+
+            #down {
+                width: 100% !important;
+            }
         }
     </style>
 </body>

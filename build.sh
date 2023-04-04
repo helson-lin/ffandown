@@ -2,7 +2,7 @@
 
 # Read version from package.json
 # VERSION=$(node -p "require('./package.json').version")
-VERSION=v4.1
+VERSION=latest
 
 # Define image name and tag
 IMAGE_NAME="h55205l/ffandown"

@@ -5,6 +5,7 @@ const path = require('path')
 const colors = require('colors')
 const bodyParser = require('body-parser')
 const logger = require('./log')
+const UPDATE = require('./utils/checkUpdate')
 const app = express()
 const { download, getNetwork } = require('./utils/index')
 
@@ -33,7 +34,14 @@ const createServer = (option) => {
             }
         }
     })
-
+    app.get('/update', async (req, res) => {
+        try {
+            const update = await UPDATE.getUpdate()
+            res.send({ code: 0, data: update })
+        } catch (err) {
+            res.end({ code: 1, message: 'get update failed' })
+        }
+    })
     app.listen(option.port, async () => {
         const list = await getNetwork()
         const listenString = list.reduce((pre, val) => {

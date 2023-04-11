@@ -24,7 +24,16 @@
         </div>
     </div>
     <script>
-        var notyf = new Notyf();
+        const notyf = new Notyf();
+        const infoNotyf = new Notyf({
+            types: [
+                {
+                    type: 'info',
+                    background: 'blue',
+                    icon: false
+                }
+            ]
+        });
         const getData = () => {
             const name = document.getElementById('name').value;
             const url = document.getElementById('url').value;
@@ -34,6 +43,23 @@
             return { name, url };
         }
         const btn = document.getElementById('down');
+        const checkUpdate = () => {
+            fetch('/update', {
+                method: 'GET',
+            }).then(res => res.json()).then((res) => {
+                if (res.code === 0) {
+                    const { update, msg } = res.data;
+                    if (!update) return;
+                    infoNotyf.open({
+                        type: 'info',
+                        message: `新版本发布：${msg}`,
+                        duration: 5000,
+                    });
+                } else {
+                    console.error(res.message);
+                }
+            })
+        }
         const postData = (data) => {
             fetch('/down', {
                 method: 'POST',
@@ -60,15 +86,15 @@
                 postData(data)
             }
         })
+        checkUpdate();
     </script>
     <style>
-
         @media (prefers-color-scheme: dark) {
             :root {
                 --color-background: #141417;
                 --color-header: #000;
-                --color-text: #fff;
-                --input-background: rgba(0, 0, 0, 0.9);
+                --color-text: #000;
+                --input-background: rgba(0, 0, 0, 0.1);
             }
         }
 
@@ -153,8 +179,9 @@
             cursor: pointer;
             box-sizing: border-box;
         }
+
         .upload button:hover {
-           box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, 0.1);
         }
 
         @media screen and (max-width: 428px) {

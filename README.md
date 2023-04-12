@@ -24,6 +24,11 @@
 </p>
 
 ## Version Description
+ 
+### v4.2
+Added log splitting
+Fixed dark theme font color issue
+Added version update prompt
 
 ### Version 4.1
 
@@ -42,7 +47,7 @@ feat: Added support for screen recording: rtsmp/rtmp, automatically terminated a
 2. Modified the config configuration directory.
 
 
-## Version 2
+### Version 2
 
 Basic version: supports m3u8 video download and notification through Bark and Feishu, but has bugs. 
 This version requires downloading the `config.yml` file and the corresponding platform's executable file, and placing them in the same directory. It is not recommended to use this version.
@@ -96,7 +101,6 @@ Alternatively, you can create a download using the API interface:
 [iOS Shortcuts download link✈️](https://www.icloud.com/shortcuts/b185d44fb6574db29c79cb193e5bb079)
 
 Before using it, remember to edit the instruction and modify the server's IP address and port.
-
 
 ## PS
 

@@ -10,8 +10,8 @@
     "clean": "rimraf dist",
     "pkg": "pkg ./ --debug=true",
     "gulp": "gulp",
-    "auto": "bash ./build.sh",
     "build": "npm run clean && npm run pkg",
+    "auto": "bash ./build.sh",
     "rmi": "docker rmi h55205l/ffandown:latest",
     "build:dockerimage": "docker build . -t h55205l/ffandown:latest",
     "test": "echo \"Error: no test specified\" && exit 1"

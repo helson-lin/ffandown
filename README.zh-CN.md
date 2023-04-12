@@ -25,9 +25,15 @@
 
 ## 版本说明
 
+### v4.2版本
+
+perf: 新增日志分割
+perf: 修改页面暗黑主题字体颜色问题
+perf: 新增版本更新提示
 ### v4.1版本
 
 perf: 优化ffmpeg下载进程超时（death），没有清除进程问题
+
 feat: 新增支持录屏：rtsmp/rtmp，直播结束自动终止
 
 ### v3版本
@@ -42,20 +48,39 @@ feat: 新增支持录屏：rtsmp/rtmp，直播结束自动终止
 2. 修改config配置目录
 
 
-## v2版本
+### v2版本
 
 基础功能版本：支持m3u8视频下载，以及bark和飞书消息通知，存在bug 
 此版本需要下载config.ym和对应平台的执行文件，并放在同目录下面。不建议使用此版本
+
+## 项目运行
+
+1. 依赖安装，`npm install` or `pnpm install`
+2. 运行服务: `npm run dev`
+
+
+## 项目打包
+
+### pkg打包
+
+终端运行`npm run pkg`
+
+### docker构建
+
+终端运行`npm run auto`
+运行会自动删除dist打包的缓存，并自动pkg打包。打包完成之后，会自动构建新的docker镜像
 ## releas说明
 
 release平台可执行文件，打包仅打包了常用平台，其他平台架构请使用docker或自行打包
+详情请查看`build.sh`
 
 ## docker安装
 
-CMD:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/config:/app/config h55205l/ffandown:v3`
+CMD:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/config:/app/config -v /Uses/helson/logs:/app/logs h55205l/ffandown:v3`
 
 `/home/media`为下载媒体的目录、默认8081端口
 `/Uses/helson/config`为配置文件目录
+`/Uses/helson/logs`为日志文件目录
 
 ## 关于配置文件`config.yml`
 

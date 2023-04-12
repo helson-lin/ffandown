@@ -17,8 +17,12 @@ echo -e "${GREEN}Checking for dist directory...${NC}"
 # Remove dist directory if it exists
 if [ -d "dist" ]; then
   echo -e "${GREEN}Removing existing dist directory...${NC}"
-  rm -r dist
+  npm run clean
 fi
+
+# Gulp html
+echo -e "${GREEN}Gulp Html...${NC}"
+npm run gulp
 
 # Build package
 echo -e "${GREEN}Building package...${NC}"

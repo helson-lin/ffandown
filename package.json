@@ -1,14 +1,15 @@
 {
   "name": "ffandown",
-  "version": "4.2",
+  "version": "4.2.0",
   "description": "",
-  "main": "index.js",
-  "bin": "index.js",
+  "main": "bootstrap.js",
+  "bin": "bootstrap.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node bootstrap.js",
+    "dev": "nodemon bootstrap.js",
     "clean": "rimraf dist",
-    "pkg": "pkg ./ --debug=false",
+    "pkg": "pkg ./ --debug=true",
+    "gulp": "gulp",
     "auto": "bash ./build.sh",
     "build": "npm run clean && npm run pkg",
     "rmi": "docker rmi h55205l/ffandown:latest",
@@ -25,6 +26,7 @@
     "express": "^4.18.2",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.0",
+    "gulp-html-minifier-terser": "^7.1.0",
     "js-yaml": "^4.1.0",
     "pidusage": "^3.0.2",
     "request": "^2.88.2",
@@ -36,10 +38,8 @@
     "scripts": [
       "index.js",
       "bootstrap.js",
-      "./bin/utils.js",
-      "./bin/m3u8.js",
-      "./bin/log.js",
-      "./bin/app.js"
+      "./bin/*.js",
+      "./bin/utils/*.js"
     ],
     "assets": [
       "./public/**/*",
@@ -61,6 +61,9 @@
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-n": "^15.0.0",
     "eslint-plugin-promise": "^6.0.0",
+    "gulp": "^4.0.2",
+    "gulp-htmlmin": "^5.0.1",
+    "gulp-rename": "^2.0.0",
     "pkg": "^5.8.0",
     "rimraf": "^4.4.0"
   }

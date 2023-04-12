@@ -89,4 +89,11 @@ const download = (url, name, filePath, { webhooks, webhookType, downloadThread }
     })
 }
 
-module.exports = { chmod, getNetwork, download }
+/**
+ * @description check input url is be supported
+ * @param {string} url
+ * @returns {boolean}
+ */
+const isSupportedUrl = (url) => url.startsWith('rtmp://') || url.startsWith('rtsp://') || url.endsWith('.m3u8')
+
+module.exports = { chmod, getNetwork, download, isSupportedUrl }

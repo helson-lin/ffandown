@@ -73,7 +73,8 @@ class m3u8ToMp4Converter {
             .outputOptions('-b:a 128k')
             .output(this.OUTPUT_FILE)
         } else if (liveProtocol === 'm3u8') {
-            ffmpegCmd.outputOptions('-c:v copy')
+            ffmpegCmd
+            .outputOptions('-c:v copy')
             .outputOptions('-bsf:a aac_adtstoasc')
             .output(this.OUTPUT_FILE)
         }
@@ -91,7 +92,20 @@ class m3u8ToMp4Converter {
             if (this.PROTOCOL_TYPE === 'unknown') {
                 reject(new Error('the protocol is not supported, please specify the protocol type: m3u8 or rtmp、 rtsp'))
             }
+            // eslint-disable-next-line max-len
+            const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.182 Safari/537.36',
+                REFERER_RGX = /^(?<referer>http|https:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+)(?::\d+)?\/[^ "]+$/u,
+                match = this.M3U8_FILE.match(REFERER_RGX),
+                [referer] = match === null ? ['unknown'] : match.slice(1)
             const ffmpegCmd = ffmpeg(this.M3U8_FILE)
+            .inputOptions(
+                [
+                    '-user_agent',
+                    `${USER_AGENT}`,
+                    '-referer',
+                    `${referer}/`,
+                ],
+            )
             .on('error', error => {
                 reject(new Error(error))
             })

@@ -6,7 +6,8 @@ const fse = require('fs-extra')
 const { chmod } = require('./core')
 
 // this is a temporary file used to store downloaded files, https://nn.oimi.space/ is a cfworker
-const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
+// const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
+const GITHUBURL = 'https://pic.kblue.site'
 
 /**
  * @description: judege input path is a directory

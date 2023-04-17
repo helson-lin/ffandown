@@ -25,6 +25,10 @@
 
 ## Version Description
  
+## v4.2.1
+fix: Fixed m3u8 download 403 error
+perf: change ffmpeg binary download site to oss
+
 ### v4.2
 Added log splitting
 Fixed dark theme font color issue

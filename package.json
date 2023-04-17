@@ -1,6 +1,6 @@
 {
   "name": "ffandown",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",

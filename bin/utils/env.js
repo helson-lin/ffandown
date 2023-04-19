@@ -3,7 +3,7 @@ const colors = require('colors')
 const path = require('path')
 const DOWNLOADZIP = require('download')
 const fse = require('fs-extra')
-const { chmod } = require('./core')
+const { chmod, execCmd } = require('./core')
 
 // this is a temporary file used to store downloaded files, https://nn.oimi.space/ is a cfworker
 // const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
@@ -73,5 +73,27 @@ const setFfmpegEnv = async () => {
         console.log('download Failed', e)
     }
 }
+/**
+ * @description set termial proxy
+ * @param {string} proxyUrl 
+ */
+const setProxy = async (proxyUrl) => {
+    if (process.platform !== 'linux') {
+        console.log(colors.italic.bgCyan(' FFMPEG_PROXY_URL only supported on Linux '))
+        logger.info('FFMPEG_PROXY_URL only supported on Linux')
+    } else {
+        if (typeof (proxyUrl) === 'string' && proxyUrl) {
+            const httpsProxyCmd = 'export https_proxy=http://' + proxyUrl
+            const httpProxyCmd = 'export http_proxy=http://' + proxyUrl
+            await execCmd(httpsProxyCmd)
+            await execCmd(httpProxyCmd)
+            console.log(colors.italic.bgCyan('Set Proxy Success'))
+        } else {
+            await execCmd('unset http_proxy')
+            await execCmd('unset https_proxy')
+            console.log(colors.italic.bgCyan('Unset Proxy Success'))
+        }
+    }
+}
 
-module.exports = { setFfmpegEnv }
+module.exports = { setFfmpegEnv, setProxy }

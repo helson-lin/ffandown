@@ -1,3 +1,4 @@
+const logger = require('./log')
 /**
  * @description M3U8 to MP4 Converter
  * @author Furkan Inanc
@@ -97,7 +98,22 @@ class m3u8ToMp4Converter {
                 REFERER_RGX = /^(?<referer>http|https:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+)(?::\d+)?\/[^ "]+$/u,
                 match = this.M3U8_FILE.match(REFERER_RGX),
                 [referer] = match === null ? ['unknown'] : match.slice(1)
-            const ffmpegCmd = ffmpeg(this.M3U8_FILE)
+            const ffmpegCmd = ffmpeg(this.M3U8_FILE, { 
+                logger: {
+                    error (...args) {
+                        console.log('warn:', args)
+                    }, 
+                    warn (...args) { 
+                        console.log('warn:', args) 
+                    },
+                    info (...args) {
+                        console.log('info', args)
+                    },
+                    debug (...args) {
+                        console.log('info12', args)
+                    },
+                },
+            })
             .inputOptions(
                 [
                     '-user_agent',
@@ -109,6 +125,8 @@ class m3u8ToMp4Converter {
             .on('error', error => {
                 reject(new Error(error))
             })
+            .on('stderr', (stderr) => 
+                logger.warn(stderr.toString().trim()))
             .on('end', () => {
                 resolve()
             })

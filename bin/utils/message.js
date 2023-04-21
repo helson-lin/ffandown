@@ -1,5 +1,4 @@
 const request = require('request')
-const logger = require('../log')
 
 /**
  * @description: generate feishu hooks request body
@@ -83,20 +82,25 @@ const msg = (url, type, Text, More) => {
     const method = type === 'bark' ? 'GET' : 'POST'
     const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody, dingding: getDingDingBody }
     const data = bodyHanler[type](Text, More)
-    request({
-        url: URL,
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    }, (error, _, body) => {
-        if (error) {
-            logger.error(error + '')
-        }
-        if (body) {
-            logger.info('notification success !')
-        }
+    return new Promise((resolve, reject) => {
+        if (!URL) 
+            reject('please set webhooks')
+        else
+            request({
+                url: URL,
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            }, (error, _, body) => {
+                if (error) {
+                reject(error)
+                }
+                if (body) {
+                resolve("notification success !")
+                }
+            })
     })
 }
 

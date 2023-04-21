@@ -2,7 +2,6 @@
 const childProcess = require('child_process')
 const process = require('process')
 const pidusage = require('pidusage')
-const logger = require('../log')
 
 const KILLPROCEETIMEOUT = 300000 // 300000
 
@@ -32,7 +31,6 @@ class FFmpegKiller {
                     const isDeadth = _this.cpuUsageIsLow(_this.pidCpu[pid].slice(-4))
                     if (!isDeadth) return
                     console.log('CPU usage is too low, killing process:' + pid, result.cpu)
-                    logger.warn('CPU usage is too low, killing process:' + pid, result.cpu)
                     process.kill(pid)
                     delete _this.pidCpu[pid]
                 }

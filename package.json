@@ -1,12 +1,13 @@
 {
   "name": "ffandown",
   "version": "4.2.1",
-  "description": "",
+  "description": "ffandown is a m3u8 downloader",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",
   "scripts": {
-    "start": "node bootstrap.js",
+    "start": "node bootstrap.js --debug=true",
     "dev": "nodemon bootstrap.js",
+    "debug": "nodemon bootstrap.js --debug",
     "clean": "rimraf dist",
     "pkg": "pkg ./ --debug=true",
     "gulp": "gulp",
@@ -16,8 +17,8 @@
     "build:dockerimage": "docker build . -t h55205l/ffandown:latest",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["ffmpeg","m3u8","live"],
+  "author": "heslonlin",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.1",

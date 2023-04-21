@@ -1,13 +1,11 @@
 const createServer = require('./bin/app.js')
-const { setFfmpegEnv, setProxy, readConfig, ffmpegKiller } = require('./bin/utils/index')
+const FFandown = require('./bin/core/index.js')
 const cluster = require('cluster')
 const os = require('os')
 const colors = require('colors')
 const process = require('process')
 const cpuNum = os.cpus().length
-// read local config options
-const option = readConfig()
-setProxy(option.proxyUrl)
+const ffandown = new FFandown()
 /**
  * Description create cluster
  * @date 3/14/2023 - 5:33:53 PM
@@ -15,9 +13,6 @@ setProxy(option.proxyUrl)
  * @returns {void}
  */
 const createCluster = async () => {
-    if (option.useFFmpegLib) {
-        await setFfmpegEnv()
-    } 
     for (let i = 0; i < cpuNum; i++) {
         process.nextTick(() => cluster.fork())
     }
@@ -36,10 +31,9 @@ const createCluster = async () => {
 const threadRun = async () => {
     if (cluster.isMaster) {
         console.log(colors.blue(`Master ${process.pid} is running`))
-        ffmpegKiller.killToDeathFfmeg()
         await createCluster()
     } else {
-        createServer(option)
+        ffandown.addReadyHooks(createServer)
     }
 }
 /**
@@ -49,21 +43,16 @@ const threadRun = async () => {
  * @returns {void}
  */
 (async () => {
-    if (option.thread) {
+    if (ffandown.option.thread) {
         await threadRun()
     } else {
-        if (option.useFFmpegLib) {
-            await setFfmpegEnv()
-        } 
-        createServer(option)
-        ffmpegKiller.killToDeathFfmeg()
+        ffandown.addReadyHooks(createServer)
     }
 })()
 
 process.on('SIGINT', function () {
     if (cluster.isMaster) {
-        ffmpegKiller.clear()
         console.log('\n Pressed Control-C to exit.')
-        process.exit(0)    
-    } 
+        process.exit(0)
+    }
 })

@@ -1,9 +1,8 @@
-const logger = require('../log')
 const colors = require('colors')
 const path = require('path')
 const DOWNLOADZIP = require('download')
 const fse = require('fs-extra')
-const { chmod, execCmd } = require('./core')
+const { chmod, execCmd } = require('./system')
 
 // this is a temporary file used to store downloaded files, https://nn.oimi.space/ is a cfworker
 // const GITHUBURL = 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1'
@@ -40,11 +39,10 @@ const downloadFfmpeg = async (type) => {
     }
     // judge file is exists
     if (!suffix) {
-        console.log(colors.italic.red('[ffdown] can\'t auto download ffmpeg \n'))
         return Promise.reject(new Error('can\'t download ffmpeg'))
     }
     try {
-        console.log(colors.italic.green('[ffdown]  downloading ffmpeg:' + `${GITHUBURL}/${suffix}.zip`))
+        console.log(colors.italic.bgGreen.black('[ffdown]  downloading ffmpeg:' + `${GITHUBURL}/${suffix}.zip`))
         await DOWNLOADZIP(`${GITHUBURL}/${suffix}.zip`, 'lib', { extract: true })
         chmod(libPath)
         return Promise.resolve(libPath)
@@ -65,12 +63,14 @@ const setFfmpegEnv = async () => {
     try {
         baseURL = await downloadFfmpeg(type)
         process.env.FFMPEG_PATH = baseURL
-        logger.info('Setting FFMPEG_PATH:' + baseURL)
+        console.log(colors.italic.black.bgGreen('[ffdown] Setting FFMPEG_PATH: ' + baseURL))
         if (process.env.FFMPEG_PATH !== baseURL) {
-            console.log(colors.italic.cyan('[ffdown] ffmpeg: 环境变量设置成功'))
+            console.log(colors.italic.black.bgGreen('[ffdown] ffmpeg: 环境变量设置成功'))
         }
+        return Promise.resolve()
     } catch (e) {
-        console.log('download Failed', e)
+        console.log(colors.italic.red('download ffmpeg failed: ' + String(e).trim()))
+        return Promise.reject('download ffmpeg failed: ' + String(e).trim())
     }
 }
 /**
@@ -78,20 +78,20 @@ const setFfmpegEnv = async () => {
  * @param {string} proxyUrl 
  */
 const setProxy = async (proxyUrl) => {
-    if (process.platform !== 'linux') {
-        console.log(colors.italic.bgCyan(' FFMPEG_PROXY_URL only supported on Linux '))
-        logger.info('FFMPEG_PROXY_URL only supported on Linux')
+    const supported = ['linux', 'darwin']
+    if (supported.indexOf(process.platform) === -1) {
+        console.log(colors.italic.black.bgGreen('FFMPEG_PROXY_URL only supported on Linux or Macos'))
     } else {
         if (typeof (proxyUrl) === 'string' && proxyUrl) {
             const httpsProxyCmd = 'export https_proxy=http://' + proxyUrl
             const httpProxyCmd = 'export http_proxy=http://' + proxyUrl
             await execCmd(httpsProxyCmd)
             await execCmd(httpProxyCmd)
-            console.log(colors.italic.bgCyan('Set Proxy Success'))
+            console.log(colors.italic.blue('Set Proxy Success'))
         } else {
             await execCmd('unset http_proxy')
             await execCmd('unset https_proxy')
-            console.log(colors.italic.bgCyan('Unset Proxy Success'))
+            console.log(colors.italic.blue('Unset Proxy Success'))
         }
     }
 }

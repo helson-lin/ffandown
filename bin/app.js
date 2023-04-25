@@ -11,8 +11,7 @@ app.use(express.static(path.join(__dirname, '../public')))
 const jsonParser = bodyParser.json()
 const isSupportedUrl = (url) => url.startsWith('rtmp://') || url.startsWith('rtsp://') || url.endsWith('.m3u8')
 
-
-function createServer() {
+function createServer () {
     const port = this.option.port
     app.post('/down', jsonParser, (req, res) => {
         const { name, url } = req.body

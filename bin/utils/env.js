@@ -70,7 +70,7 @@ const setFfmpegEnv = async () => {
         return Promise.resolve()
     } catch (e) {
         console.log(colors.italic.red('download ffmpeg failed: ' + String(e).trim()))
-        return Promise.reject('download ffmpeg failed: ' + String(e).trim())
+        return Promise.reject(new Error('download ffmpeg failed: ' + String(e).trim()))
     }
 }
 /**

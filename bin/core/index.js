@@ -8,32 +8,40 @@ const path = require('path')
 const logger = require('./log')
 
 class FFandown {
-    constructor() {
+    constructor () {
         this.readyList = []
-        this.option = this.config.readConfig();
+        this.option = this.config.readConfig()
+        this.converter = new m3u8ToMp4({ 
+            ffmpeg: this.option.useFFmpegLib, 
+            ffprobe: this.option.useFFmpegLib,
+            registoryUrl: 'https://pic.kblue.site', 
+        })
         this.beforeHooks()
     }
-    async beforeHooks() {
-        await this.env.setFfmpegEnv()
-        await this.env.setProxy()
+
+    async beforeHooks () {
+        await this.converter.downloadFfbinaries()
+        await this.converter.setProxy()
+        // await this.env.setFfmpegEnv()
+        // await this.env.setProxy()
         this.readyHooks()
     }
 
-    readyHooks() {
+    readyHooks () {
         this.readyList.forEach(func => func.call(this))
     }
 
-    addReadyHooks(func) {
+    addReadyHooks (func) {
         if (func && typeof func === 'function') {
-            this.readyList.push(func);
+            this.readyList.push(func)
         }
     }
 
-    getDownloadFilePath(name) {
+    getDownloadFilePath (name) {
         return path.join(this.option.downloadDir, (name || new Date().getTime()) + '.mp4')
     }
 
-    download(url, filePath) {
+    download (url, filePath) {
         const cpuNums = this.system.getCpuNum()
         const threads = this.option?.downloadThread ? cpuNums : 0
         return new Promise((resolve, reject) => {
@@ -50,24 +58,27 @@ class FFandown {
         })
     }
 
-    async startDownload(url, name) {
+    async startDownload (url, name) {
         const filePath = this.getDownloadFilePath(name)
         this.logger.info(`online m3u8 url: ${url}, \n file download path:  ${filePath}`)
         const { webhooks, webhookType } = this.option
         this.download(url, filePath)
-            .then(() => {
-                this.logger.info(`${name}.mp4 下载成功`)
-                this.msg(webhooks, webhookType, `${name}.mp4 下载成功`).then((msg) => this.logger.info(msg)).catch(e => this.logger.warn(e))
-            }).catch((e) => {
-                this.logger.info(`${name}.mp4 下载失败`)
-                this.msg(webhooks, webhookType, `${name}.mp4 下载失败`, String(e).trim()).then((msg) => this.logger.info(msg)).catch(e => this.logger.warn(e))
-            })
+        .then(() => {
+            this.logger.info(`${name}.mp4 下载成功`)
+            this.msg(webhooks, webhookType, `${name}.mp4 下载成功`)
+            .then((msg) => this.logger.info(msg))
+            .catch(e => this.logger.warn(e))
+        }).catch((e) => {
+            this.logger.info(`${name}.mp4 下载失败`)
+            this.msg(webhooks, webhookType, `${name}.mp4 下载失败`, String(e).trim())
+            .then((msg) => this.logger.info(msg))
+            .catch(e => this.logger.warn(e))
+        })
     }
 }
 
 FFandown.prototype.env = env
 FFandown.prototype.system = system
-FFandown.prototype.converter = new m3u8ToMp4()
 FFandown.prototype.msg = message.msg
 FFandown.prototype.config = config
 FFandown.prototype.update = update

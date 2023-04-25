@@ -11,8 +11,8 @@ const getTransport = () => {
             format: format.combine(
                 format.colorize({ all: false, level: true, message: false }),
                 format.align(),
-                format.simple()
-            )
+                format.simple(),
+            ),
         }),
         new DailyRotateFile({
             filename: path.join(logPath, 'server_%DATE%.log'),
@@ -23,7 +23,7 @@ const getTransport = () => {
                 format.align(),
                 format.printf((info) => `${info.level}: ${[info.timestamp]}: ${info.message}`),
             ),
-        })
+        }),
     ]
     if (!isDebug) transport.shift()
     return transport

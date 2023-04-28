@@ -4,8 +4,10 @@ const cluster = require('cluster')
 const os = require('os')
 const colors = require('colors')
 const process = require('process')
+const { v4: uuidv4 } = require('uuid')
 const cpuNum = os.cpus().length
 const ffandown = new FFandown()
+console.log(uuidv4())
 /**
  * Description create cluster
  * @date 3/14/2023 - 5:33:53 PM

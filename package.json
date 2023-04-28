@@ -17,7 +17,11 @@
     "build:dockerimage": "docker build . -t h55205l/ffandown:latest",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["ffmpeg","m3u8","live"],
+  "keywords": [
+    "ffmpeg",
+    "m3u8",
+    "live"
+  ],
   "author": "heslonlin",
   "license": "ISC",
   "dependencies": {
@@ -29,9 +33,13 @@
     "fs-extra": "^11.1.0",
     "gulp-html-minifier-terser": "^7.1.0",
     "js-yaml": "^4.1.0",
+    "nanoid": "^4.0.2",
     "pidusage": "^3.0.2",
     "request": "^2.88.2",
+    "sequelize": "^6.31.0",
+    "sqlite3": "^5.1.6",
     "systeminformation": "^5.17.12",
+    "uuid": "^9.0.0",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1",
     "yamljs": "^0.3.0"

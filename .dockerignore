@@ -1,14 +1,8 @@
-lib/*
-libs/*
-libs
-media
+media/*
 node_modules/*
-.github
-.vscode
 libs/*
 lib/*
 logs/*
-node_modules/*
 .vscode/*
 .github/*
 *.zip

@@ -5,7 +5,6 @@ const path = require('path')
 const colors = require('colors')
 const bodyParser = require('body-parser')
 const app = express()
-
 app.use(express.static(path.join(__dirname, '../public')))
 
 const jsonParser = bodyParser.json()

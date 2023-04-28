@@ -37,9 +37,6 @@ jobs:
         
       - name: Npm build
         run: npm run build
-        
-      - name: NPM PKG
-        run: npm run build
 
       - name: Create Release
         id: create_release
@@ -59,8 +56,8 @@ jobs:
          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
          upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-win.exe
-         asset_name:  ffandown-win.exe
+         asset_path: ./dist/ffandown-win-x64
+         asset_name:  ffandown-win-x64
          asset_content_type: application/x-ms-dos-executable
  
       - name: Upload Release Linux Asset
@@ -107,15 +104,26 @@ jobs:
          asset_name:  ffandown-alpine-64
          asset_content_type: application/binary
       
-      - name: Upload Release MACOS Asset
-        id: upload-release-mac-asset
+      - name: Upload Release MACOS x64 Asset
+        id: upload-release-mac-x64-asset
         uses: actions/upload-release-asset@master
         env:
          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
          upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-macos
-         asset_name:  ffandown-macos
+         asset_path: ./dist/ffandown-macos-x64
+         asset_name:  ffandown-macos-x64
+         asset_content_type: application/binary
+
+      - name: Upload Release MACOS arm64 Asset
+        id: upload-release-mac-arm64-asset
+        uses: actions/upload-release-asset@master
+        env:
+         GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+         upload_url: ${{ steps.create_release.outputs.upload_url }}
+         asset_path: ./dist/ffandown-macos-arm64
+         asset_name:  ffandown-macos-arm64
          asset_content_type: application/binary
 
       

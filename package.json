@@ -50,6 +50,7 @@
       "./runtime/*.js"
     ],
     "targets": [
+      "node14-macos-arm64",
       "node14-macos-x64",
       "node14-windows-x64",
       "node14-linux-x64",

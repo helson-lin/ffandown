@@ -36,7 +36,7 @@ const execCmd = (cmd) => {
  * @param {string} file
  */
 const chmod = (file) => {
-    // if(process.platform !== 'linux' || process.platform !== 'darwin') return
+    if (process.platform !== 'linux' || process.platform !== 'darwin') return
     const cmd = `chmod +x ${file}`
     execCmd(cmd)
 }

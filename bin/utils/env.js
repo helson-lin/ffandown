@@ -32,7 +32,7 @@ const downloadFfmpeg = async (type) => {
         'linux-amd64': 'ffmpeg-4.4.1-linux-armel-32',
     }
     const suffix = typeLink[type]
-    const executableFileSuffix = typeLink[type].startsWith('win') ? 'ffmpeg.exe' : 'ffmpeg'
+    const executableFileSuffix = type.startsWith('win') ? 'ffmpeg.exe' : 'ffmpeg'
     const libPath = path.join(process.cwd(), `lib/${executableFileSuffix}`)
     const isExist = isFile(libPath)
     if (isExist) {

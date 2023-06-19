@@ -49,6 +49,7 @@ const downloadFfmpeg = async (type) => {
         chmod(libPath)
         return Promise.resolve(libPath)
     } catch (e) {
+        console.log(e)
         return Promise.reject(e)
     }
 }

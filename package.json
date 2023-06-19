@@ -1,6 +1,6 @@
 {
   "name": "ffandown",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",
@@ -52,6 +52,7 @@
     "targets": [
       "node14-macos-arm64",
       "node14-macos-x64",
+      "node14-linux-arm64",
       "node14-windows-x64",
       "node14-linux-x64",
       "node14-linux-arm64",

@@ -24,7 +24,12 @@
 </p>
 
 ## Version Description
- 
+
+## v4.2.2
+fix: fix permission judgement error of ffmpeg
+feat:  add batch URL support: pass multiple URLs separated by commas
+`https://s8.fsvod1.com/20230428/VTjjzmIu/index.m3u8,https://s8.fsvod1.com/20230524/bW0SZkHJ/index.m3u8`
+
 ## v4.2.1
 fix: Fixed m3u8 download 403 error
 perf: change ffmpeg binary download site to oss

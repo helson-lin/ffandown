@@ -16,23 +16,39 @@ const createServer = (option) => {
     app.post('/down', jsonParser, (req, res) => {
         const { name, url } = req.body
         // check params
-        if (!url || !isSupportedUrl(url)) {
+        if (!url) {
             res.send({ code: 0, message: 'please check params' })
         } else {
             // pass check
-            const filePath = path.join(option.downloadDir, (name || new Date().getTime()) + '.mp4')
-            logger.info(`online m3u8 url: ${url}, file download path:  ${filePath}`)
             if (!url) {
                 res.send('{"code": 2, "message":"url cant be null"}')
             } else {
                 try {
                     res.send({ code: 0, message: `${name}.mp4 is download !!!!` })
-                    download(url, name, filePath, option).then(res => {
-                        logger.info(`${name}.mp4 is finish !!!!`)
-                        console.log(`${name}.mp4 is finish !!!!`)
-                    }).catch(err => {
-                        logger.info(`${name}.mp4, ${String(err)}`)
-                    })
+                    // to download
+                    const urlList = url.indexOf(",") === -1 ? url : url.split(",").filter(i => isSupportedUrl(i))
+                    const isArray = urlList instanceof Array
+                    if (!isArray) {
+                        const filename = name || new Date().getTime()
+                        const filePath = path.join(option.downloadDir, filename + '.mp4')
+                        logger.info(`online m3u8 url: ${url}, file download path:  ${filePath}`)
+                        download(url, name, filePath, option).then(res => {
+                            logger.info(`${name}.mp4 is finish !!!!`)
+                        }).catch(err => {
+                            logger.info(`${name}.mp4, ${String(err)}`)
+                        })
+                    } else {
+                        const urlPromiseList = urlList.map((url, index) => {
+                            const filename = name ? `${name}-${index+1}` : `${new Date().getTime()}-${index+1}`
+                            const filePath = path.join(option.downloadDir, filename + '.mp4')
+                            return download(url, filename, filePath, option)
+                        })
+                        Promise.allSettled(urlPromiseList).then((result) => {
+                            logger.info('download success')
+                            // const successList = result.filter(item => item.status === 'fullfilled')
+                            // successList.forEach(sucesss => console.log(sucesss))
+                        })
+                    }
                 } catch (e) {
                     logger.info(`${name}.mp4, ${String(e)}`)
                     res.send({ code: 1, message: String(e) })

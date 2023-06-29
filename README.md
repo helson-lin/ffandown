@@ -19,7 +19,7 @@
         <img alt="docker image size" src="https://img.shields.io/github/last-commit/helson-lin/ffandown"/>
     </a>
     <a href="/README.zh-CN.md">
-        <img alt="lang" src="https://img.shields.io/badge/Lang-CN-brightgreen" />
+        <img alt="lang" src="https://img.shields.io/badge/Lang-中文-brightgreen" />
     </a>
 </p>
 

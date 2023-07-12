@@ -45,6 +45,15 @@ class m3u8ToMp4Converter {
         return this
     }
 
+    setTimeMark (time) {
+        // TODO: check params is correct
+        const timePattern = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d).[0-9]{2}$/
+        if (time && timePattern.test(time)) {
+            this.TIMEMARK = time
+        }
+        return this
+    }
+
     /**
      * 获取地址协议
      * @date 3/30/2023 - 11:50:14 AM
@@ -53,11 +62,12 @@ class m3u8ToMp4Converter {
      * @returns {("live" | "m3u8" | "mp4" | "unknown")}
      */
     getProtocol (url) {
+        console.log(url, url.indexOf('m3u8') !== -1)
         switch (true) {
             case url.startsWith('rtmp://'):
             case url.startsWith('rtsp://'):
                 return 'live'
-            case url.endsWith('m3u8'):
+            case url.indexOf('m3u8') !== -1:
                 return 'm3u8'
             default:
                 return 'unknown'
@@ -86,6 +96,10 @@ class m3u8ToMp4Converter {
             this._ffmpegCmd.outputOptions(`-threads ${this.THREADS}`)
             this._ffmpegCmd.outputOptions('-preset ultrafast')
         }
+        // 断点续传
+        if (this.TIMEMARK) {
+            this._ffmpegCmd.outputOptions(`-ss ${this.TIMEMARK}`)
+        }
         // diffrent type set diffrent download 
         const liveProtocol = this.PROTOCOL_TYPE
         if (liveProtocol === 'live') {
@@ -107,20 +121,26 @@ class m3u8ToMp4Converter {
                 console.log(`Error: ${err.message}`)
                 return
             }
+            const toFixed = (val, precision = 1) => {
+                const multiplier = Math.pow(10, precision)
+                return Math.round(val * multiplier) / multiplier 
+            }
             const duration = data.format.duration
             this._ffmpegCmd
             .on('progress', (progress) => {
-                const percent = Math.round((progress.percent * 100) / 100)
+                console.log(progress)
+                const percent = (progress.percent * 100) / 100
                 const processedDuration = duration * (progress.percent / 100)
                 const remainingDuration = duration - processedDuration
-                // console.log(`Transcoding: ${percent}% done`)
-                // console.log(`Processed duration: ${processedDuration.toFixed(2)}s`)
-                // console.log(`Remaining duration: ${remainingDuration.toFixed(2)}s`)
+                const currentMbs = progress.currentKbps / 1000
                 if (callback && typeof callback === 'function') {
                     const params = {
-                        percent,
-                        process: processedDuration.toFixed(2),
-                        remaining: remainingDuration.toFixed(2),
+                        percent: toFixed(percent),
+                        process: toFixed(processedDuration),
+                        remaining: toFixed(remainingDuration),
+                        currentMbs: toFixed(currentMbs, 2) + 'Mb/s',
+                        timemark: progress.timemark,
+                        targetSize: progress.targetSize,
                     }
                     callback(params)
                 }

@@ -1,4 +1,5 @@
 .vscode
+.idea
 logs/*
 ffandown
 node_modules

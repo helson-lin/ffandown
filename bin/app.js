@@ -6,15 +6,17 @@ const colors = require('colors')
 const bodyParser = require('body-parser')
 const app = express()
 app.use(express.static(path.join(__dirname, '../public')))
-
 const jsonParser = bodyParser.json()
-const isSupportedUrl = (url) => url.startsWith('rtmp://') || url.startsWith('rtsp://') || url.endsWith('.m3u8')
 
+/**
+ * @description
+ * @param {FFandown} this
+ */
 function createServer () {
     const port = this.option.port
     app.post('/down', jsonParser, (req, res) => {
         const { name, url } = req.body
-        if (!url || !isSupportedUrl(url)) {
+        if (!url) {
             res.send({ code: 0, message: 'please check params' })
         } else {
             if (!url) {
@@ -35,6 +37,42 @@ function createServer () {
             res.send({ code: 0, data: update })
         } catch (err) {
             res.end({ code: 1, message: 'get update failed' })
+        }
+    })
+    app.get('/list', async (req, res) => {
+        const list = await this.db.SysDownload.getAll()
+        res.send({ code: 0, data: list })
+    })
+    app.delete('/del', async (req, res) => {
+        const { uid } = req.query
+        if (!uid) {
+            res.send({ code: 1, message: 'uid is required' })
+        } else {
+            const result = await this.db.SysDownload.delete(uid) 
+            res.send({ code: 0, data: result })
+        }
+    })
+    app.post('/contDownload', jsonParser, async (req, res) => {
+        const { name, url, timemark } = req.body
+        if (!url || !timemark) {
+            res.send({ code: 0, message: 'please check params' })
+        } else {
+            try {
+                this.startDownload(url, name, timemark)
+                res.send({ code: 0, message: `${name}.mp4 is continue download` })
+            } catch (e) {
+                res.send({ code: 1, message: String(e) })
+            }
+        }
+    })
+    app.get('/parser', async (req, res) => {
+        const url = req.query.url
+        if (!url) {
+            res.send({ code: 1, message: '' })
+        } else {
+            const realUrl = await this.pluginParser(url)
+            console.log(realUrl, url)
+            res.send({ code: 0, data: realUrl })
         }
     })
     app.listen(port, async () => {

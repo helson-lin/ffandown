@@ -25,7 +25,7 @@ const helper = {
         return this
     },
     /**
-    * @description: judege input path is a directory
+    * @description: judge input path is a directory
     * @param {string} pathDir path 
     * @return {boolean} true: path is a file
     */
@@ -135,6 +135,7 @@ const helper = {
      * @param {String} ffmpegPath 
      * @param {String} ffprobePath 
     */
+    // todo: remove logs repeat 
     setEnv (type, path) {
         if (type === 'ffmpeg') {
             ffmpeg.setFfmpegPath(path)
@@ -145,7 +146,7 @@ const helper = {
             console.log(colors.italic.black.bgGreen('[ffdown] ffprobe: 环境变量设置成功'))
         }
     },
-
+    // todo: remove logs repeat 
     async setProxy (proxyUrl) {
         const supported = ['linux', 'darwin']
         if (supported.indexOf(process.platform) === -1) {

@@ -114,3 +114,9 @@ Before using it, remember to edit the instruction and modify the server's IP add
 ## PS
 
 You can deploy it on Linux or other servers to download `m3u8` videos to NAS. Currently, most small website videos are `m3u8` videos.
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=helson-lin/ffandown&type=Date)](https://star-history.com/#helson-lin/ffandown&Date)
+

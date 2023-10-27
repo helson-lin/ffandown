@@ -4,14 +4,10 @@ name: CI
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    tags:
+      - 'v*.*.*'
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -38,92 +34,12 @@ jobs:
       - name: Npm build
         run: npm run build
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@master
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: "dist/**"
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          tag_name: ${{ github.run_id }}
-          release_name: Release ${{ github.run_id }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Windows Asset
-        id: upload-release-window-asset
-        uses: actions/upload-release-asset@master
-        env:
-         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-         upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-win-x64
-         asset_name:  ffandown-win-x64
-         asset_content_type: application/x-ms-dos-executable
- 
-      - name: Upload Release Linux Asset
-        id: upload-release-linux-asset
-        uses: actions/upload-release-asset@master
-        env:
-         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-         upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-linux
-         asset_name:  ffandown-linux
-         asset_content_type: application/binary
-
-      - name: Upload Release Linux Arm64 Asset
-        id: upload-release-linux-arm64-asset
-        uses: actions/upload-release-asset@master
-        env:
-         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-         upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-linux-arm64
-         asset_name:  ffandown-linux-arm64
-         asset_content_type: application/binary
-
-      - name: Upload Release Linux Alpine arm64 Asset
-        id: upload-release-linux-apline-arm64-asset
-        uses: actions/upload-release-asset@master
-        env:
-         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-         upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-alpine-arm64
-         asset_name:  ffandown-alpine-arm64
-         asset_content_type: application/binary
-
-      - name: Upload Release Linux Alpine 64 Asset
-        id: upload-release-linux-apline-64-asset
-        uses: actions/upload-release-asset@master
-        env:
-         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-         upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-alpine-64
-         asset_name:  ffandown-alpine-64
-         asset_content_type: application/binary
-      
-      - name: Upload Release MACOS x64 Asset
-        id: upload-release-mac-x64-asset
-        uses: actions/upload-release-asset@master
-        env:
-         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-         upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-macos-x64
-         asset_name:  ffandown-macos-x64
-         asset_content_type: application/binary
-
-      - name: Upload Release MACOS arm64 Asset
-        id: upload-release-mac-arm64-asset
-        uses: actions/upload-release-asset@master
-        env:
-         GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-         upload_url: ${{ steps.create_release.outputs.upload_url }}
-         asset_path: ./dist/ffandown-macos-arm64
-         asset_name:  ffandown-macos-arm64
-         asset_content_type: application/binary
 
       

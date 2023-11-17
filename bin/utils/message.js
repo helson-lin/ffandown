@@ -83,9 +83,9 @@ const msg = (url, type, Text, More) => {
     const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody, dingding: getDingDingBody }
     const data = bodyHanler[type](Text, More)
     return new Promise((resolve, reject) => {
-        if (!URL) 
-            reject('please set webhooks')
-        else
+        if (!URL) { 
+            reject(new Error('please set webhooks')) 
+        } else {
             request({
                 url: URL,
                 method,
@@ -95,12 +95,13 @@ const msg = (url, type, Text, More) => {
                 body: JSON.stringify(data),
             }, (error, _, body) => {
                 if (error) {
-                reject(error)
+                    reject(error)
                 }
                 if (body) {
-                resolve("notification success !")
+                    resolve('notification success !')
                 }
-            })
+            }) 
+        }
     })
 }
 

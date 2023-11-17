@@ -1,21 +1,15 @@
 const createServer = require('./bin/app.js')
-const ffandown = require('./bin/core/index.js')
 const cluster = require('cluster')
-const process = require('process')
-/**
- * Description start server
- * @date 3/14/2023 - 5:33:01 PM
- * @async
- * @returns {void}
- */
-const startServer = () => {
-    ffandown
-    .addReadyHooks(createServer) // add ready hooks
-    .create() // create server
-}
+const Utils = require('./bin/utils/index')
+const Oimi = require('oimi-helper')
+const config = Utils.readConfig()
+const figlet = require('figlet')
+const oimi = new Oimi(config.downloadDir)
 
-startServer()
-
+console.log(figlet.textSync("ffandown"))
+oimi.ready().then(() => {
+    createServer.call(oimi, config.port)
+})
 process.on('SIGTERM', async () => {
     process.exit(1)
 })

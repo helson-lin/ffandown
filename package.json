@@ -14,7 +14,7 @@
     "build": "npm run clean && npm run pkg",
     "auto": "bash ./build.sh",
     "rmi": "docker rmi h55205l/ffandown:latest",
-    "build:dockerimage": "docker build . -t h55205l/ffandown:latest",
+    "build:image": "docker build . -t h55205l/ffandown:latest",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -30,11 +30,13 @@
     "colors": "^1.4.0",
     "download": "^8.0.0",
     "express": "^4.18.2",
+    "figlet": "^1.6.0",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.0",
     "gulp-html-minifier-terser": "^7.1.0",
     "js-yaml": "^4.1.0",
     "nanoid": "^4.0.2",
+    "oimi-helper": "^1.0.5",
     "pidusage": "^3.0.2",
     "request": "^2.88.2",
     "sequelize": "^6.31.0",
@@ -60,9 +62,13 @@
       "./runtime/*.js"
     ],
     "targets": [
+      "node14-macos-arm64",
       "node14-macos-x64",
       "node14-windows-x64",
-      "node14-linux-x64"
+      "node14-linuxstatic-x64",
+      "node14-linux-arm64",
+      "node14-alpine-x64",
+      "node14-alpine-arm64"
     ],
     "outputPath": "dist"
   },

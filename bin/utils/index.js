@@ -1,8 +1,10 @@
 const CONFIG = require('./config')
-const ENV = require('./env')
 const PROCESS = require('./process')
+const SYSTEM = require('./system')
+const MSG = require('./message')
 module.exports = {
     ...CONFIG,
-    ...ENV,
     ...PROCESS,
+    ...SYSTEM,
+    ...MSG,
 }

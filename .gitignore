@@ -6,7 +6,7 @@ node_modules
 dist/**
 media/*
 config/*
-database/sqlite.db
+**/*.db
 lib/*
 *.mp4
 **/.DS_Store

@@ -53,10 +53,10 @@ function createServer (port) {
             } else {
                 try {
                     this.createDownloadMission({ name, url, preset, outputformat }).then(() => {
-                        console.log('下载成功', this.config)
+                        // console.log('下载成功', this.config)
                         Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${url}`)
                     }).catch((e) => {
-                        console.log('download failed：' + e)
+                        // console.log('download failed：' + e)
                         Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${url}: ${e}`)
                     },
                     )

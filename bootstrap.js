@@ -5,12 +5,14 @@ const Oimi = require('oimi-helper')
 const config = Utils.readConfig()
 const figlet = require('figlet')
 const oimi = new Oimi(config.downloadDir)
-
-console.log(figlet.textSync("ffandown"))
+Oimi.prototype.config = config
+console.log(figlet.textSync('ffandown', 'ANSI Shadow'))
 oimi.ready().then(() => {
+    // download latest front package
     createServer.call(oimi, config.port)
 })
 process.on('SIGTERM', async () => {
+    await oimi.killAll()
     process.exit(1)
 })
 
@@ -20,6 +22,7 @@ process.on('SIGINT', function () {
         process.exit(0)
     }
 })
-process.on('exit', () => {
+process.on('exit', async () => {
+    await oimi.killAll()
     console.log('\n Server stop')
 })

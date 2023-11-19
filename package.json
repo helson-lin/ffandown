@@ -6,7 +6,7 @@
   "bin": "bootstrap.js",
   "scripts": {
     "start": "node bootstrap.js --debug=true",
-    "dev": "nodemon bootstrap.js --debug=true",
+    "dev": "nodemon",
     "debug": "nodemon bootstrap.js --debug",
     "clean": "rimraf dist",
     "pkg": "pkg ./ --debug=true",
@@ -30,13 +30,14 @@
     "colors": "^1.4.0",
     "download": "^8.0.0",
     "express": "^4.18.2",
+    "express-ws": "^5.0.2",
     "figlet": "^1.6.0",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.0",
     "gulp-html-minifier-terser": "^7.1.0",
     "js-yaml": "^4.1.0",
     "nanoid": "^4.0.2",
-    "oimi-helper": "^1.0.5",
+    "oimi-helper": "^1.1.1",
     "pidusage": "^3.0.2",
     "request": "^2.88.2",
     "sequelize": "^6.31.0",
@@ -45,6 +46,7 @@
     "uuid": "^9.0.0",
     "winston": "^3.8.2",
     "winston-daily-rotate-file": "^4.7.1",
+    "ws": "^8.14.2",
     "yamljs": "^0.3.0"
   },
   "pkg": {
@@ -59,7 +61,8 @@
       "./public/*",
       "./runtime/**/*.js",
       "./runtime/**/**/*.js",
-      "./runtime/*.js"
+      "./runtime/*.js",
+      "node_modules/figlet/fonts/ANSI Shadow.flf"
     ],
     "targets": [
       "node14-macos-arm64",

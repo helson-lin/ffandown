@@ -67,7 +67,7 @@ const handlerURL = (url) => {
  * @param {string} text video name
  * @returns {*}
  */
-const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, text))
+const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, encodeURIComponent(text)))
 
 /**
  * @description: send message notice to user
@@ -78,7 +78,7 @@ const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, text
  * @return {void}
  */
 const msg = (url, type, Text, More) => {
-    const URL = type === 'bark' ? getBarkUrl(url, Text) : url
+    const URL = type === 'bark' ? getBarkUrl(url, More) : url
     const method = type === 'bark' ? 'GET' : 'POST'
     const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody, dingding: getDingDingBody }
     const data = bodyHanler[type](Text, More)

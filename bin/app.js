@@ -1,75 +1,165 @@
 /** express server */
 const express = require('express')
+const ws = require('express-ws')
 const cluster = require('cluster')
 const path = require('path')
 const colors = require('colors')
 const bodyParser = require('body-parser')
-const logger = require('./log')
-const UPDATE = require('./utils/checkUpdate')
 const app = express()
-const { download, getNetwork, isSupportedUrl } = require('./utils/index')
-
-app.use(express.static(path.join(__dirname, '../public')))
+const Utils = require('./utils/index')
 const jsonParser = bodyParser.json()
 
-const createServer = (option) => {
+// express static server
+app.use(express.static(path.join(__dirname, '../public')))
+/**
+ * @description
+ * @param {FFandown} this
+ */
+function createServer (port) {
+    ws(app).getWss('/')
+
+    const { getNetwork } = Utils
+    app.ws('/ws', (ws, req) => {
+        // console.log('连接成功！')
+        // wss.push(ws)
+        ws.send(Utils.sendWsMsg('connected'))
+        // send给客户端发消息
+        // on是监听事件
+        // message表示服务端传来的数据
+        ws.on('message', async (msg) => {
+            try {
+                const data = JSON.parse(msg)
+                const { key } = data
+                if (key === 'list') {
+                    const list = await this.dbOperation.getAll()
+                    ws.send(Utils.sendWsMsg(list, 'list'))
+                }
+            } catch (e) {
+                console.error(e)
+            }
+        })
+        // close 事件表示客户端断开连接时执行的回调函数 
+        ws.on('close', function (e) {
+            console.log('close connection')
+        })
+    })
     app.post('/down', jsonParser, (req, res) => {
-        const { name, url } = req.body
-        // check params
+        const { name, url, preset, outputformat } = req.body
         if (!url) {
             res.send({ code: 0, message: 'please check params' })
         } else {
-            // pass check
             if (!url) {
                 res.send('{"code": 2, "message":"url cant be null"}')
             } else {
                 try {
+                    this.createDownloadMission({ name, url, preset, outputformat }).then(() => {
+                        console.log('下载成功', this.config)
+                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${url}`)
+                    }).catch((e) => {
+                        console.log('download failed：' + e)
+                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${url}: ${e}`)
+                    },
+                    )
                     res.send({ code: 0, message: `${name}.mp4 is download !!!!` })
-                    // to download
-                    const urlList = url.indexOf(",") === -1 ? url : url.split(",").filter(i => isSupportedUrl(i))
-                    const isArray = urlList instanceof Array
-                    if (!isArray) {
-                        const filename = name || new Date().getTime()
-                        const filePath = path.join(option.downloadDir, filename + '.mp4')
-                        logger.info(`online m3u8 url: ${url}, file download path:  ${filePath}`)
-                        download(url, name, filePath, option).then(res => {
-                            logger.info(`${name}.mp4 is finish !!!!`)
-                        }).catch(err => {
-                            logger.info(`${name}.mp4, ${String(err)}`)
-                        })
-                    } else {
-                        const urlPromiseList = urlList.map((url, index) => {
-                            const filename = name ? `${name}-${index+1}` : `${new Date().getTime()}-${index+1}`
-                            const filePath = path.join(option.downloadDir, filename + '.mp4')
-                            return download(url, filename, filePath, option)
-                        })
-                        Promise.allSettled(urlPromiseList).then((result) => {
-                            logger.info('download success')
-                            // const successList = result.filter(item => item.status === 'fullfilled')
-                            // successList.forEach(sucesss => console.log(sucesss))
-                        })
-                    }
                 } catch (e) {
-                    logger.info(`${name}.mp4, ${String(e)}`)
                     res.send({ code: 1, message: String(e) })
                 }
             }
         }
     })
-    app.get('/update', async (req, res) => {
-        try {
-            const update = await UPDATE.getUpdate()
-            res.send({ code: 0, data: update })
-        } catch (err) {
-            res.end({ code: 1, message: 'get update failed' })
+    app.post('/contDownload', jsonParser, async (req, res) => {
+        const { uid, name } = req.body
+        if (!uid) {
+            res.send({ code: 0, message: 'please check params' })
+        } else {
+            try {
+                // continue download
+                this.resumeDownload(uid)
+                res.send({ code: 0, message: `${name}.mp4 is continue download` })
+            } catch (e) {
+                res.send({ code: 1, message: String(e) })
+            }
         }
     })
-    app.listen(option.port, async () => {
+    app.get('/list', async (req, res) => {
+        try {
+            const list = await this.dbOperation.getAll()
+            res.send({ code: 0, data: list })
+        } catch (e) {
+            res.send({ code: 1, message: String(e) })
+        }
+    })
+    // pause download
+    app.get('/pause', async (req, res) => {
+        const { uid } = req.query
+        if (!uid) {
+            res.send({ code: 0, message: 'please check params' })
+        } else {
+            try {
+                await this.pauseMission(uid)
+                res.send({ code: 0 })
+            } catch (e) {
+                res.send({ code: 1, message: String(e) })
+            }
+        }
+    })
+    // pause download
+    app.get('/resume', async (req, res) => {
+        const { uid } = req.query
+        if (!uid) {
+            res.send({ code: 0, message: 'please check params' })
+        } else {
+            try {
+                await this.resumeDownload(uid)
+                res.send({ code: 0 })
+            } catch (e) {
+                res.send({ code: 1, message: String(e) })
+            }
+        }
+    })
+    // delete mission
+    app.delete('/del', async (req, res) => {
+        let uid = req.query.uid
+        if (uid.indexOf(',')) {
+            uid = uid.split(',')
+        }
+        if (!uid || uid === undefined) {
+            res.send({ code: 1, message: 'please provide a valid  uid' })
+        } else {
+            try {
+                if (uid instanceof Array) {
+                    for (let uidItem of uid) {
+                        // 同步删除文件
+                        await this.deleteMission(uidItem)
+                    }
+                } else {
+                    await this.deleteMission(uid)
+                }
+                res.send({ code: 0, message: 'delete mission' })
+            } catch (e) {
+                res.send({ code: 2, message: 'system error' })
+            }
+        }
+    })
+    app.get('/parser', async (req, res) => {
+        const url = req.query.url
+        if (!url || url === undefined) {
+            res.send({ code: 1, message: 'please provide a valid  url' })
+        } else {
+            try {
+                const realUrl = await this.parserUrl(url)
+                res.send({ code: 0, data: realUrl })
+            } catch (e) {
+                console.log(e)
+                res.send({ code: 2, message: 'system error' })
+            }
+        }
+    })
+    app.listen(port, async () => {
         const list = await getNetwork()
         const listenString = list.reduce((pre, val) => {
-            return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + option.port + '/')}`
+            return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + port + '/')}`
         }, colors.white('[ffandown] server running at:\n'))
-        logger.info('[ffandown] server running at port: ' + option.port)
         const isWorker = cluster.isWorker
         if (isWorker && cluster.worker.id === 1 || !isWorker) {
             console.log(colors.green(listenString))

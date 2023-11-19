@@ -3,11 +3,10 @@ const fs = require('fs')
 const fse = require('fs-extra')
 const YAML = require('yamljs')
 const json2yaml = require('js-yaml')
-const logger = require('../log')
 
 const DEFAULT_OPTIONS = {
     port: 8081,
-    downloadDir: path.join(process.cwd(), 'media'), 
+    downloadDir: '/media/', 
     webhooks: '',
     webhookType: 'bark',
     thread: false,
@@ -60,21 +59,20 @@ const EnsureDonwloadPath = (_path) => {
 const readConfig = (option = DEFAULT_OPTIONS) => {
     const configPath = getConfigPath()
     if (!configPath) {
-        logger.info('not found config file, auto create config.yml')
-        // make sure download dir is exists
-        EnsureDonwloadPath('/media/')
+        console.log('not found config file, auto create config.yml')
         createYml({ ...option, downloadDir: '/media/' })
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString())
-        const { port, downloadDir, webhooks, webhookType, thread, useFFmpegLib, downloadThread, proxyUrl } = data
+        const { port, downloadDir, webhooks, webhookType, thread, useFFmpegLib, downloadThread, proxyUrl, debug } = data
         if (port) option.port = port
         if (proxyUrl) option.proxyUrl = proxyUrl
-        if (downloadDir) option.downloadDir = EnsureDonwloadPath(downloadDir)
+        if (downloadDir) option.downloadDir = downloadDir
         if (webhooks) option.webhooks = webhooks
         if (webhookType) option.webhookType = webhookType
         if (thread !== undefined) option.thread = thread
         if (downloadThread !== undefined) option.downloadThread = downloadThread
         if (useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
+        if (debug) process.env.DEBUG = true
     }
     return option
 }

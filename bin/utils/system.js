@@ -30,16 +30,13 @@ const execCmd = (cmd) => {
 const chmod = async (file) => {
     const supported = ['linux', 'darwin']
     // eslint-disable-next-line max-len, prefer-promise-reject-errors
-    if (supported.indexOf(process.platform) === -1) { 
-        return Promise.reject('the platform not support auto chmod, please do it by yourself') 
-    } else {
-        const cmd = `chmod +x ${file}`
-        try {
-            await execCmd(cmd)
-            return Promise.resolve('chmod success')
-        } catch (e) {
-            return Promise.reject(e)
-        }
+    if (supported.indexOf(process.platform) === -1) { return Promise.reject('the platform not support auto chmod, please do it by yourself') }
+    const cmd = `chmod +x ${file}`
+    try {
+        await execCmd(cmd)
+        return Promise.resolve('chmod success')
+    } catch (e) {
+        return Promise.reject(e)
     }
 }
 

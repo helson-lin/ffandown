@@ -1,0 +1,19 @@
+{
+    "delay": 1000,
+    "watch": [
+      "bin"
+    ],
+    "env": {
+      "NODE_ENV": "development"
+    },
+    "ext": "js",
+    "ignore": [
+      "package.json",
+      "nodemon.json",
+      "public/*",
+      "dist/*",
+      "node_modules/**/node_modules",
+      ".git"
+    ]
+  }
+  

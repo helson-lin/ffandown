@@ -1,12 +1,12 @@
 const CONFIG = require('./config')
-const ENV = require('./env')
-const CORE = require('./core')
 const PROCESS = require('./process')
-const UPDATE = require('./checkUpdate')
+const SYSTEM = require('./system')
+const MSG = require('./message')
+const WSHELPER = require('./ws')
 module.exports = {
     ...CONFIG,
-    ...ENV,
-    ...CORE,
     ...PROCESS,
-    UPDATE,
+    ...SYSTEM,
+    ...MSG,
+    ...WSHELPER,
 }

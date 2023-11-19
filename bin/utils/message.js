@@ -1,5 +1,4 @@
 const request = require('request')
-const logger = require('../log')
 
 /**
  * @description: generate feishu hooks request body
@@ -68,7 +67,7 @@ const handlerURL = (url) => {
  * @param {string} text video name
  * @returns {*}
  */
-const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, text))
+const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, encodeURIComponent(text)))
 
 /**
  * @description: send message notice to user
@@ -79,23 +78,29 @@ const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, text
  * @return {void}
  */
 const msg = (url, type, Text, More) => {
-    const URL = type === 'bark' ? getBarkUrl(url, Text) : url
+    const URL = type === 'bark' ? getBarkUrl(url, More) : url
     const method = type === 'bark' ? 'GET' : 'POST'
     const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody, dingding: getDingDingBody }
     const data = bodyHanler[type](Text, More)
-    request({
-        url: URL,
-        method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    }, (error, _, body) => {
-        if (error) {
-            logger.error(error + '')
-        }
-        if (body) {
-            logger.info('notification success !')
+    return new Promise((resolve, reject) => {
+        if (!URL) { 
+            reject(new Error('please set webhooks')) 
+        } else {
+            request({
+                url: URL,
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            }, (error, _, body) => {
+                if (error) {
+                    reject(error)
+                }
+                if (body) {
+                    resolve('notification success !')
+                }
+            }) 
         }
     })
 }

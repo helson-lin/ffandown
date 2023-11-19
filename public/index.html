@@ -1,1 +1,21 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"><title>FFanDown</title><link rel="shortcut icon" href="favicon.ico" type="image/x-icon"><link href="https://fonts.font.im/css?family=Permanent+Marker|Righteous" rel="stylesheet"><link rel="stylesheet" href="https://pic.kblue.site/notyf.min.css"><script src="https://pic.kblue.site/notyf.min.js"></script></head><body><header><h3>FFanDown</h3></header><div class="center"> <div class="upload"><input id="name" class="name" type="text" placeholder="请输入名称"> <input id="url" class="url" type="text" placeholder="请输入M3U8地址或者rtmp/rtsp"> <button id="down">下载</button></div></div><script>const notyf=new Notyf,infoNotyf=new Notyf({types:[{type:"info",background:"blue",icon:!1}]}),isSupportedUrl=e=>e.startsWith("rtmp://")||e.startsWith("rtsp://")||e.endsWith(".m3u8"),getData=()=>{const e=document.getElementById("name").value,t=document.getElementById("url").value;return e?t?isSupportedUrl(t)?{name:e,url:t}:(notyf.error("请输入正确的地址"),null):(notyf.error("请输入地址"),null):(notyf.error("请输入名称"),null)},btn=document.getElementById("down"),checkUpdate=()=>{fetch("/update",{method:"GET"}).then((e=>e.json())).then((e=>{if(0===e.code){const{update:t,msg:n}=e.data;if(!t)return;infoNotyf.open({type:"info",message:`新版本发布：${n}`,duration:5e3})}else console.error(e.message)}))},postData=e=>{fetch("/down",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(e)}).then((e=>e.json())).then((e=>{btn.innerHTML="下载",1===e.code||2===e.code?notyf.error(e.message):notyf.success("downloaded!")}))};btn.addEventListener("click",(()=>{btn.innerHTML="下载中";const e=getData();e?postData(e):btn.innerHTML="下载"})),fetch("/update",{method:"GET"}).then((e=>e.json())).then((e=>{if(0===e.code){const{update:t,msg:n}=e.data;if(!t)return;infoNotyf.open({type:"info",message:`新版本发布：${n}`,duration:5e3})}else console.error(e.message)}))</script><style>@media (prefers-color-scheme:dark){:root{--color-background:#141417;--color-header:#000;--color-text:#fff;--input-background:rgba(0, 0, 0, 0.9);--input-color-text:rgba(0, 0, 0, 0.9)}}@media (prefers-color-scheme:light){:root{--color-background:#fafafa;--color-header:#fff;--color-text:#000;--input-background:rgba(0, 0, 0, 0.09);--input-color-text:rgba(0, 0, 0, 0.9)}}body,html{margin:0;padding:0}body{background:var(--color-background);width:100vw;height:100vh;user-select:none}header{with:100%;background:var(--color-header);box-shadow:0 2px 12px 0 rgba(0,0,0,.1)}header h3{font-family:'Permanent Marker',cursive,sans-serif;text-align:center;color:var(--color-text);margin:0;line-height:60px}.center{width:100%;padding-top:10%;box-sizing:border-box}.upload{margin:0 auto;width:max-content;background:var(--input-background);padding:40px 40px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;backdrop-filter:blur(20px)}.upload input{width:400px;height:40px;color:var(--input-color-text)!important;outline:0;border:1px solid #333;padding:5px 10px;box-sizing:border-box;margin-bottom:30px;border-radius:3px}.upload .url{width:400px}.upload button{width:400px;padding:10px 20px;color:#fafafa;background:#057feb;border-radius:3px;outline:0;border:none;cursor:pointer;box-sizing:border-box}.upload button:hover{box-shadow:0 5px 10px 5px rgba(0,0,0,.1)}@media screen and (max-width:428px){.upload{flex-direction:column;background-color:transparent!important;width:100%!important;align-content:center}.upload input{width:100%!important;margin:0 0 1rem 0!important;border-radius:.1rem}#down{width:100%!important}}</style></body></html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>FFandown</title>
+  <script type="module" crossorigin src="./assets/index.e0196328.js"></script>
+  <link rel="stylesheet" href="./assets/index.c59e8478.css">
+</head>
+
+<body>
+  <noscript>
+    <strong>We're sorry but the project doesn't work properly without JavaScript enabled. Please enable it to
+      continue.</strong>
+  </noscript>
+  <div id="app"></div>
+  
+</body>
+</html>

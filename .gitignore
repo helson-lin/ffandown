@@ -1,10 +1,12 @@
 .vscode
+.idea
 logs/*
 ffandown
 node_modules
 dist/**
 media/*
 config/*
+database/sqlite.db
 lib/*
 *.mp4
 **/.DS_Store

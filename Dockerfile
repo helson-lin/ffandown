@@ -1,7 +1,7 @@
 FROM centos:7
-COPY ./dist/ffandown-linux /app/
+COPY ./dist/ffandown-linuxstatic-x64 /app/
 workdir /app
-CMD chmod +x ffandown-linux
+CMD chmod +x ffandown-linuxstatic-x64
 EXPOSE 8081
 
-ENTRYPOINT ["./ffandown-linux"]
+ENTRYPOINT ["./ffandown-linuxstatic-x64"]

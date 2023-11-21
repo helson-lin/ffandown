@@ -62,7 +62,8 @@
       "./runtime/**/*.js",
       "./runtime/**/**/*.js",
       "./runtime/*.js",
-      "node_modules/figlet/fonts/ANSI Shadow.flf"
+      "node_modules/figlet/fonts/ANSI Shadow.flf",
+      "node_modules/sqlite3/lib/bindings"
     ],
     "targets": [
       "node14-macos-arm64",

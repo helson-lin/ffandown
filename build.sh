@@ -2,7 +2,7 @@
 
 # Read version from package.json
 # VERSION=$(node -p "require('./package.json').version")
-VERSION=latest
+VERSION=v5.0.0
 
 # Define image name and tag
 IMAGE_NAME="h55205l/ffandown"
@@ -19,10 +19,6 @@ if [ -d "dist" ]; then
   echo -e "${GREEN}Removing existing dist directory...${NC}"
   npm run clean
 fi
-
-# Gulp html
-echo -e "${GREEN}Gulp Html...${NC}"
-npm run gulp
 
 # Build package
 echo -e "${GREEN}Building package...${NC}"

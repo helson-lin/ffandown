@@ -7,10 +7,8 @@
   "scripts": {
     "start": "node bootstrap.js --debug=true",
     "dev": "nodemon",
-    "debug": "nodemon bootstrap.js --debug",
     "clean": "rimraf dist",
     "pkg": "pkg ./ --debug=true",
-    "gulp": "gulp",
     "build": "npm run clean && npm run pkg",
     "auto": "bash ./build.sh",
     "rmi": "docker rmi h55205l/ffandown:latest",
@@ -62,13 +60,14 @@
       "./runtime/**/*.js",
       "./runtime/**/**/*.js",
       "./runtime/*.js",
-      "node_modules/figlet/fonts/ANSI Shadow.flf"
+      "node_modules/figlet/fonts/ANSI Shadow.flf",
+      "node_modules/sqlite3/lib/bindings"
     ],
     "targets": [
       "node14-macos-arm64",
       "node14-macos-x64",
       "node14-windows-x64",
-      "node14-linuxstatic-x64",
+      "node14-linux-x64",
       "node14-linux-arm64",
       "node14-alpine-x64",
       "node14-alpine-arm64"
@@ -81,9 +80,6 @@
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-n": "^15.0.0",
     "eslint-plugin-promise": "^6.0.0",
-    "gulp": "^4.0.2",
-    "gulp-htmlmin": "^5.0.1",
-    "gulp-rename": "^2.0.0",
     "pkg": "^5.8.0",
     "rimraf": "^4.4.0"
   }

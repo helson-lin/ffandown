@@ -23,69 +23,16 @@
     </a>
 </p>
 
-## Version Description
-
-## v4.2.2
-fix: fix permission judgement error of ffmpeg
-feat:  add batch URL support: pass multiple URLs separated by commas
-`https://s8.fsvod1.com/20230428/VTjjzmIu/index.m3u8,https://s8.fsvod1.com/20230524/bW0SZkHJ/index.m3u8`
-
-## v4.2.1
-fix: Fixed m3u8 download 403 error
-perf: change ffmpeg binary download site to oss
-
-### v4.2
-Added log splitting
-Fixed dark theme font color issue
-Added version update prompt
-
-### Version 4.1
-
-perf: Optimized the problem of ffmpeg download process timeout (death) and failure to clear the process
-feat: Added support for screen recording: rtsmp/rtmp, automatically terminated after the live broadcast ends
-
-### Version 3
-✨ feat:
-1. Added multi-threaded transcoding,
-2. Supported DingTalk message notification,
-3. Added automatic generation of configuration files,
-4. Optimized Docker build method.
-
-🐞 fix:
-1. Fixed the failure issue of bark notification,
-2. Modified the config configuration directory.
-
-
-### Version 2
-
-Basic version: supports m3u8 video download and notification through Bark and Feishu, but has bugs. 
-This version requires downloading the `config.yml` file and the corresponding platform's executable file, and placing them in the same directory. It is not recommended to use this version.
-
 ## Release Notes
 
+suggest to use version v4.1 or higher
+
 The release platform executable file is packaged for commonly used platforms only. For other platform architectures, please use Docker or package them yourself.
-
-## Docker Installation
-
-CMD:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/config:/app/config h55205l/ffandown:v3`
-
-- `/home/media` is the directory for downloading media, and the default port is 8081
-- `/Uses/helson/config` is the directory for configuration files.
-
-## About the `config.yml` Configuration File
-
-If the `config.yml` configuration file is not found, the default configuration will be used and the configuration file will be automatically created in the `config` folder under the running directory.
-
-- port: The port on which the service listens.
-- downloadDir: The download directory, relative to the location of the executable file, or an absolute path (prefixed with `@`).
-- webhooks: The webhook notification address, which can use software such as DingTalk or Bark. `$TEXT` is a variable representing the name of the downloaded file (note that the variable is in all uppercase letters and only supports Bark)!!! Please manually modify the address⚠️
-- webhookType: `bark` | `'feishu'` ｜ `'dingding'`
-- thread: Whether to enable the Express multi-threaded service (disabled by default).
-- downloadThread: Whether to enable `ffmpeg` multi-threaded transcoding.
-- useFFmpegLib: Whether to automatically include ffmpeg. When the service starts, it will automatically download the corresponding platform's ffmpeg. If not enabled, it defaults to the local environment.
-
+[Release](https://github.com/helson-lin/ffandown/releases)
 
 ## Usage
+
+[Full Usage Documentation](https://ffandown.oimi.space)
 
 After the service is started, you can see the message `server runing on port: 8081`. Simply open `localhost:8081` in a browser to see the download page.
 

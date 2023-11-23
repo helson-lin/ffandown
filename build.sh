@@ -13,16 +13,12 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# echo -e "${GREEN}Checking for dist directory...${NC}"
-# # Remove dist directory if it exists
-# if [ -d "dist" ]; then
-#   echo -e "${GREEN}Removing existing dist directory...${NC}"
-#   npm run clean
-# fi
-
-# Gulp html
-# echo -e "${GREEN}Gulp Html...${NC}"
-# npm run gulp
+echo -e "${GREEN}Checking for dist directory...${NC}"
+# Remove dist directory if it exists
+if [ -d "dist" ]; then
+  echo -e "${GREEN}Removing existing dist directory...${NC}"
+  npm run clean
+fi
 
 # Build package
 echo -e "${GREEN}Building package...${NC}"

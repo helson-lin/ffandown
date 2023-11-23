@@ -8,8 +8,9 @@
     "start": "node bootstrap.js --debug=true",
     "dev": "nodemon",
     "clean": "rimraf dist",
+    "cp": "cp -R package/sqlite3/* ./node_modules/sqlite3/lib/binding/",
     "pkg": "pkg ./ --debug=true",
-    "build": "npm run clean && npm run pkg",
+    "build": "npm run clean && npm run cp && npm run pkg",
     "auto": "bash ./build.sh",
     "rmi": "docker rmi h55205l/ffandown:latest",
     "build:image": "docker build . -t h55205l/ffandown:latest",
@@ -80,7 +81,7 @@
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-n": "^15.0.0",
     "eslint-plugin-promise": "^6.0.0",
-    "pkg": "^5.8.0",
+    "pkg": "^5.8.1",
     "rimraf": "^4.4.0"
   }
 }

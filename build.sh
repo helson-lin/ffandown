@@ -13,6 +13,10 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# 移动sqlite3文件到node_modules/sqlite3/lib/binding
+echo -e "${GREEN}Moving sqlite3.node to node_modules/sqlite3/lib/binding...${NC}  "
+cp package/sqlite3/* ./node_modules/sqlite3/lib/binding/
+
 echo -e "${GREEN}Checking for dist directory...${NC}"
 # Remove dist directory if it exists
 if [ -d "dist" ]; then

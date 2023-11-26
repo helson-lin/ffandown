@@ -44,7 +44,7 @@ function createServer (port) {
         })
     })
     app.post('/down', jsonParser, (req, res) => {
-        const { name, url, preset, outputformat } = req.body
+        const { name, url, preset, outputformat, useragent } = req.body
         if (!url) {
             res.send({ code: 0, message: 'please check params' })
         } else {
@@ -52,14 +52,28 @@ function createServer (port) {
                 res.send('{"code": 2, "message":"url cant be null"}')
             } else {
                 try {
-                    this.createDownloadMission({ name, url, preset, outputformat }).then(() => {
-                        // console.log('下载成功', this.config)
-                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${url}`)
-                    }).catch((e) => {
-                        // console.log('download failed：' + e)
-                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${url}: ${e}`)
-                    },
-                    )
+                    const isMultiple = url.indexOf(',') !== -1 // 多个链接处理
+                    // 如果url是逗号分隔的多个链接处理
+                    if (isMultiple) {
+                        const urls = url.split(',')
+                        for (const urlItem of urls) {
+                            // eslint-disable-next-line max-len
+                            this.createDownloadMission({ url: urlItem, preset, useragent, outputformat }).then(() => {
+                                Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${urlItem}`)
+                            }).catch((e) => {
+                                // eslint-disable-next-line max-len
+                                Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${urlItem}: ${e}`)
+                            })
+                        }
+                    } else {
+                        this.createDownloadMission({ name, url, preset, useragent, outputformat }).then(() => {
+                            // console.log('下载成功', this.config)
+                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${url}`)
+                        }).catch((e) => {
+                            // console.log('download failed：' + e)
+                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${url}: ${e}`)
+                        })
+                    }
                     res.send({ code: 0, message: `${name}.mp4 is download !!!!` })
                 } catch (e) {
                     res.send({ code: 1, message: String(e) })

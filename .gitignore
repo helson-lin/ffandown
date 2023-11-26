@@ -2,6 +2,8 @@
 .idea
 logs/*
 ffandown
+database
+database/*
 node_modules
 dist/**
 media/*

@@ -35,12 +35,12 @@ function createServer (port) {
                     ws.send(Utils.sendWsMsg(list, 'list'))
                 }
             } catch (e) {
-                console.error(e)
+                Utils.LOG.error('client:' + msg)
             }
         })
         // close 事件表示客户端断开连接时执行的回调函数 
         ws.on('close', function (e) {
-            console.log('close connection')
+            Utils.LOG.info('close connection')
         })
     })
     app.post('/down', jsonParser, (req, res) => {

@@ -21,6 +21,9 @@
     <a href="/README.zh-CN.md">
         <img alt="lang" src="https://img.shields.io/badge/Lang-CN-brightgreen" />
     </a>
+    <a href="https://discord.gg/7UETpUwE">
+        <img alt="discord" src="https://img.shields.io/discord/1113103538948669461"/>
+    </a>
 </p>
 
 ## Release Notes

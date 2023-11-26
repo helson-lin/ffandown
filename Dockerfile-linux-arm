@@ -1,7 +1,21 @@
-FROM centos:7
-COPY ./dist/ffandown-linux-arm64 /app/
-workdir /app
-CMD chmod +x ffandown-linux-arm64
+FROM ubuntu:16.04
+
+# 维护者信息
+MAINTAINER "ffandown"
+
+# 创建文件夹app
+RUN mkdir /app
+
+ADD ./dist/ffandown-linux-arm64 /app
+
+WORKDIR /app
+
+# 设置可执行权限
+RUN chmod +x ffandown-linux-arm64
+
+# 设置默认命令
+CMD ["./ffandown-linux-arm64"]
+
 EXPOSE 8081
 
 ENTRYPOINT ["./ffandown-linux-arm64"]

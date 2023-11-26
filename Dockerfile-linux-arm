@@ -1,0 +1,7 @@
+FROM centos:7
+COPY ./dist/ffandown-linux-arm64 /app/
+workdir /app
+CMD chmod +x ffandown-linux-arm64
+EXPOSE 8081
+
+ENTRYPOINT ["./ffandown-linux-arm64"]

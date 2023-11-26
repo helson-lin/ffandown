@@ -36,7 +36,8 @@ The release platform executable file is packaged for commonly used platforms onl
 
 After the service is started, you can see the message `server runing on port: 8081`. Simply open `localhost:8081` in a browser to see the download page.
 
-![](https://pic.kblue.site/picgo/localhost_8081_.png)
+![FireShot Capture 007 - FFandown - 192 168 31 22](https://github.com/helson-lin/ffandown/assets/84565447/f1baae09-ff0f-4c28-95d7-ea3d4acf38b0)
+
 
 
 Alternatively, you can create a download using the API interface:

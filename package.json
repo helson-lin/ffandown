@@ -1,6 +1,6 @@
 {
   "name": "ffandown",
-  "version": "4.2.1",
+  "version": "5.0.5",
   "description": "ffandown is a m3u8 downloader",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",
@@ -25,6 +25,7 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.1",
+    "colors": "^1.4.0",
     "download": "^8.0.0",
     "express": "^4.18.2",
     "express-ws": "^5.0.2",
@@ -32,7 +33,8 @@
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^11.1.0",
     "js-yaml": "^4.1.0",
-    "oimi-helper": "^1.1.3",
+    "node-fetch": "2",
+    "oimi-helper": "^1.1.5",
     "pidusage": "^3.0.2",
     "request": "^2.88.2",
     "sequelize": "^6.31.0",

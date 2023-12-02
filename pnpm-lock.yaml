@@ -36,8 +36,8 @@ dependencies:
     specifier: '2'
     version: 2.6.9
   oimi-helper:
-    specifier: ^1.1.4
-    version: 1.1.4
+    specifier: ^1.1.5
+    version: 1.1.5
   pidusage:
     specifier: ^3.0.2
     version: 3.0.2
@@ -2914,8 +2914,8 @@ packages:
       es-abstract: 1.21.2
     dev: true
 
-  /oimi-helper@1.1.4:
-    resolution: {integrity: sha512-t7CF11NHoNIJpow3wd7Ryjr1subkYfYs7p5dwM8E65H69HSaYZLvYaJkBLtFXe7q1XnGxcDV04Suow/2g+fSBg==}
+  /oimi-helper@1.1.5:
+    resolution: {integrity: sha512-90KLx1jQfi7A+OxlJC2hkJuDYSOuVtGBmdwcKj5gHJMGQX8i6G6FvKJlkPIqDaLXWZuwQLIQkYhAI75vJhiJzQ==}
     hasBin: true
     dependencies:
       dotenv: 16.3.1

@@ -44,24 +44,26 @@ function createServer (port) {
         const data = req.body
         data.port = Number(data.port)
         modifyYml(data)
+        // sync data to config on instance
+        this.config = data
         res.send({ code: 0, message: 'update success' })
     })
     // get version info
     app.get('/version', async (req, res) => {
         try {
             const version = await Utils.getFrontEndVersion()
-            res.send({ code: 1, data: version })
+            res.send({ code: 0, data: version })
         } catch (e) {
-            res.send({ code: 0, message: e.message })
+            res.send({ code: 1, message: e.message })
         }
     })
     // upgrade front end
     app.get('/upgrade', async (req, res) => {
         try {
             await Utils.autoUpdateFrontEnd()
-            res.send({ code: 1, message: 'upgrade success' })
+            res.send({ code: 0, message: 'upgrade success' })
         } catch (e) {
-            res.send({ code: 0, message: e.message })
+            res.send({ code: 1, message: e.message })
         }
     })
     // create download mission
@@ -174,7 +176,7 @@ function createServer (port) {
                 }
                 res.send({ code: 0, message: 'delete mission' })
             } catch (e) {
-                res.send({ code: 2, message: 'system error' })
+                res.send({ code: 1, message: 'system error' })
             }
         }
     })
@@ -189,7 +191,7 @@ function createServer (port) {
                 res.send({ code: 0, data: realUrl })
             } catch (e) {
                 console.log(e)
-                res.send({ code: 2, message: 'system error' })
+                res.send({ code: 1, message: 'system error' })
             }
         }
     })

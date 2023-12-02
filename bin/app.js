@@ -10,7 +10,7 @@ const Utils = require('./utils/index')
 const jsonParser = bodyParser.json()
 
 // express static server
-app.use(express.static(path.join(__dirname, '../public')))
+app.use(express.static(path.join(process.cwd(), 'public')))
 /**
  * @description
  * @param {FFandown} this
@@ -18,14 +18,9 @@ app.use(express.static(path.join(__dirname, '../public')))
 function createServer (port) {
     ws(app).getWss('/')
 
-    const { getNetwork } = Utils
+    const { getNetwork, initializeFrontEnd, modifyYml } = Utils
     app.ws('/ws', (ws, req) => {
-        // console.log('连接成功！')
-        // wss.push(ws)
         ws.send(Utils.sendWsMsg('connected'))
-        // send给客户端发消息
-        // on是监听事件
-        // message表示服务端传来的数据
         ws.on('message', async (msg) => {
             try {
                 const data = JSON.parse(msg)
@@ -35,14 +30,41 @@ function createServer (port) {
                     ws.send(Utils.sendWsMsg(list, 'list'))
                 }
             } catch (e) {
-                Utils.LOG.error('client:' + msg)
+                Utils.LOG.error('client:' + e)
             }
         })
-        // close 事件表示客户端断开连接时执行的回调函数 
         ws.on('close', function (e) {
             Utils.LOG.info('close connection')
         })
     })
+    app.get('/config', async (req, res) => {
+        res.send({ code: 0, data: this.config })
+    })
+    app.post('/config', jsonParser, async (req, res) => {
+        const data = req.body
+        data.port = Number(data.port)
+        modifyYml(data)
+        res.send({ code: 0, message: 'update success' })
+    })
+    // get version info
+    app.get('/version', async (req, res) => {
+        try {
+            const version = await Utils.getFrontEndVersion()
+            res.send({ code: 1, data: version })
+        } catch (e) {
+            res.send({ code: 0, message: e.message })
+        }
+    })
+    // upgrade front end
+    app.get('/upgrade', async (req, res) => {
+        try {
+            await Utils.autoUpdateFrontEnd()
+            res.send({ code: 1, message: 'upgrade success' })
+        } catch (e) {
+            res.send({ code: 0, message: e.message })
+        }
+    })
+    // create download mission
     app.post('/down', jsonParser, (req, res) => {
         const { name, url, preset, outputformat, useragent } = req.body
         if (!url) {
@@ -59,19 +81,33 @@ function createServer (port) {
                         for (const urlItem of urls) {
                             // eslint-disable-next-line max-len
                             this.createDownloadMission({ url: urlItem, preset, useragent, outputformat }).then(() => {
+                                Utils.LOG.info('download success:' + urlItem)
                                 Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${urlItem}`)
+                                .catch(e => {
+                                    Utils.LOG.warn('message failed:' + e)
+                                })
                             }).catch((e) => {
+                                Utils.LOG.warn('download failed:' + e)
                                 // eslint-disable-next-line max-len
                                 Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${urlItem}: ${e}`)
+                                .catch(e => {
+                                    Utils.LOG.warn('message failed:' + e)
+                                })
                             })
                         }
                     } else {
                         this.createDownloadMission({ name, url, preset, useragent, outputformat }).then(() => {
-                            // console.log('下载成功', this.config)
+                            Utils.LOG.info('download success:' + url)
                             Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${url}`)
+                            .catch(e => {
+                                Utils.LOG.warn('message failed:' + e)
+                            })
                         }).catch((e) => {
-                            // console.log('download failed：' + e)
+                            Utils.LOG.warn('download failed:' + e)
                             Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${url}: ${e}`)
+                            .catch(e => {
+                                Utils.LOG.warn('message failed:' + e)
+                            })
                         })
                     }
                     res.send({ code: 0, message: `${name}.mp4 is download !!!!` })
@@ -81,20 +117,7 @@ function createServer (port) {
             }
         }
     })
-    app.post('/contDownload', jsonParser, async (req, res) => {
-        const { uid, name } = req.body
-        if (!uid) {
-            res.send({ code: 0, message: 'please check params' })
-        } else {
-            try {
-                // continue download
-                this.resumeDownload(uid)
-                res.send({ code: 0, message: `${name}.mp4 is continue download` })
-            } catch (e) {
-                res.send({ code: 1, message: String(e) })
-            }
-        }
-    })
+    // get download list
     app.get('/list', async (req, res) => {
         try {
             const list = await this.dbOperation.getAll()
@@ -133,8 +156,8 @@ function createServer (port) {
     })
     // delete mission
     app.delete('/del', async (req, res) => {
-        let uid = req.query.uid
-        if (uid.indexOf(',')) {
+        let uid = req.query?.uid
+        if (uid && uid.indexOf(',')) {
             uid = uid.split(',')
         }
         if (!uid || uid === undefined) {
@@ -155,6 +178,7 @@ function createServer (port) {
             }
         }
     })
+    // parser url
     app.get('/parser', async (req, res) => {
         const url = req.query.url
         if (!url || url === undefined) {
@@ -170,6 +194,8 @@ function createServer (port) {
         }
     })
     app.listen(port, async () => {
+        // initial front end resouce
+        await initializeFrontEnd()
         const list = await getNetwork()
         const listenString = list.reduce((pre, val) => {
             return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + port + '/')}`

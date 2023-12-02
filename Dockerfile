@@ -1,4 +1,4 @@
-FROM centos:7
+FROM ubuntu:18.04
 COPY ./dist/ffandown-linux-x64 /app/
 workdir /app
 CMD chmod +x ffandown-linux-x64

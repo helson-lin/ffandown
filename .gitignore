@@ -1,14 +1,14 @@
 .vscode
 .idea
-logs/*
+logs
 ffandown
+public/*
 database
-database/*
 node_modules
 dist/**
 media/*
 config/*
-**/*.db
+*.db
 lib/*
 *.mp4
 **/.DS_Store

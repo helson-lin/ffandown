@@ -21,6 +21,9 @@
     <a href="/README.zh-CN.md">
         <img alt="lang" src="https://img.shields.io/badge/Lang-CN-brightgreen" />
     </a>
+    <a href="https://discord.gg/7UETpUwE">
+        <img alt="discord" src="https://img.shields.io/discord/1113103538948669461"/>
+    </a>
 </p>
 
 ## Release Notes
@@ -36,7 +39,8 @@ The release platform executable file is packaged for commonly used platforms onl
 
 After the service is started, you can see the message `server runing on port: 8081`. Simply open `localhost:8081` in a browser to see the download page.
 
-![](https://pic.kblue.site/picgo/localhost_8081_.png)
+![FireShot Capture 007 - FFandown - 192 168 31 22](https://github.com/helson-lin/ffandown/assets/84565447/f1baae09-ff0f-4c28-95d7-ea3d4acf38b0)
+
 
 
 Alternatively, you can create a download using the API interface:

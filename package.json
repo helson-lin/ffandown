@@ -11,7 +11,6 @@
     "cp": "cp -R package/sqlite3/* ./node_modules/sqlite3/lib/binding/",
     "pkg": "pkg ./ --debug=true",
     "build": "npm run clean && npm run cp && npm run pkg",
-    "auto": "bash ./build.sh",
     "rmi": "docker rmi h55205l/ffandown:latest",
     "build:image": "docker build . -t h55205l/ffandown:latest",
     "test": "echo \"Error: no test specified\" && exit 1"

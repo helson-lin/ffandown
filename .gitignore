@@ -3,7 +3,7 @@
 logs
 ffandown
 public/*
-database
+database/*
 node_modules
 dist/**
 media/*

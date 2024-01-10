@@ -60,10 +60,10 @@ const getFrontEndVersion = async () => {
     return { ...versionInfo, current: localVersionInfo.version, upgrade, upd }
 }
 
-const isEmptyFrontEndResouce = () => {
+const isEmptyFrontEndResource = () => {
     fse.ensureDirSync(path.join(process.cwd(), 'public'))
     const allFiles = fs.readdirSync(path.join(process.cwd(), 'public'))
-    if (allFiles.length === 0) {
+    if (allFiles.filter(filename => !['.DS_Store'].includes(filename)).length === 0) {
         return true
     } else {
         return false
@@ -101,7 +101,7 @@ const autoUpdateFrontEnd = async () => {
 }
 
 const initializeFrontEnd = async () => {
-    const isEmpty = isEmptyFrontEndResouce()
+    const isEmpty = isEmptyFrontEndResource()
     if (isEmpty) await autoUpdateFrontEnd()
 }
 

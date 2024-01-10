@@ -36,8 +36,8 @@ dependencies:
     specifier: '2'
     version: 2.6.9
   oimi-helper:
-    specifier: ^1.1.5
-    version: 1.1.5
+    specifier: ^1.1.6
+    version: 1.1.6
   pidusage:
     specifier: ^3.0.2
     version: 3.0.2
@@ -327,7 +327,7 @@ packages:
     dev: false
 
   /@types/ms@0.7.31:
-    resolution: {integrity: sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==}
+    resolution: {integrity: sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==, tarball: https://r2.cnpmjs.org/@types/ms/-/ms-0.7.31.tgz}
     dev: false
 
   /@types/node@18.15.0:
@@ -358,7 +358,7 @@ packages:
     dev: false
 
   /abort-controller@3.0.0:
-    resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
+    resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==, tarball: https://r2.cnpmjs.org/abort-controller/-/abort-controller-3.0.0.tgz}
     engines: {node: '>=6.5'}
     dependencies:
       event-target-shim: 5.0.1
@@ -1125,7 +1125,7 @@ packages:
     dev: false
 
   /encoding@0.1.13:
-    resolution: {integrity: sha512-ETBauow1T35Y/WZMkio9jiM0Z5xjHHmJ4XmjZOq1l/dXz3lr2sRn87nJy20RupqSh1F2m3HHPSp8ShIPQJrJ3A==}
+    resolution: {integrity: sha512-ETBauow1T35Y/WZMkio9jiM0Z5xjHHmJ4XmjZOq1l/dXz3lr2sRn87nJy20RupqSh1F2m3HHPSp8ShIPQJrJ3A==, tarball: https://r2.cnpmjs.org/encoding/-/encoding-0.1.13.tgz}
     requiresBuild: true
     dependencies:
       iconv-lite: 0.6.3
@@ -1482,12 +1482,12 @@ packages:
     dev: false
 
   /event-target-shim@5.0.1:
-    resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
+    resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==, tarball: https://r2.cnpmjs.org/event-target-shim/-/event-target-shim-5.0.1.tgz}
     engines: {node: '>=6'}
     dev: false
 
   /events@3.3.0:
-    resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
+    resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==, tarball: https://r2.cnpmjs.org/events/-/events-3.3.0.tgz}
     engines: {node: '>=0.8.x'}
     dev: false
 
@@ -2504,7 +2504,7 @@ packages:
     dev: true
 
   /lodash.throttle@4.1.1:
-    resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==}
+    resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==, tarball: https://r2.cnpmjs.org/lodash.throttle/-/lodash.throttle-4.1.1.tgz}
     dev: false
 
   /lodash@4.17.21:
@@ -2804,7 +2804,7 @@ packages:
       whatwg-url: 5.0.0
 
   /node-gyp@8.4.1:
-    resolution: {integrity: sha512-olTJRgUtAb/hOXG0E93wZDs5YiJlgbXxTwQAFHyNlRsXQnYzUaF2aGgujZbw+hR8aF4ZG/rST57bWMWD16jr9w==}
+    resolution: {integrity: sha512-olTJRgUtAb/hOXG0E93wZDs5YiJlgbXxTwQAFHyNlRsXQnYzUaF2aGgujZbw+hR8aF4ZG/rST57bWMWD16jr9w==, tarball: https://r2.cnpmjs.org/node-gyp/-/node-gyp-8.4.1.tgz}
     engines: {node: '>= 10.12.0'}
     hasBin: true
     requiresBuild: true
@@ -2914,8 +2914,8 @@ packages:
       es-abstract: 1.21.2
     dev: true
 
-  /oimi-helper@1.1.5:
-    resolution: {integrity: sha512-90KLx1jQfi7A+OxlJC2hkJuDYSOuVtGBmdwcKj5gHJMGQX8i6G6FvKJlkPIqDaLXWZuwQLIQkYhAI75vJhiJzQ==}
+  /oimi-helper@1.1.6:
+    resolution: {integrity: sha512-pwoNA/VawdYErCTgkY0+8ea9JJ2+JUU+FrQEcLXiBlrvJypMvwTht1AfVyrZyYol/tLEQq16bOpY2oSONcTdrA==}
     hasBin: true
     dependencies:
       dotenv: 16.3.1
@@ -3209,7 +3209,7 @@ packages:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
 
   /process@0.11.10:
-    resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==}
+    resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==, tarball: https://r2.cnpmjs.org/process/-/process-0.11.10.tgz}
     engines: {node: '>= 0.6.0'}
     dev: false
 

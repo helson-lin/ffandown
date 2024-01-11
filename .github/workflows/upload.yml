@@ -58,6 +58,15 @@ jobs:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Prepare Docker Tags
+        id: docker_tags
+        run: |
+              if [[ "${{ env.TAG }}" == *Beta* ]]; then
+                echo "::set-output name=tags::h55205l/ffandown:${{ env.TAG }}"
+              else
+                echo "::set-output name=tags::h55205l/ffandown:latest,h55205l/ffandown:${{ env.TAG }}"
+              fi
+
       - name: Build And Push Docker image
         uses: docker/build-push-action@v3
         with:
@@ -65,7 +74,16 @@ jobs:
             file: Dockerfile
             push: true
             platforms: linux/amd64
-            tags: h55205l/ffandown:latest,h55205l/ffandown:${{ env.TAG }}
+            tags: ${{ steps.docker_tags.outputs.tags }}
+
+      - name: Prepare Arm Docker Tags
+        id: docker_arm_tags
+        run: |
+              if [[ "${{ env.TAG }}" == *Beta* ]]; then
+                echo "::set-output name=tags::h55205l/ffandown:arm64-${{ env.TAG }}"
+              else
+                echo "::set-output name=tags::h55205l/ffandown:arm64,h55205l/ffandown:arm64-${{ env.TAG }}"
+              fi
 
       - name: Build And Push Arm64 Docker image
         uses: docker/build-push-action@v3
@@ -74,4 +92,4 @@ jobs:
             file: Dockerfile-linux-arm
             push: true
             platforms: linux/arm64
-            tags: h55205l/ffandown:arm64,h55205l/ffandown:arm64-${{ env.TAG }}
+            tags: ${{ steps.docker_arm_tags.outputs.tags }}

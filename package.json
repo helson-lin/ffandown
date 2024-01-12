@@ -8,7 +8,7 @@
     "start": "node bootstrap.js --debug=true",
     "dev": "nodemon",
     "clean": "rimraf dist",
-    "cp": "cp -R package/sqlite3/* ./node_modules/sqlite3/lib/binding/",
+    "cp": "cp -R package/* ./node_modules/sqlite3/lib/binding/",
     "pkg": "pkg ./ --debug=true",
     "build": "npm run clean && npm run cp && npm run pkg",
     "rmi": "docker rmi h55205l/ffandown:latest",

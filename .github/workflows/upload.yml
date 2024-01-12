@@ -35,7 +35,7 @@ jobs:
         run: npm install
         
       - name: Copy SqlLite
-        run: mkdir -p ./node_modules/sqlite3/lib/binding/ && cp -R package/sqlite3/* ./node_modules/sqlite3/lib/binding/
+        run: mkdir -p ./node_modules/sqlite3/lib/binding/ && cp -R package/* ./node_modules/sqlite3/lib/binding/
 
       - name: Build Release
         run: npm run pkg

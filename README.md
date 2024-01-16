@@ -21,8 +21,8 @@
     <a href="/README.zh-CN.md">
         <img alt="lang" src="https://img.shields.io/badge/Lang-CN-brightgreen" />
     </a>
-    <a href="https://discord.gg/7UETpUwE">
-        <img alt="discord" src="https://img.shields.io/discord/1113103538948669461"/>
+    <a href="https://t.me/+alHp7377d3E1MjZh">
+        <img alt="telegram" src="https://img.shields.io/badge/ffandown-brightgreen.svg?logo=telegram&color=#4F4F4F" />
     </a>
 </p>
 

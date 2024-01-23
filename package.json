@@ -61,13 +61,13 @@
       "node_modules/sqlite3/lib/binding/**/*"
     ],
     "targets": [
-      "node14-macos-arm64",
-      "node14-macos-x64",
-      "node14-windows-x64",
-      "node14-linux-x64",
-      "node14-linux-arm64",
-      "node14-alpine-x64",
-      "node14-alpine-arm64"
+      "node16-macos-arm64",
+      "node16-macos-x64",
+      "node16-windows-x64",
+      "node16-linux-x64",
+      "node16-linux-arm64",
+      "node16-alpine-x64",
+      "node16-alpine-arm64"
     ],
     "outputPath": "dist"
   },

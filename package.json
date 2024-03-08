@@ -33,7 +33,7 @@
     "fs-extra": "^11.1.0",
     "js-yaml": "^4.1.0",
     "node-fetch": "2",
-    "oimi-helper": "^1.1.8",
+    "oimi-helper": "^1.2.7",
     "pidusage": "^3.0.2",
     "request": "^2.88.2",
     "sequelize": "^6.31.0",

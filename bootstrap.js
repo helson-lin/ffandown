@@ -5,7 +5,10 @@ const Oimi = require('oimi-helper')
 const config = Utils.readConfig()
 const figlet = require('figlet')
 const colors = require('colors')
-const oimi = new Oimi(config.downloadDir, { thread: config.downloadThread, verbose: false })
+const oimi = new Oimi(
+    config.downloadDir, 
+    { thread: config.thread, verbose: false, maxDownloadNum: config.maxDownloadNum },
+)
 Oimi.prototype.config = config
 console.log(colors.blue(figlet.textSync('ffandown', 'ANSI Shadow')))
 oimi.ready().then(() => {

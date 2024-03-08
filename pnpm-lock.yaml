@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   body-parser:
     specifier: ^1.20.1
@@ -32,8 +36,8 @@ dependencies:
     specifier: '2'
     version: 2.6.9
   oimi-helper:
-    specifier: ^1.1.7
-    version: 1.1.7
+    specifier: ^1.2.7
+    version: 1.2.7
   pidusage:
     specifier: ^3.0.2
     version: 3.0.2
@@ -2910,8 +2914,8 @@ packages:
       es-abstract: 1.21.2
     dev: true
 
-  /oimi-helper@1.1.7:
-    resolution: {integrity: sha512-xJkv2/OjMVJcngvkCCTGEYSPygB21/cQadIvStJokKki7nN1eL1ZXd8VemSXpTn+lf1ZCatbR4sOKGHIkQQU5w==}
+  /oimi-helper@1.2.7:
+    resolution: {integrity: sha512-BVuoej6JWO4HqdOGS9MbOxVtpDpP8HxMHmdXLJBwFPWa6T1Uo2gMW4iPHRLhoofD4BoR6w8si7CtMi4PuqJ5/w==}
     hasBin: true
     dependencies:
       dotenv: 16.3.1
@@ -4370,7 +4374,3 @@ packages:
       - bufferutil
       - utf-8-validate
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

@@ -9,10 +9,9 @@ const DEFAULT_OPTIONS = {
     downloadDir: '/media/', 
     webhooks: '',
     webhookType: 'bark',
-    thread: false,
-    downloadThread: true,
+    thread: true,
     useFFmpegLib: true,
-    proxyUrl: null,
+    maxDownloadNum: 5,
 }
 /**
  * @description: find config.yaml location
@@ -69,17 +68,16 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
         createYml({ ...option, downloadDir: '/media/' })
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString())
-        const { port, downloadDir, webhooks, webhookType, useFFmpegLib, downloadThread, proxyUrl, debug } = data
+        const { port, downloadDir, maxDownloadNum, webhooks, webhookType, useFFmpegLib, debug } = data
         if (port) option.port = port
-        if (proxyUrl) option.proxyUrl = proxyUrl
         if (downloadDir) option.downloadDir = downloadDir
         if (webhooks) option.webhooks = webhooks
         if (webhookType) option.webhookType = webhookType
-        if (downloadThread !== undefined) option.downloadThread = downloadThread
+        if (maxDownloadNum) option.maxDownloadNum = maxDownloadNum
         if (useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
         if (debug) process.env.DEBUG = true
     }
     return option
 }
 
-module.exports = { readConfig, modifyYml }
+module.exports = { readConfig, modifyYml, EnsureDonwloadPath }

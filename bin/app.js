@@ -121,8 +121,11 @@ function createServer (port) {
     })
     // get download list
     app.get('/list', async (req, res) => {
+        const { current, pageSize, status } = req.query
         try {
-            const list = await this.dbOperation.getAll()
+            const list = await this.dbOperation.queryByPage({
+                pageNumber: current, pageSize, status, sortField: 'crt_tm', sortOrder: 'ASC',
+            })
             res.send({ code: 0, data: list })
         } catch (e) {
             res.send({ code: 1, message: String(e) })
@@ -166,14 +169,7 @@ function createServer (port) {
             res.send({ code: 1, message: 'please provide a valid  uid' })
         } else {
             try {
-                if (uid instanceof Array) {
-                    for (let uidItem of uid) {
-                        // 同步删除文件
-                        await this.deleteMission(uidItem)
-                    }
-                } else {
-                    await this.deleteMission(uid)
-                }
+                await this.dbOperation.batchDelete(uid)
                 res.send({ code: 0, message: 'delete mission' })
             } catch (e) {
                 res.send({ code: 1, message: 'system error' })
@@ -190,7 +186,6 @@ function createServer (port) {
                 const realUrl = await this.parserUrl(url)
                 res.send({ code: 0, data: realUrl })
             } catch (e) {
-                console.log(e)
                 res.send({ code: 1, message: 'system error' })
             }
         }

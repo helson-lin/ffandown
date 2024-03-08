@@ -2,7 +2,6 @@ port: 8081
 downloadDir: /media/
 webhooks: https://api.day.app/wmKLMC4xdxL9djWCMc3SWP/ffandown下载/$TEXT
 webhookType: bark
-thread: false
-downloadThread: true
+thread: true
 useFFmpegLib: true
-proxyUrl: null
+maxDownloadNum: '3'

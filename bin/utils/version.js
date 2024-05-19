@@ -6,7 +6,8 @@ const path = require('path')
 const download = require('download')
 
 const getLatestVersion = async (repo = 'ffandown-front') => {
-    const response = await fetch(`https://api.github.com/repos/helson-lin/${repo}/releases/latest`)
+    // eslint-disable-next-line max-len
+    const response = await fetch(`https://ipera.oimi.space/https://api.github.com/repos/helson-lin/${repo}/releases/latest`)
     const data = await response.json()
     const { tag_name, assets, body } = data
     return {

@@ -68,7 +68,10 @@ function createServer (port) {
     })
     // create download mission
     app.post('/down', jsonParser, (req, res) => {
-        const { name, url, preset, outputformat, useragent } = req.body
+        // TODO: 新增参数dir 实现自动目录
+        // 前端页面需要可以获取目录地址
+        const { name, url, preset, outputformat, useragent, dir } = req.body
+        console.log(req.body, 'query')
         if (!url) {
             res.send({ code: 0, message: 'please check params' })
         } else {
@@ -82,7 +85,7 @@ function createServer (port) {
                         const urls = url.split(',')
                         for (const urlItem of urls) {
                             // eslint-disable-next-line max-len
-                            this.createDownloadMission({ url: urlItem, preset, useragent, outputformat }).then(() => {
+                            this.createDownloadMission({ url: urlItem, dir, preset, useragent, outputformat }).then(() => {
                                 Utils.LOG.info('download success:' + urlItem)
                                 Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${urlItem}`)
                                 .catch(e => {
@@ -98,7 +101,14 @@ function createServer (port) {
                             })
                         }
                     } else {
-                        this.createDownloadMission({ name, url, preset, useragent, outputformat }).then(() => {
+                        this.createDownloadMission({ 
+                            name, 
+                            url,
+                            dir,
+                            preset,
+                            useragent,
+                            outputformat, 
+                        }).then(() => {
                             Utils.LOG.info('download success:' + url)
                             Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${url}`)
                             .catch(e => {
@@ -128,6 +138,7 @@ function createServer (port) {
             })
             res.send({ code: 0, data: list })
         } catch (e) {
+            Utils.LOG.error(e)
             res.send({ code: 1, message: String(e) })
         }
     })
@@ -141,6 +152,7 @@ function createServer (port) {
                 await this.pauseMission(uid)
                 res.send({ code: 0 })
             } catch (e) {
+                Utils.LOG.error(e)
                 res.send({ code: 1, message: String(e) })
             }
         }
@@ -155,6 +167,7 @@ function createServer (port) {
                 await this.resumeDownload(uid)
                 res.send({ code: 0 })
             } catch (e) {
+                Utils.LOG.error(e)
                 res.send({ code: 1, message: String(e) })
             }
         }
@@ -172,8 +185,26 @@ function createServer (port) {
                 await this.dbOperation.batchDelete(uid)
                 res.send({ code: 0, message: 'delete mission' })
             } catch (e) {
+                Utils.LOG.error(e)
                 res.send({ code: 1, message: 'system error' })
             }
+        }
+    })
+    app.get('/dir', async (req, res) => {
+        try {
+            const dirs = await Utils.getDirectories(
+                path.join(process.cwd(), this.config.downloadDir), 
+                this.config.downloadDir,
+            )
+            dirs.unshift({
+                label: '/media/',
+                value: '/media/',
+
+            })
+            res.send({ code: 0, data: dirs })
+        } catch (e) {
+            Utils.LOG.error(e)
+            res.send({ code: 1, message: 'system error' })
         }
     })
     // parser url

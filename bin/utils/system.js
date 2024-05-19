@@ -1,5 +1,7 @@
 const childProcess = require('child_process')
 const si = require('systeminformation')
+const fs = require('fs')
+const path = require('path')
 const os = require('os')
 /**
  * @description exec command
@@ -61,4 +63,28 @@ const getNetwork = () => {
  */
 const getCpuNum = () => os.cpus().length
 
-module.exports = { getCpuNum, getNetwork, chmod, execCmd }
+/**
+ * @description 获取媒体目录下的所有的目录
+ * @param {string} dirPath 
+ * @param {string} basePath 
+ * @returns 
+ */
+const getDirectories = async (dirPath, basePath) => {
+    let directories = []
+    const items = await fs.readdirSync(dirPath, { withFileTypes: true })
+    for (const item of items) {
+        if (item.isDirectory()) {
+            const fullPath = path.join(dirPath, item.name)
+            const relativePath = `${basePath}/${item.name}`.replaceAll('//', '/')
+            const children = await getDirectories(fullPath, relativePath)
+            directories.push({
+                label: relativePath,
+                value: relativePath,
+            })
+            directories = directories.concat(children)
+        }
+    }
+    return directories
+}
+
+module.exports = { getCpuNum, getNetwork, chmod, execCmd, getDirectories }

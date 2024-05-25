@@ -68,64 +68,63 @@ function createServer (port) {
     })
     // create download mission
     app.post('/down', jsonParser, (req, res) => {
-        // TODO: 新增参数dir 实现自动目录
-        // 前端页面需要可以获取目录地址
-        const { name, url, preset, outputformat, useragent, dir } = req.body
-        console.log(req.body, 'query')
+        let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix } = req.body
+        // if the config option have preset and outputformat, and body have't will auto replace
+        if (!preset && this.config.preset) preset = this.config.preset
+        if (!outputformat && this.config.outputformat) outputformat = this.config.outputformat
+        url = Utils.getRealUrl(url)
         if (!url) {
-            res.send({ code: 0, message: 'please check params' })
+            res.send({ code: 1, message: 'please check params' })
         } else {
-            if (!url) {
-                res.send('{"code": 2, "message":"url cant be null"}')
-            } else {
-                try {
-                    const isMultiple = url.indexOf(',') !== -1 // 多个链接处理
-                    // 如果url是逗号分隔的多个链接处理
-                    if (isMultiple) {
-                        const urls = url.split(',')
-                        for (const urlItem of urls) {
+            try {
+                const isMultiple = Array.isArray(url)
+                // 如果url是逗号分隔的多个链接处理
+                if (isMultiple) {
+                    for (const urlItem of url) {
+                        // eslint-disable-next-line max-len
+                        this.createDownloadMission({ url: urlItem, dir, preset, enableTimeSuffix: enableTimeSuffix ?? false, useragent, outputformat }).then(() => {
+                            Utils.LOG.info('download success:' + urlItem)
                             // eslint-disable-next-line max-len
-                            this.createDownloadMission({ url: urlItem, dir, preset, useragent, outputformat }).then(() => {
-                                Utils.LOG.info('download success:' + urlItem)
-                                Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${urlItem}`)
-                                .catch(e => {
-                                    Utils.LOG.warn('message failed:' + e)
-                                })
-                            }).catch((e) => {
-                                Utils.LOG.warn('download failed:' + e)
-                                // eslint-disable-next-line max-len
-                                Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${urlItem}: ${e}`)
-                                .catch(e => {
-                                    Utils.LOG.warn('message failed:' + e)
-                                })
-                            })
-                        }
-                    } else {
-                        this.createDownloadMission({ 
-                            name, 
-                            url,
-                            dir,
-                            preset,
-                            useragent,
-                            outputformat, 
-                        }).then(() => {
-                            Utils.LOG.info('download success:' + url)
-                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载成功', `${url}`)
+                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download success', `${urlItem}`)
                             .catch(e => {
                                 Utils.LOG.warn('message failed:' + e)
                             })
                         }).catch((e) => {
                             Utils.LOG.warn('download failed:' + e)
-                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown下载失败', `${url}: ${e}`)
+                            // eslint-disable-next-line max-len
+                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download failed', `${urlItem}: ${e}`)
                             .catch(e => {
                                 Utils.LOG.warn('message failed:' + e)
                             })
                         })
                     }
-                    res.send({ code: 0, message: `${name}.mp4 is download !!!!` })
-                } catch (e) {
-                    res.send({ code: 1, message: String(e) })
+                } else {
+                    this.createDownloadMission({ 
+                        name, 
+                        url,
+                        dir,
+                        preset,
+                        enableTimeSuffix: enableTimeSuffix ?? false,
+                        useragent,
+                        outputformat, 
+                    }).then(() => {
+                        Utils.LOG.info('download success:' + url)
+                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download success', `${url}`)
+                        .catch(e => {
+                            Utils.LOG.warn('message failed:' + e)
+                        })
+                    }).catch((e) => {
+                        Utils.LOG.warn('download failed:' + e)
+                        // eslint-disable-next-line max-len
+                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download failed', `${url}: ${e}`)
+                        .catch(e => {
+                            Utils.LOG.warn('message failed:' + e)
+                        })
+                    })
                 }
+                res.send({ code: 0, message: `${name} video download mission create success` })
+            } catch (e) {
+                res.send({ code: 1, message: String(e) })
             }
         }
     })
@@ -182,11 +181,26 @@ function createServer (port) {
             res.send({ code: 1, message: 'please provide a valid  uid' })
         } else {
             try {
-                await this.dbOperation.batchDelete(uid)
-                res.send({ code: 0, message: 'delete mission' })
+                await this.deleteDownload(uid)
+                res.send({ code: 0, message: 'delete mission success' })
             } catch (e) {
                 Utils.LOG.error(e)
-                res.send({ code: 1, message: 'system error' })
+                res.send({ code: 1, message: String(e) })
+            }
+        }
+    })
+    // stop mission
+    app.post('/stop', async (req, res) => {
+        const uid = req.query?.uid
+        if (!uid || uid === undefined) {
+            res.send({ code: 1, message: 'please provide a valid  uid' })
+        } else {
+            try {
+                await this.stopDownload(uid)
+                res.send({ code: 0, message: 'stop mission success' })
+            } catch (e) {
+                Utils.LOG.error(e)
+                res.send({ code: 1, message: String(e) })
             }
         }
     })

@@ -12,7 +12,12 @@ const DEFAULT_OPTIONS = {
     thread: true,
     useFFmpegLib: true,
     maxDownloadNum: 5,
+    preset: 'medium',
+    outputformat: 'mp4',
+    enableTimeSuffix: false,
 }
+const OUTPUTFORMAT_OPTIONS = ['mp4', 'mov', 'flv', 'avi']
+const PRESET_OPTIONS = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow']
 /**
  * @description: find config.yaml location
  * @return {string}
@@ -68,13 +73,20 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
         createYml({ ...option, downloadDir: '/media/' })
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString())
-        const { port, downloadDir, maxDownloadNum, webhooks, webhookType, useFFmpegLib, debug } = data
+        const { 
+            port, downloadDir, maxDownloadNum, webhooks, enableTimeSuffix,
+            webhookType, preset, outputformat, useFFmpegLib, debug, 
+        } = data
         if (port) option.port = port
         if (downloadDir) option.downloadDir = downloadDir
         if (webhooks) option.webhooks = webhooks
         if (webhookType) option.webhookType = webhookType
         if (maxDownloadNum) option.maxDownloadNum = maxDownloadNum
         if (useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
+        // check preset and outputformat is legal
+        if (preset && PRESET_OPTIONS.includes(preset)) option.preset = preset
+        if (outputformat && OUTPUTFORMAT_OPTIONS.includes(outputformat)) option.outputformat = outputformat
+        if (enableTimeSuffix) option.enableTimeSuffix = enableTimeSuffix
         if (debug) process.env.DEBUG = true
     }
     return option

@@ -87,4 +87,23 @@ const getDirectories = async (dirPath, basePath) => {
     return directories
 }
 
-module.exports = { getCpuNum, getNetwork, chmod, execCmd, getDirectories }
+const isBase64 = (str) => {
+    try {
+        // 尝试将字符串解码为Buffer
+        const buffer = Buffer.from(str, 'base64')
+        // 如果解码成功，检查解码后的Buffer是否与原始字符串相同
+        return buffer.toString('base64') === str
+    } catch (err) {
+        // 如果解码失败，返回false
+        return false
+    }
+}
+
+const getRealUrl = (str) => {
+    const urlArray = str.split('\n') ?? []
+    if (urlArray.length === 0) return ''
+    if (urlArray.length === 1) return urlArray[0]
+    return urlArray
+}
+
+module.exports = { getCpuNum, getNetwork, chmod, execCmd, getDirectories, getRealUrl }

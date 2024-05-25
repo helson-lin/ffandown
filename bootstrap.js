@@ -7,7 +7,11 @@ const figlet = require('figlet')
 const colors = require('colors')
 const oimi = new Oimi(
     config.downloadDir, 
-    { thread: config.thread, verbose: false, maxDownloadNum: config.maxDownloadNum },
+    { 
+        thread: config.thread, 
+        verbose: false, 
+        maxDownloadNum: config.maxDownloadNum, 
+    },
 )
 Oimi.prototype.config = config
 console.log(colors.blue(figlet.textSync('ffandown', 'ANSI Shadow')))
@@ -27,6 +31,7 @@ process.on('SIGINT', async function () {
     }
 })
 process.on('exit', async () => {
+    // 退出之前，杀掉进程
     await oimi.killAll()
     console.log('\n Server stop')
 })

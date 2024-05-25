@@ -2,8 +2,8 @@
 .idea
 logs
 ffandown
-public/*
-database/*
+/public/
+/database/
 node_modules
 dist/**
 media/*

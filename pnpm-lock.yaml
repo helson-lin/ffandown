@@ -36,8 +36,8 @@ dependencies:
     specifier: '2'
     version: 2.6.9
   oimi-helper:
-    specifier: ^1.2.8
-    version: 1.2.8
+    specifier: ^1.3.3
+    version: 1.3.3
   pidusage:
     specifier: ^3.0.2
     version: 3.0.2
@@ -468,6 +468,7 @@ packages:
   /are-we-there-yet@4.0.1:
     resolution: {integrity: sha512-2zuA+jpOYBRgoBCfa+fB87Rk0oGJjDX6pxGzqH6f33NzUhG25Xur6R0u0Z9VVAq8Z5JvQpQI6j6rtonuivC8QA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+    deprecated: This package is no longer supported.
     dependencies:
       delegates: 1.0.0
       readable-stream: 4.4.2
@@ -1835,6 +1836,7 @@ packages:
   /gauge@5.0.1:
     resolution: {integrity: sha512-CmykPMJGuNan/3S4kZOpvvPYSNqSHANiWnh9XcMU2pSjtBfF0XzZ2p1bFAxTbnFxyBuPxQYHhzwaoOmUdqzvxQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+    deprecated: This package is no longer supported.
     dependencies:
       aproba: 2.0.0
       color-support: 1.1.3
@@ -2866,6 +2868,7 @@ packages:
   /npmlog@7.0.1:
     resolution: {integrity: sha512-uJ0YFk/mCQpLBt+bxN88AKd+gyqZvZDbtiNxk6Waqcj2aPRyfVx8ITawkyQynxUagInjdYT1+qj4NfA5KJJUxg==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+    deprecated: This package is no longer supported.
     dependencies:
       are-we-there-yet: 4.0.1
       console-control-strings: 1.1.0
@@ -2914,8 +2917,8 @@ packages:
       es-abstract: 1.21.2
     dev: true
 
-  /oimi-helper@1.2.8:
-    resolution: {integrity: sha512-KrLOu3reFjt1xfeo289jFsyFQeoWJMCePKac/YUNOTu1bORDBqIyJrLKLkyl6/GgGCElnhIK0g8X7/B93p2A1Q==}
+  /oimi-helper@1.3.3:
+    resolution: {integrity: sha512-WyoyPwEzkfkMA+6bmoU8LdIxByqRl8y4h7VoF5rOk66vCIkDV55A+qcBbqvsrIW3kpFlwt4mfmz9JXP9sHxwSA==}
     hasBin: true
     dependencies:
       dotenv: 16.3.1

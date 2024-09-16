@@ -1,7 +1,7 @@
 port: 8081
 downloadDir: /media/
-webhooks: ''
-webhookType: bark
+webhooks: 'https://open.feishu.cn/open-apis/bot/v2/hook/ec34fee9-5695-4e2d-8938-129e71656ad2'
+webhookType: feishu
 thread: true
 useFFmpegLib: true
 maxDownloadNum: 5

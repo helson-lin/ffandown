@@ -25,7 +25,7 @@ const getFeiShuBody = (text, More) => {
         content: {
             post: {
                 zh_cn: {
-                    title: '文件下载通知',
+                    title: 'ffandown',
                     content,
                 },
             },

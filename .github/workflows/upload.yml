@@ -33,9 +33,6 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Install Dependencies
         run: npm install
-        
-      - name: Copy SqlLite
-        run: mkdir -p ./node_modules/sqlite3/lib/binding/ && cp -R package/* ./node_modules/sqlite3/lib/binding/
 
       - name: Build Release
         run: npm run pkg

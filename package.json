@@ -8,8 +8,7 @@
     "start": "node bootstrap.js --debug=true",
     "dev": "nodemon",
     "clean": "rimraf dist",
-    "cp": "cp -R package/* ./node_modules/sqlite3/lib/binding/",
-    "pkg": "pkg ./ --debug=true",
+    "pkg": "node build.js",
     "build": "npm run clean && npm run cp && npm run pkg",
     "rmi": "docker rmi h55205l/ffandown:latest",
     "build:image": "docker build . -t h55205l/ffandown:latest",
@@ -61,18 +60,17 @@
       "node_modules/sqlite3/lib/binding/**/*"
     ],
     "targets": [
-      "node16-macos-arm64",
-      "node16-macos-x64",
-      "node16-windows-x64",
-      "node16-linux-x64",
-      "node16-linux-arm64",
-      "node16-alpine-x64",
-      "node16-alpine-arm64"
+      "node18-macos-arm64",
+      "node18-macos-x64",
+      "node18-windows-x64",
+      "node18-linux-x64",
+      "node18-linux-arm64",
+      "node18-alpine-x64",
+      "node18-alpine-arm64"
     ],
     "outputPath": "dist"
   },
   "devDependencies": {
-    "colors": "^1.4.0",
     "eslint": "^8.0.1",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.25.2",
@@ -80,5 +78,8 @@
     "eslint-plugin-promise": "^6.0.0",
     "pkg": "^5.8.1",
     "rimraf": "^4.4.0"
+  },
+  "engines": {
+    "node": ">=18.20.3"
   }
 }

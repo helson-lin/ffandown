@@ -1,10 +1,10 @@
-const CONFIG = require('./config')
-const PROCESS = require('./process')
-const SYSTEM = require('./system')
-const MSG = require('./message')
-const WSHELPER = require('./ws')
-const VERSION = require('./version')
-const LOG = require('./log')
+const CONFIG = require('./config.js')
+const PROCESS = require('./process.js')
+const SYSTEM = require('./system.js')
+const MSG = require('./message.js')
+const WSHELPER = require('./ws.js')
+const VERSION = require('./version.js')
+const LOG = require('./log.js')
 module.exports = {
     ...CONFIG,
     ...PROCESS,

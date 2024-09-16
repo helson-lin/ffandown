@@ -2,11 +2,7 @@
 const childProcess = require('child_process')
 const si = require('systeminformation')
 const os = require('os')
-const m3u8ToMp4 = require('../m3u8')
-const logger = require('../log')
-const { msg } = require('./message')
-const converter = new m3u8ToMp4()
-const cpuNum = os.cpus().length
+const logger = require('./log')
 
 /**
  * @description exec command
@@ -57,38 +53,6 @@ const getNetwork = () => {
     })
 }
 
-/**
- * @description: download m3u8 video to local storage
- * @param {string} url m3u8 url
- * @param {string} name fielName
- * @param {string} filePath file output path
- * @param {string} webhooks webhooks url
- * @param {string} webhookType webhooks type
- * @return {Promise}
- */
-const download = (url, name, filePath, { webhooks, webhookType, downloadThread }) => {
-    return new Promise((resolve, reject) => {
-        converter
-        .setInputFile(url)
-        .setThreads(downloadThread ? cpuNum : 0)
-        .setOutputFile(filePath)
-        .start()
-        .then(res => {
-            if (webhooks) {
-                console.log('下载成功：' + name)
-                msg(webhooks, webhookType, `${name}.mp4 下载成功`)
-            }
-            resolve()
-        }).catch(err => {
-            console.log('下载失败', webhooks)
-            console.log('下载失败：' + err)
-            if (webhooks) {
-                msg(webhooks, webhookType, `${name}.mp4 下载失败`, err + '')
-            }
-            reject(err)
-        })
-    })
-}
 
 /**
  * @description check input url is be supported

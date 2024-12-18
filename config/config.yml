@@ -7,4 +7,4 @@ useFFmpegLib: true
 maxDownloadNum: 5
 preset: ultrafast
 outputformat: mp4
-enableTimeSuffix: false
+enableTimeSuffix: true

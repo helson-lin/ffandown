@@ -21,14 +21,15 @@ function createServer (port) {
     const { getNetwork, initializeFrontEnd, modifyYml } = Utils
 
     // registerEventCallback
-    this.registerEventCallback(({ name, status, url, message }) => {
+    this.registerEventCallback(({ name, status }) => {
         const isSuccess = status === '3'
         Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown notification', `${name}: ${isSuccess ? 'download successful' : 'download failed'}`)
+        .then(() => Utils.LOG.warn('message send successfuly'))
         .catch(e => {
             Utils.LOG.warn('message failed:' + e)
         })
     })
-
+    // websocket
     app.ws('/ws', (ws, req) => {
         ws.send(Utils.sendWsMsg('connected'))
         ws.on('message', async (msg) => {
@@ -38,6 +39,12 @@ function createServer (port) {
                 if (key === 'list') {
                     const list = await this.dbOperation.getAll()
                     ws.send(Utils.sendWsMsg(list, 'list'))
+                } else if(key === 'page') {
+                    const { current, pageSize, status } = data
+                    const list = await this.dbOperation.queryByPage({
+                        pageNumber: current, pageSize, status, sortField: 'crt_tm', sortOrder: 'ASC',
+                    })
+                    ws.send(Utils.sendWsMsg(list, 'page'))
                 }
             } catch (e) {
                 Utils.LOG.error('client:' + e)
@@ -47,6 +54,7 @@ function createServer (port) {
             Utils.LOG.info('close connection')
         })
     })
+
     app.get('/config', async (req, res) => {
         res.send({ code: 0, data: this.config })
     })
@@ -226,6 +234,20 @@ function createServer (port) {
             }
         }
     })
+    app.get('/testWebhook', async (req, res) => {
+        const { webhookType, webhooks } = req.query
+        try {
+            Utils.msg(webhooks, webhookType, 'ffandown notification', `this is a test notification`)
+            .then(() => {
+                res.send({ code: 0, message: 'success' })
+            })
+            .catch(e => {
+                res.send({ code: 1, message: e })
+            })
+        } catch (e) {
+            res.send({ code: 1, message: e })
+        }
+    })
     app.listen(port, async () => {
         // initial front end resouce
         try {
@@ -234,7 +256,6 @@ function createServer (port) {
             // download frontend static file error;
             console.warn(colors.red(e));
             process.exit(0)
-
         }
         const list = await getNetwork()
         const listenString = list.reduce((pre, val) => {

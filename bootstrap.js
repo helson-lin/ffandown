@@ -9,7 +9,7 @@ const oimi = new Oimi(
     config.downloadDir, 
     { 
         thread: config.thread, 
-        verbose: false, 
+        verbose: true, 
         maxDownloadNum: config.maxDownloadNum, 
     },
 )

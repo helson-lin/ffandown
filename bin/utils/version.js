@@ -89,34 +89,20 @@ const addVersionFile = (version, msg, upd = new Date().getTime()) => {
 }
 
 const autoUpdateFrontEnd = async () => {
-    const ORA = await import('ora')
-    const ora = ORA?.default
-    const spinner = ora({ 
-        text: `auto update frontend`,
+    log.info('ready to update frontend')
+    const { version, urls } = await getLatestVersion()
+    const { browser_download_url } = urls[0]
+    if (!browser_download_url) throw new Error('no latest release url found')
+    fse.ensureDirSync(path.join(process.cwd(), 'public'))
+    fse.emptyDirSync(path.join(process.cwd(), 'public'))
+    // add download supported log
+    log.info('start download frontend static file')
+    await download('https://nn.oimi.space/' + browser_download_url, path.join(process.cwd(), 'public'), {
+        filename: 'ffandown.zip',
+        extract: true,
     })
-    spinner.prefixText = '[ffandown]'
-    spinner.start()
-    try {
-        const { version, urls } = await getLatestVersion()
-        const { browser_download_url } = urls[0]
-        if (!browser_download_url) throw new Error('no latest release url found')
-        fse.ensureDirSync(path.join(process.cwd(), 'public'))
-        fse.emptyDirSync(path.join(process.cwd(), 'public'))
-        // add download supported log
-        spinner.info('downloading new version frontend')
-        await download('https://nn.oimi.space/' + browser_download_url, path.join(process.cwd(), 'public'), {
-            filename: 'ffandown.zip',
-            extract: true,
-        })
-        spinner.info('moving static file')
-        moveDistFile()
-        spinner.info('generate version file')
-        addVersionFile(version, '自动更新成功')
-        spinner.succeed('update frontend succeed')
-    } catch (e) {
-        spinner.fail('check update failed:')
-        throw e;
-    }
+    moveDistFile()
+    addVersionFile(version, 'update successfully')
 }
 
 const initializeFrontEnd = async () => {

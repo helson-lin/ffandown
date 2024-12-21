@@ -8,3 +8,4 @@ maxDownloadNum: 2
 preset: medium
 outputformat: mp4
 enableTimeSuffix: false
+debug: false

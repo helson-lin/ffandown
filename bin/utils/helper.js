@@ -147,16 +147,7 @@ const Helper = {
     async downloadAndSetEnv (url, libPath, type) {
         try {
             // download ffmpeg or ffprobe dependency
-            const ORA = await import('ora')
-            const ora = ORA?.default
-            const spinner = ora(`downloading ${type}...`).start()
-            try {
-                await download(url, 'lib', { extract: true })
-                spinner.succeed(`downloaded ${type}`)
-            } catch (error) {
-                spinner.fail(`download ${type} failed`)
-                throw error
-            }
+            await download(url, 'lib', { extract: true })
             this.setEnv(type, libPath)
             await this.chmod(libPath)
         } catch (e) {

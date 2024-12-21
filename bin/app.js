@@ -1,7 +1,6 @@
 /** express server */
 const express = require('express')
 const ws = require('express-ws')
-const i18n = require('i18n')
 const cluster = require('cluster')
 const path = require('path')
 const colors = require('colors')
@@ -9,21 +8,12 @@ const bodyParser = require('body-parser')
 const app = express()
 const Utils = require('./utils/index')
 const jsonParser = bodyParser.json()
-const Oimi = require('./index')
 
-// i18n
-i18n.configure({
-    locales: ['en', 'zh'], // 声明包含语言
-    directory: path.join(__dirname, '../locales'), // 设置语言文件目录
-    header: 'accept-language',
-    defaultLocale: 'zh', // 设置默认语言
-})
-app.use(i18n.init)
 // express static server
 app.use(express.static(path.join(process.cwd(), 'public')))
 /**
  * @description
- * @param port
+ * @param {FFandown} this
  */
 function createServer (port) {
     ws(app).getWss('/')
@@ -35,18 +25,18 @@ function createServer (port) {
         const { name, status } = data
         const isSuccess = status === '3'
         Utils.msg(
-            this.config.webhooks,
-            this.config.webhookType,
-            i18n.__('test_title'),
-            `${name}: ${isSuccess ? i18n.__('download_success') : `${i18n.__('download_failed')}:\n ${data?.message}`}`,
+            this.config.webhooks, 
+            this.config.webhookType, 
+            'ffandown notification', 
+            `${name}: ${isSuccess ? 'download successful' : `download failed: \n ${data.message}`}`,
         )
-        .then(() => Utils.LOG.warn(i18n.__('send_success')))
+        .then(() => Utils.LOG.warn('message send successfuly'))
         .catch(e => {
-            Utils.LOG.warn(`${i18n.__('send_failed')}:  ${String(e)}`)
+            Utils.LOG.warn('message failed:' + e)
         })
     })
     // websocket
-    app.ws('/ws', (ws) => {
+    app.ws('/ws', (ws, req) => {
         ws.send(Utils.sendWsMsg('connected'))
         ws.on('message', async (msg) => {
             try {
@@ -66,7 +56,7 @@ function createServer (port) {
                 Utils.LOG.error('client:' + e)
             }
         })
-        ws.on('close', function (e) {
+        ws.on('close', function () {
             Utils.LOG.info('close connection')
         })
     })
@@ -80,7 +70,7 @@ function createServer (port) {
         modifyYml(data)
         // sync data to config on instance
         this.config = data
-        res.send({ code: 0, message: res.__('update_success') })
+        res.send({ code: 0, message: 'update success' })
     })
     // get version info
     app.get('/version', async (req, res) => {
@@ -95,7 +85,7 @@ function createServer (port) {
     app.get('/upgrade', async (req, res) => {
         try {
             await Utils.autoUpdateFrontEnd()
-            res.send({ code: 0, message: res.__('update_success') })
+            res.send({ code: 0, message: 'upgrade success' })
         } catch (e) {
             res.send({ code: 1, message: e.message })
         }
@@ -103,12 +93,12 @@ function createServer (port) {
     // create download mission
     app.post('/down', jsonParser, (req, res) => {
         let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix } = req.body
-        // if the config option have preset and outputformat, and body haven't willed auto replace
+        // if the config option have preset and outputformat, and body have't will auto replace
         if (!preset && this.config.preset) preset = this.config.preset
         if (!outputformat && this.config.outputformat) outputformat = this.config.outputformat
         url = Utils.getRealUrl(url)
         if (!url) {
-            res.send({ code: 1, message: res.__('query_error') })
+            res.send({ code: 1, message: 'please check params' })
         } else {
             try {
                 const isMultiple = Array.isArray(url)
@@ -117,9 +107,9 @@ function createServer (port) {
                     for (const urlItem of url) {
                         // eslint-disable-next-line max-len
                         this.createDownloadMission({ url: urlItem, dir, preset, enableTimeSuffix: enableTimeSuffix ?? false, useragent, outputformat }).then(() => {
-                            Utils.LOG.info(`${i18n.__('create_success')}: ${urlItem}` )
+                            Utils.LOG.info('download mission created:' + urlItem)
                         }).catch((e) => {
-                            Utils.LOG.warn(`${i18n.__('create_failed')}: ${String(e)}` )
+                            Utils.LOG.warn('download mission create failed:' + e)
                         })
                     }
                 } else {
@@ -132,12 +122,12 @@ function createServer (port) {
                         useragent,
                         outputformat, 
                     }).then(() => {
-                        Utils.LOG.info(`${i18n.__('create_success')}: ${url}` )
+                        Utils.LOG.info('download mission created:' + url)
                     }).catch((e) => {
-                        Utils.LOG.warn(`${i18n.__('create_failed')}: ${String(e)}` )
+                        Utils.LOG.warn('download mission create failed:' + e)
                     })
                 }
-                res.send({ code: 0, message: `${name} ${res.__('create_success')}` })
+                res.send({ code: 0, message: `${name} video download mission create success` })
             } catch (e) {
                 res.send({ code: 1, message: String(e) })
             }
@@ -160,7 +150,7 @@ function createServer (port) {
     app.get('/pause', async (req, res) => {
         const { uid } = req.query
         if (!uid) {
-            res.send({ code: 0, message: res.__('query_error') })
+            res.send({ code: 0, message: 'please check params' })
         } else {
             try {
                 await this.pauseMission(uid)
@@ -175,7 +165,7 @@ function createServer (port) {
     app.get('/resume', async (req, res) => {
         const { uid } = req.query
         if (!uid) {
-            res.send({ code: 0, message: res.__('query_error') })
+            res.send({ code: 0, message: 'please check params' })
         } else {
             try {
                 await this.resumeDownload(uid)
@@ -193,11 +183,11 @@ function createServer (port) {
             uid = uid.split(',')
         }
         if (!uid || uid === undefined) {
-            res.send({ code: 1, message: res.__('uid_required') })
+            res.send({ code: 1, message: 'please provide a valid  uid' })
         } else {
             try {
                 await this.deleteDownload(uid)
-                res.send({ code: 0, message: res.__('delete_success') })
+                res.send({ code: 0, message: 'delete mission success' })
             } catch (e) {
                 Utils.LOG.error(e)
                 res.send({ code: 1, message: String(e) })
@@ -208,11 +198,11 @@ function createServer (port) {
     app.post('/stop', async (req, res) => {
         const uid = req.query?.uid
         if (!uid || uid === undefined) {
-            res.send({ code: 1, message: res.__('uid_required') })
+            res.send({ code: 1, message: 'please provide a valid  uid' })
         } else {
             try {
                 await this.stopDownload(uid)
-                res.send({ code: 0, message: res.__('stop_success') })
+                res.send({ code: 0, message: 'stop mission success' })
             } catch (e) {
                 Utils.LOG.error(e)
                 res.send({ code: 1, message: String(e) })
@@ -233,27 +223,27 @@ function createServer (port) {
             res.send({ code: 0, data: dirs })
         } catch (e) {
             Utils.LOG.error(e)
-            res.send({ code: 1, message: res.__('system_error') })
+            res.send({ code: 1, message: 'system error' })
         }
     })
     // parser url
     app.get('/parser', async (req, res) => {
         const url = req.query.url
         if (!url || url === undefined) {
-            res.send({ code: 1, message: res.__('uid_required') })
+            res.send({ code: 1, message: 'please provide a valid  url' })
         } else {
             try {
                 const realUrl = await this.parserUrl(url)
                 res.send({ code: 0, data: realUrl })
             } catch (e) {
-                res.send({ code: 1, message: res.__('system_error') })
+                res.send({ code: 1, message: 'system error' })
             }
         }
     })
     app.get('/testWebhook', async (req, res) => {
         const { webhookType, webhooks } = req.query
         try {
-            Utils.msg(webhooks, webhookType, i18n.__('test_title'), i18n.__('test_notification'))
+            Utils.msg(webhooks, webhookType, 'ffandown notification', 'this is a test download notification')
             .then(() => {
                 res.send({ code: 0, message: 'success' })
             })

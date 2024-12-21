@@ -1,7 +1,6 @@
 /** process operation、file download、cmd exec  */
 const childProcess = require('child_process')
 const si = require('systeminformation')
-const os = require('os')
 const logger = require('./log')
 
 /**

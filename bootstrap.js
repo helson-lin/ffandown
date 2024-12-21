@@ -11,8 +11,9 @@ const oimi = new Oimi(
     config.downloadDir, 
     { 
         thread: config.thread, 
-        verbose: true, 
+        verbose: process.env.DEBUG || false, 
         maxDownloadNum: config.maxDownloadNum, 
+        enableTimeSuffix: config.enableTimeSuffix || false,
     },
 )
 Oimi.prototype.config = config

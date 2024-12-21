@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
 // 源文件路径（根据你的项目结构调整）
-let isDebug = false
+let isDebug = true
 let releaseName
 const argv = process.argv.slice(2)
 if (argv && argv[0] === '--debug') isDebug = true

@@ -7,6 +7,7 @@ const log = (() => {
     if (!logger) {
         logger = createLogger({
             transports: [
+                new transports.Console(),
                 new transports.File({
                     filename: logPath,
                     level: 'info',

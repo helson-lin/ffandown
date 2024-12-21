@@ -8,12 +8,12 @@ const request = require('request')
  */
 const getFeiShuBody = (text, More) => {
     const content = []
-    if (text) {
-        content.push([{
-            tag: 'text',
-            text: `${text}`,
-        }])
-    }
+    // if (text) {
+    //     content.push([{
+    //         tag: 'text',
+    //         text: `${text}`,
+    //     }])
+    // }
     if (More) {
         content.push([{
             tag: 'text',
@@ -37,7 +37,7 @@ const getDingDingBody = (text, More) => {
     const obj = {
         msgtype: 'text',
         text: {
-            content: `文件下载通知: \n ${text} ${More || ''}`,
+            content: `${More || ''}`,
         },
         at: {
             isAtAll: true,

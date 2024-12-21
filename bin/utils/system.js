@@ -100,8 +100,14 @@ const isBase64 = (str) => {
 }
 
 const getRealUrl = (str) => {
-    const urlArray = str.split('\n') ?? []
-    if (urlArray.length === 0) return ''
+    let urlArray = []
+    if (str.indexOf('\n') !== -1) {
+        urlArray = str?.split('\n') ?? []
+    }
+    if (str.indexOf(',') !== -1) {
+        urlArray = str?.split(',') ?? []
+    }
+    if (urlArray.length === 0) return str
     if (urlArray.length === 1) return urlArray[0]
     return urlArray
 }

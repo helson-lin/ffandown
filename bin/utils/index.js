@@ -5,6 +5,7 @@ const MSG = require('./message.js')
 const WSHELPER = require('./ws.js')
 const VERSION = require('./version.js')
 const LOG = require('./log.js')
+const HELPER = require('./helper.js')
 module.exports = {
     ...CONFIG,
     ...PROCESS,
@@ -12,5 +13,6 @@ module.exports = {
     ...MSG,
     ...WSHELPER,
     ...VERSION,
+    HELPER,
     LOG,
 }

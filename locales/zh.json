@@ -1,0 +1,17 @@
+{
+  "test_notification": "下载测试通知消息",
+  "server_name": "ffandown",
+  "test_title": "ffandown下载通知",
+  "download_success": "下载成功",
+  "download_failed": "下载失败",
+  "send_success": "发送成功",
+  "send_failed": "发送失败",
+  "update_success": "更新成功",
+  "query_error": "请检查请求参数",
+  "create_success": "创建任务成功",
+  "create_failed": "创建任务失败",
+  "uid_required": "uid为必填参数",
+  "delete_success": "删除成功",
+  "system_error": "系统错误",
+  "stop_success": "终止成功"
+}

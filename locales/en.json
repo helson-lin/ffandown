@@ -1,0 +1,16 @@
+{
+  "test_notification": "Download test notification message",
+  "server_name": "ffandown",
+  "test_title": "ffandown download notification",
+  "download_success": "Download successful",
+  "download_failed": "Download failed",
+  "send_success": "Send successful",
+  "send_failed": "Send failed",
+  "update_success": "Update successful",
+  "query_error": "Please check the request parameters",
+  "create_success": "Task created successfully",
+  "uid_required": "UID is a required parameter",
+  "delete_success": "Deleted successfully",
+  "system_error": "System error",
+  "stop_success": "Terminated successfully"
+}

@@ -4,6 +4,7 @@ const fs = require('fs')
 const fse = require('fs-extra')
 const path = require('path')
 const download = require('download')
+const log = require('./log')
 
 const getLatestVersion = async (repo = 'ffandown-front') => {
     // eslint-disable-next-line max-len
@@ -88,17 +89,20 @@ const addVersionFile = (version, msg, upd = new Date().getTime()) => {
 }
 
 const autoUpdateFrontEnd = async () => {
+    log.info('ready to update frontend')
     const { version, urls } = await getLatestVersion()
     const { browser_download_url } = urls[0]
     if (!browser_download_url) throw new Error('no latest release url found')
     fse.ensureDirSync(path.join(process.cwd(), 'public'))
     fse.emptyDirSync(path.join(process.cwd(), 'public'))
+    // add download supported log
+    log.info('start download frontend static file')
     await download('https://nn.oimi.space/' + browser_download_url, path.join(process.cwd(), 'public'), {
         filename: 'ffandown.zip',
         extract: true,
     })
     moveDistFile()
-    addVersionFile(version, '自动更新成功')
+    addVersionFile(version, 'update successfully')
 }
 
 const initializeFrontEnd = async () => {

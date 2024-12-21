@@ -1,4 +1,4 @@
-const logger = require('../log')
+const logger = require('./log')
 const colors = require('colors')
 const path = require('path')
 const DOWNLOADZIP = require('download')

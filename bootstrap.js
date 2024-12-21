@@ -1,20 +1,23 @@
 const createServer = require('./bin/app.js')
 const cluster = require('cluster')
 const Utils = require('./bin/utils/index')
-const Oimi = require('oimi-helper')
+const Oimi = require('./bin/index.js')
 const config = Utils.readConfig()
 const figlet = require('figlet')
 const colors = require('colors')
+
+console.log(colors.blue(figlet.textSync('ffandown', 'ANSI Shadow')))
 const oimi = new Oimi(
     config.downloadDir, 
     { 
         thread: config.thread, 
-        verbose: false, 
+        verbose: process.env.DEBUG || false, 
         maxDownloadNum: config.maxDownloadNum, 
+        enableTimeSuffix: config.enableTimeSuffix || false,
     },
 )
 Oimi.prototype.config = config
-console.log(colors.blue(figlet.textSync('ffandown', 'ANSI Shadow')))
+
 oimi.ready().then(() => {
     // download latest front package
     createServer.call(oimi, config.port)

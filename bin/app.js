@@ -19,6 +19,23 @@ function createServer (port) {
     ws(app).getWss('/')
 
     const { getNetwork, initializeFrontEnd, modifyYml } = Utils
+
+    // registerEventCallback
+    this.registerEventCallback((data) => {
+        const { name, status } = data
+        const isSuccess = status === '3'
+        Utils.msg(
+            this.config.webhooks, 
+            this.config.webhookType, 
+            'ffandown notification', 
+            `${name}: ${isSuccess ? 'download successful' : `download failed: \n ${data.message}`}`,
+        )
+        .then(() => Utils.LOG.warn('message send successfuly'))
+        .catch(e => {
+            Utils.LOG.warn('message failed:' + e)
+        })
+    })
+    // websocket
     app.ws('/ws', (ws, req) => {
         ws.send(Utils.sendWsMsg('connected'))
         ws.on('message', async (msg) => {
@@ -28,15 +45,22 @@ function createServer (port) {
                 if (key === 'list') {
                     const list = await this.dbOperation.getAll()
                     ws.send(Utils.sendWsMsg(list, 'list'))
+                } else if(key === 'page') {
+                    const { current, pageSize, status } = data
+                    const list = await this.dbOperation.queryByPage({
+                        pageNumber: current, pageSize, status, sortField: 'crt_tm', sortOrder: 'ASC',
+                    })
+                    ws.send(Utils.sendWsMsg(list, 'page'))
                 }
             } catch (e) {
                 Utils.LOG.error('client:' + e)
             }
         })
-        ws.on('close', function (e) {
+        ws.on('close', function () {
             Utils.LOG.info('close connection')
         })
     })
+
     app.get('/config', async (req, res) => {
         res.send({ code: 0, data: this.config })
     })
@@ -83,19 +107,9 @@ function createServer (port) {
                     for (const urlItem of url) {
                         // eslint-disable-next-line max-len
                         this.createDownloadMission({ url: urlItem, dir, preset, enableTimeSuffix: enableTimeSuffix ?? false, useragent, outputformat }).then(() => {
-                            Utils.LOG.info('download success:' + urlItem)
-                            // eslint-disable-next-line max-len
-                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download success', `${urlItem}`)
-                            .catch(e => {
-                                Utils.LOG.warn('message failed:' + e)
-                            })
+                            Utils.LOG.info('download mission created:' + urlItem)
                         }).catch((e) => {
-                            Utils.LOG.warn('download failed:' + e)
-                            // eslint-disable-next-line max-len
-                            Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download failed', `${urlItem}: ${e}`)
-                            .catch(e => {
-                                Utils.LOG.warn('message failed:' + e)
-                            })
+                            Utils.LOG.warn('download mission create failed:' + e)
                         })
                     }
                 } else {
@@ -108,18 +122,9 @@ function createServer (port) {
                         useragent,
                         outputformat, 
                     }).then(() => {
-                        Utils.LOG.info('download success:' + url)
-                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download success', `${url}`)
-                        .catch(e => {
-                            Utils.LOG.warn('message failed:' + e)
-                        })
+                        Utils.LOG.info('download mission created:' + url)
                     }).catch((e) => {
-                        Utils.LOG.warn('download failed:' + e)
-                        // eslint-disable-next-line max-len
-                        Utils.msg(this.config.webhooks, this.config.webhookType, 'ffandown download failed', `${url}: ${e}`)
-                        .catch(e => {
-                            Utils.LOG.warn('message failed:' + e)
-                        })
+                        Utils.LOG.warn('download mission create failed:' + e)
                     })
                 }
                 res.send({ code: 0, message: `${name} video download mission create success` })
@@ -235,9 +240,29 @@ function createServer (port) {
             }
         }
     })
+    app.get('/testWebhook', async (req, res) => {
+        const { webhookType, webhooks } = req.query
+        try {
+            Utils.msg(webhooks, webhookType, 'ffandown notification', 'this is a test download notification')
+            .then(() => {
+                res.send({ code: 0, message: 'success' })
+            })
+            .catch(e => {
+                res.send({ code: 1, message: e })
+            })
+        } catch (e) {
+            res.send({ code: 1, message: e })
+        }
+    })
     app.listen(port, async () => {
         // initial front end resouce
-        await initializeFrontEnd()
+        try {
+            await initializeFrontEnd()
+        } catch (e) {
+            // download frontend static file error;
+            console.warn(colors.red(e))
+            process.exit(0)
+        }
         const list = await getNetwork()
         const listenString = list.reduce((pre, val) => {
             return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + port + '/')}`

@@ -1,10 +1,11 @@
 port: 8081
 downloadDir: /media/
-webhooks: ''
+webhooks: https://bark.helson-lin.cn/Mtf2nA8kE4wYrMuQNHunDo/$TEXT
 webhookType: bark
 thread: true
 useFFmpegLib: true
-maxDownloadNum: 5
-preset: ultrafast
+maxDownloadNum: 2
+preset: medium
 outputformat: mp4
 enableTimeSuffix: false
+debug: false

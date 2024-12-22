@@ -18,7 +18,7 @@
      <a href="https://github.com/helson-lin/ffandown">
         <img alt="docker image size" src="https://img.shields.io/github/last-commit/helson-lin/ffandown"/>
     </a>
-    <a href="/README.zh-CN.md">
+    <a href="/README.md">
         <img alt="lang" src="https://img.shields.io/badge/Lang-CN-brightgreen" />
     </a>
     <a href="https://qm.qq.com/q/7EtNRkt2eI">

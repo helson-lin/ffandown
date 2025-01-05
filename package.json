@@ -1,6 +1,6 @@
 {
   "name": "ffandown",
-  "version": "5.0.5",
+  "version": "5.1.1",
   "description": "ffandown is a m3u8 downloader",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",
@@ -63,7 +63,13 @@
       "/node_modules/sqlite3/build/**/*"
     ],
     "targets": [
-      "node18-macos-arm64"
+      "node18-macos-arm64",
+      "node18-macos-x64",
+      "node18-windows-x64",
+      "node18-linux-x64",
+      "node18-linux-arm64",
+      "node18-alpine-x64",
+      "node18-alpine-arm64"
     ],
     "outputPath": "dist"
   },

@@ -112,7 +112,7 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
 
 ## 捐助和支持
 
-感谢**Gentle**捐助支持、感谢**jk9527**技术贡献、
+感谢**Gentle**、**鑫仔** 捐助支持、感谢**jk9527**技术贡献、
 
 ![sponsors](https://pic.kblue.site//sponsors.png)
 

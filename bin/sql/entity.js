@@ -90,4 +90,37 @@ const SysDownloadDb = sequelize.define('sys_download', {
     },
 })
 
-module.exports = { SysDownloadDb, sequelize }
+const SysUsersDb = sequelize.define('sys_users', {
+    uid: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        primaryKey: true,
+    },
+    username: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    password: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    role: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    on: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        default: '1',
+    },
+    crt_tm: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    upd_tm: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+})
+
+module.exports = { SysDownloadDb, SysUsersDb, sequelize }

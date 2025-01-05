@@ -19,9 +19,12 @@ const oimi = new Oimi(
 Oimi.prototype.config = config
 
 oimi.ready().then(() => {
-    // download latest front package
-    createServer.call(oimi, config.port)
+    createServer({
+        oimi, 
+        port: config.port,
+    })
 })
+
 process.on('SIGTERM', async () => {
     await oimi.killAll()
     process.exit(1)
@@ -33,6 +36,7 @@ process.on('SIGINT', async function () {
         process.exit(0)
     }
 })
+
 process.on('exit', async () => {
     // 退出之前，杀掉进程
     await oimi.killAll()

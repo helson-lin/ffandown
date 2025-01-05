@@ -1,16 +1,24 @@
 {
   "test_notification": "Download test notification message",
   "server_name": "ffandown",
-  "test_title": "ffandown download notification",
+  "msg_title": "ffandown download notification",
   "download_success": "Download successful",
   "download_failed": "Download failed",
   "send_success": "Send successful",
   "send_failed": "Send failed",
+  "name": "Name",
+  "site": "Site",
+  "error_reason": "Error reason",
   "update_success": "Update successful",
   "query_error": "Please check the request parameters",
+  "upgrade_success": "Upgrade successfully",
   "create_success": "Task created successfully",
   "uid_required": "UID is a required parameter",
+  "url_required": "URL is a required parameter",
   "delete_success": "Deleted successfully",
   "system_error": "System error",
-  "stop_success": "Terminated successfully"
+  "stop_success": "Terminated successfully",
+  "invalid_credentials": "Invalid credentials",
+  "login_failed": "Login failed, Please check username and password",
+  "login_success": "Login successfully"
 }

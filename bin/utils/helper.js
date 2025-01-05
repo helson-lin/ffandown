@@ -7,10 +7,10 @@ const download = require('download')
 
 const Helper = {
     version: '4.4.1',
-    registryUrl: 'https://pic.kblue.site',
+    registryUrl: 'https://storage.helson-lin.cn',
     registryMap: {
         github: 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1',
-        selfCdn: 'https://pic.kblue.site',
+        selfCdn: 'https://storage.helson-lin.cn',
     },
     decencyList: ['ffmpeg', 'ffprobe'],
     /**

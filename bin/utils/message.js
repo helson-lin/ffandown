@@ -1,51 +1,4 @@
 const request = require('request')
-
-/**
- * @description: generate feishu hooks request body
- * @param {string} text  title
- * @param {string} More   body 
- * @return {object} Request body
- */
-const getFeiShuBody = (text, More) => {
-    const content = []
-    // if (text) {
-    //     content.push([{
-    //         tag: 'text',
-    //         text: `${text}`,
-    //     }])
-    // }
-    if (More) {
-        content.push([{
-            tag: 'text',
-            text: `${More}`,
-        }])
-    }
-    return {
-        msg_type: 'post',
-        content: {
-            post: {
-                zh_cn: {
-                    title: 'ffandown',
-                    content,
-                },
-            },
-        },
-    }
-}
-
-const getDingDingBody = (text, More) => {
-    const obj = {
-        msgtype: 'text',
-        text: {
-            content: `${More || ''}`,
-        },
-        at: {
-            isAtAll: true,
-        },
-    }
-    return obj
-}
-
 /**
  * @description handler url  contains unescaped characters
  * @date 3/16/2023 - 11:46:23 AM
@@ -60,15 +13,88 @@ const handlerURL = (url) => {
     return url
 }
 
-/**
- * @description get bark request url
- * @date 3/16/2023 - 11:45:35 AM
- * @param {string} url bark URL
- * @param {string} text video name
- * @returns {*}
- */
-const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, encodeURIComponent(text)))
+const getBarkInfo = ({
+    url,
+    more,
+    text,
+}) => {
+    return {
+        url: handlerURL(String(url).replace(/\$TEXT/g, 
+            encodeURIComponent(text) + '/' + encodeURIComponent(more || ''),
+        )),
+        method: 'GET',
+        data: {},
+    }
+}
 
+const getFeiShuInfo = ({
+    url,
+    more,
+}) => {
+    const content = []
+    if (more) {
+        content.push([{
+            tag: 'text',
+            text: more,
+        }])
+    }
+    return {
+        url,
+        method: 'POST',
+        data: {
+            msg_type: 'post',
+            content: {
+                post: {
+                    zh_cn: {
+                        title: 'ffandown',
+                        content,
+                    },
+                },
+            },
+        },
+    }
+}
+
+
+const getDingDingInfo = ({
+    url,
+    more,
+}) => {
+    return {
+        url,
+        method: 'POST',
+        data: {
+            msgtype: 'text',
+            text: {
+                content: more || '',
+            },
+            at: {
+                isAtAll: true,
+            },
+        },
+    }
+}
+
+const getGotifyInfo = ({
+    url,
+    text,
+    more,
+}) => {
+    return {
+        url,
+        method: 'POST',
+        data: {
+            'message': more || '',
+            'title': text || '',
+            'priority': 2,
+            'extras': {
+                'client::display': {
+                    'contentType': 'text/markdown',
+                },
+            },
+        },
+    }
+}
 /**
  * @description: send message notice to user
  * @param {string} url hooks url
@@ -77,24 +103,30 @@ const getBarkUrl = (url, text) => handlerURL(String(url).replace(/\$TEXT/g, enco
  * @param {string} More body text
  * @return {void}
  */
-const msg = (url, type, Text, More) => {
-    const URL = type === 'bark' ? getBarkUrl(url, More) : url
-    const method = type === 'bark' ? 'GET' : 'POST'
-    const bodyHanler = { bark: () => ({}), feishu: getFeiShuBody, dingding: getDingDingBody }
-    const data = bodyHanler[type](Text, More)
+const msg = (url, type, text, more) => {
+    const msgHandlerMap = {
+        'bark': getBarkInfo,
+        'feishu': getFeiShuInfo,
+        'dingding': getDingDingInfo,
+        'gotify': getGotifyInfo,
+    }
+    const handler = msgHandlerMap[type]
+    if (!handler || typeof handler !== 'function') return
+    const sendInfo  = handler({ url, text, more })
     return new Promise((resolve, reject) => {
-        if (!URL) { 
+        if (!sendInfo.url) { 
             reject(new Error('please set webhooks')) 
         } else {
             request({
-                url: URL,
-                method,
+                url: sendInfo.url,
+                method: sendInfo.method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify(sendInfo.data),
             }, (error, _, body) => {
                 if (error) {
+                    console.log(error)
                     reject(error)
                 }
                 if (body) {

@@ -18,6 +18,16 @@ const getLatestVersion = async (repo = 'ffandown-front') => {
     }
 }
 
+const getLatestVersionByOss = async () => {
+    const response = await fetch(`https://storage.helson-lin.cn/ffandown-front/release.json?time=${Date.now()}`)
+    const data = await response.json()
+    return {
+        version: data.tag_name,
+        urls: data.assets,
+        body: data.data,
+    }
+}
+
 const getLocalVersionInfo = () => {
     try {
         const version = fse.readFileSync(path.join(process.cwd(), 'public', 'version.json'), 'utf-8')
@@ -54,7 +64,7 @@ const compareVersion = (version1, version2) => {
 }
 
 const getFrontEndVersion = async () => {
-    const versionInfo = await getLatestVersion()
+    const versionInfo = await getLatestVersionByOss()
     const localVersionInfo = getLocalVersionInfo()
     if (!localVersionInfo) return { ...versionInfo, current: null, upgrade: false }
     const { version, upd } = localVersionInfo
@@ -85,19 +95,20 @@ const moveDistFile = () => {
 }
 
 const addVersionFile = (version, msg, upd = new Date().getTime()) => {
+    console.log('add version file')
     fse.writeFileSync(path.join(process.cwd(), 'public', 'version.json'), JSON.stringify({ version, msg, upd }))
 }
 
 const autoUpdateFrontEnd = async () => {
     log.info('ready to update frontend')
-    const { version, urls } = await getLatestVersion()
-    const { browser_download_url } = urls[0]
+    const { version, urls } = await getLatestVersionByOss()
+    const browser_download_url = urls[0]
     if (!browser_download_url) throw new Error('no latest release url found')
     fse.ensureDirSync(path.join(process.cwd(), 'public'))
     fse.emptyDirSync(path.join(process.cwd(), 'public'))
     // add download supported log
     log.info('start download frontend static file')
-    await download('https://nn.oimi.space/' + browser_download_url, path.join(process.cwd(), 'public'), {
+    await download(browser_download_url + `?tm=${Date.now()}`, path.join(process.cwd(), 'public'), {
         filename: 'ffandown.zip',
         extract: true,
     })

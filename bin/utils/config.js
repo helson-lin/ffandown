@@ -4,6 +4,16 @@ const fse = require('fs-extra')
 const YAML = require('yamljs')
 const json2yaml = require('js-yaml')
 
+// 生成随机字符串
+function generateRandomString(length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+} 
+
 const DEFAULT_OPTIONS = {
     port: 8081,
     downloadDir: '/media/', 
@@ -15,6 +25,7 @@ const DEFAULT_OPTIONS = {
     preset: 'medium',
     outputformat: 'mp4',
     enableTimeSuffix: false,
+    secret: generateRandomString(32),
 }
 const OUTPUTFORMAT_OPTIONS = ['mp4', 'mov', 'flv', 'avi']
 const PRESET_OPTIONS = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow']
@@ -75,7 +86,7 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
         const data = YAML.parse(fs.readFileSync(configPath).toString())
         const { 
             port, downloadDir, maxDownloadNum, webhooks, enableTimeSuffix,
-            webhookType, preset, outputformat, useFFmpegLib, debug, 
+            webhookType, preset, outputformat, useFFmpegLib, debug, secret,
         } = data
         if (port) option.port = port
         if (downloadDir) option.downloadDir = downloadDir
@@ -87,6 +98,9 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
         if (preset && PRESET_OPTIONS.includes(preset)) option.preset = preset
         if (outputformat && OUTPUTFORMAT_OPTIONS.includes(outputformat)) option.outputformat = outputformat
         if (enableTimeSuffix) option.enableTimeSuffix = enableTimeSuffix
+        if (secret) option.secret = secret
+        // if secret is undefined, auto create a secret
+        if (!secret) option.secret = generateRandomString(32)
         if (debug) process.env.DEBUG = true
     }
     return option

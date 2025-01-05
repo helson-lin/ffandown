@@ -1,11 +1,11 @@
 port: 8081
 downloadDir: /media/
-webhooks: https://bark.helson-lin.cn/Mtf2nA8kE4wYrMuQNHunDo/$TEXT
-webhookType: bark
+webhooks: https://nz.helson-lin.cn/message?token=A3HJgdetn8Rhh9g
+webhookType: gotify
 thread: true
 useFFmpegLib: true
-maxDownloadNum: 2
+maxDownloadNum: 3
 preset: medium
 outputformat: mp4
 enableTimeSuffix: false
-debug: false
+secret: DJH1v3kXjV2v3oN4NHGlphZXyZGfmr3E

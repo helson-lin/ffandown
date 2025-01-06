@@ -60,16 +60,15 @@
       "./runtime/**/**/*.js",
       "./runtime/*.js",
       "node_modules/figlet/fonts/ANSI Shadow.flf",
-      "/node_modules/sqlite3/build/**/*"
+      "/node_modules/sqlite3/build/**/*",
+      "/node_modules/bcrypt/lib/binding/napi-v3/**/*"
     ],
     "targets": [
       "node18-macos-arm64",
       "node18-macos-x64",
       "node18-windows-x64",
       "node18-linux-x64",
-      "node18-linux-arm64",
-      "node18-alpine-x64",
-      "node18-alpine-arm64"
+      "node18-linux-arm64"
     ],
     "outputPath": "dist"
   },

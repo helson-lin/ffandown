@@ -65,7 +65,6 @@ function createServer ({ port, oimi }) {
     // express static server
     app.use(express.static(path.join(process.cwd(), 'public')))
     // 配置 session 中间件
-    console.log(oimi.config?.secret)
     app.use(
         session({
             secret: oimi.config?.secret, // 替换为你自己的密钥，用于加密

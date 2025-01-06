@@ -9,48 +9,46 @@ const argv = process.argv.slice(2)
 if (argv && argv[0] === '--debug') isDebug = true
 const sourcePath = path.join(__dirname, 'package/')
 // 目标路径
-const targetPath = path.join(__dirname, 'node_modules/sqlite3/build/Release/')
-if (!fs.existsSync(targetPath)) {
-    fs.mkdirSync(targetPath, { recursive: true })
-}
-
-const moveNodeSqlite = (targetPlatform) => {
+const nodeSqlite3targetPath = path.join(__dirname, 'node_modules/sqlite3/build/Release/')
+const bcryptTargetPath = path.join(__dirname, 'node_modules/bcrypt/lib/binding/napi-v3')
+const moveNodeSqlite = (targetPlatform, packageName = 'node_sqlite3', targetPath = nodeSqlite3targetPath) => {
     // 根据目标平台选择正确的文件
     let targetFile
     const name = targetPlatform.split('-').slice(1).join('-')
     switch (name) {
         case 'linux-x64':
-            targetFile = 'linux_x64_node_sqlite3.node'
+            targetFile = `linux_x64_${packageName}.node`
             break
         case 'linux-arm64':
-            targetFile = 'linux_arm64_node_sqlite3.node'
+            targetFile = `linux_arm64_${packageName}.node`
             break
         case 'macos-arm64':
-            targetFile = 'macos_arm64_node_sqlite3.node'
+            targetFile = `macos_arm64_${packageName}.node`
             break
         case 'macos-x64':
-            targetFile = 'macos_x64_node_sqlite3.node'
+            targetFile = `macos_x64_${packageName}.node`
             break
         case 'alpine-x64':
-            targetFile = 'alpine_x64_node_sqlite3.node'
+            targetFile = `alpine_x64_${packageName}.node`
             break
         case 'alpine-arm64':
-            targetFile = 'alpine_arm64_node_sqlite3.node'
+            targetFile = `alpine_arm64_${packageName}.node`
             break
         case 'windows-x64':
-            targetFile = 'windows_x64_node_sqlite3.node'
+            targetFile = `windows_x64_${packageName}.node`
             break
         case 'windows-arm64':
-            targetFile = 'windows_arm64_node_sqlite3.node'
+            targetFile = `windows_arm64_${packageName}.node`
             break
         default:
             console.error(`\n ❗️ Unsupported target platform：${targetPlatform} \n`)
     }
     if (targetFile) {
-    // 复制文件
+        if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath, { recursive: true })
+        // 复制文件
         fs.copyFileSync(
             path.join(sourcePath, targetFile),
-            path.join(targetPath, 'node_sqlite3.node'),
+            path.join(targetPath, `${packageName}.node`),
         )
 
         console.log(
@@ -64,6 +62,7 @@ const moveNodeSqlite = (targetPlatform) => {
 
 const pkgRelease = (targetPlatform) => {
     moveNodeSqlite(targetPlatform)
+    moveNodeSqlite(targetPlatform, 'bcrypt_lib', bcryptTargetPath)
     // 执行打包命令
     execSync(
     `pkg . -t ${targetPlatform} --output ./dist/${releaseName}${targetPlatform.replace(/node\d+/g, '')}${targetPlatform.indexOf('windows') !== -1 ? '.exe' : ''

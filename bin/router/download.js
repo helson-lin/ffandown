@@ -1,5 +1,6 @@
 const express = require('express')
 const i18n = require('../utils/locale')
+const autoParser = require('../utils/parser')
 const bodyParser = require('body-parser')
 const Utils = require('../utils/index')
 const jsonParser = bodyParser.json()
@@ -11,11 +12,12 @@ const downloadRouter = express.Router()
  */
 function createDownloadRouter (oimi) {
     // create download mission
-    downloadRouter.post('/down', jsonParser, (req, res) => {
+    downloadRouter.post('/down', jsonParser, async (req, res) => {
         let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix } = req.body
         // if the config option have preset and outputformat, and body have't will auto replace
         if (!preset && this.config.preset) preset = this.config.preset
         if (!outputformat && this.config.outputformat) outputformat = this.config.outputformat
+        // 解析所有的地址
         url = Utils.getRealUrl(url)
         if (!url) {
             res.send({ code: 1, message: i18n._('query_error') })
@@ -25,8 +27,10 @@ function createDownloadRouter (oimi) {
                 // 如果url是逗号分隔的多个链接处理
                 if (isMultiple) {
                     for (const urlItem of url) {
+                        // todo: 解析地址
+                        const parserUrl = await autoParser(urlItem)
                         oimi.createDownloadMission({ 
-                            url: urlItem, 
+                            url: parserUrl, 
                             dir, 
                             preset, 
                             enableTimeSuffix: enableTimeSuffix ?? false, 
@@ -39,9 +43,11 @@ function createDownloadRouter (oimi) {
                         })
                     }
                 } else {
+                    // todo: 解析地址
+                    const parserUrl = await autoParser(url)
                     oimi.createDownloadMission({ 
                         name, 
-                        url,
+                        url: parserUrl,
                         dir,
                         preset,
                         enableTimeSuffix: enableTimeSuffix ?? false,

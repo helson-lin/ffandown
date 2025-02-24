@@ -74,7 +74,8 @@ const SysDownloadDb = sequelize.define('sys_download', {
         type: Sequelize.STRING,
         allowNull: false,
         default: '0',
-        comment: '0/initial status; 1/ downloading status; 2/stopped status; 3/ finish status;/ 4 error happed,5 waiting download',
+        comment: `
+        0/initial status 1/ downloading status; 2/stopped status; 3/ finish status;/ 4 error happed,5 waiting download`,
     },
     message: {
         type: Sequelize.STRING,
@@ -123,4 +124,41 @@ const SysUsersDb = sequelize.define('sys_users', {
     },
 })
 
-module.exports = { SysDownloadDb, SysUsersDb, sequelize }
+// system plugins 
+const SysPluginsDb = sequelize.define('sys_plugins', {
+    uid: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        primaryKey: true,
+    },
+    name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    author: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    description: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    url: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    locateUrl: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    crt_tm: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    upd_tm: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+})
+
+module.exports = { SysDownloadDb, SysUsersDb, SysPluginsDb, sequelize }

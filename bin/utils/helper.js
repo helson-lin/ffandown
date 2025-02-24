@@ -202,7 +202,12 @@ const Helper = {
         return new Promise((resolve, reject) => {
             // prefetch media need carry User-Agent
             fetch(url, 
-                { headers: { 'User-Agent': USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36' },
+                { 
+                    headers: { 
+                        'User-Agent': USER_AGENT || 
+                        // eslint-disable-next-line max-len
+                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
+                    },
                 }).then(async (res) => {
                 const data = await res.text()
                 if (data.startsWith('#EXTM3U')) {

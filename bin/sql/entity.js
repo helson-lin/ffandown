@@ -139,6 +139,12 @@ const SysPluginsDb = sequelize.define('sys_plugins', {
         type: Sequelize.STRING,
         allowNull: false,
     },
+    status: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        default: '0',
+        comment: '0/stop 1/using',
+    },
     description: {
         type: Sequelize.STRING,
         allowNull: true,

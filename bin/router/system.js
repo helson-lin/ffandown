@@ -3,6 +3,8 @@ const bodyParser = require('body-parser')
 const i18n = require('../utils/locale')
 const Utils = require('../utils/index')
 const path = require('path')
+const validate = require('../middleware/validate')
+const { query } = require('express-validator')
 const jsonParser = bodyParser.json()
 const systemRouter = express.Router()
 
@@ -59,7 +61,10 @@ function createSystemRouter (oimi) {
         }
     })
 
-    systemRouter.get('/testWebhook', async (req, res) => {
+    systemRouter.get('/testWebhook', validate([
+        query('webhooks').isString().notEmpty().withMessage('webhooks is required'),
+        query('webhookType').isString().notEmpty().withMessage('webhookType is required'),
+    ]), async (req, res) => {
         const { webhookType, webhooks } = req.query
         try {
             Utils.msg(webhooks, webhookType, i18n._('msg_title'), i18n._('test_notification'))

@@ -1,5 +1,5 @@
 const { SysPluginsDb } = require('./entity')
-
+const { Op } = require('sequelize')
 // 测试的地址： https://file.helson-lin.cn/picgo/bi.js
 const PluginService = {
     // 新增插件
@@ -23,6 +23,23 @@ const PluginService = {
             }  catch (e) {
                 return Promise.reject(e)
             }
+        }
+    },
+    async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'ASC', status = '1' }) {
+        try {
+            const statusList = String(status || '1').split(',').map(item => Number(item.trim()))
+            const offset = (pageNumber - 1) * pageSize
+            const options = {
+                limit: pageSize,
+                offset,
+                order: [[sortField, sortOrder]],
+                where: { 
+                    status: { [Op.in]: statusList },
+                },
+            }
+            return await SysPluginsDb.findAndCountAll(options)
+        } catch (e) {
+            return Promise.reject(e)
         }
     },
 }

@@ -1,7 +1,6 @@
 const express = require('express')
 const ws = require('express-ws')
 const session = require('express-session')
-const bcrypt = require('bcrypt')
 const cluster = require('cluster')
 const path = require('path')
 const colors = require('colors')
@@ -10,7 +9,8 @@ const Utils = require('./utils/index')
 const createUserRouter = require('./router/user')
 const createDownloadRouter = require('./router/download')
 const createSystemRouter = require('./router/system')
-const UserService = require('./sql/userService')
+const createPluginRouter = require('./router/plugin')
+const checkAuth = require('./middleware/checkAuth')
 
 const app = express()
 const { getNetwork, initializeFrontEnd } = Utils
@@ -20,28 +20,6 @@ const { getNetwork, initializeFrontEnd } = Utils
  * @param {FFandown} this
  */
 function createServer ({ port, oimi }) {
-    async function checkAuth (req, res, next) {
-        const publicRoutes = ['/user/login', '/public'] // 不需要鉴权的路由列表
-        // 如果请求的路由在公开路由列表中，直接放行
-        if (publicRoutes.includes(req.path)) {
-            return next()
-        }
-        const sessionUser = req.session?.user?.username
-        const queryUsername = req.body?.username || req.query?.username
-        const queryPassword = req.body?.password || req.query?.password
-        if (sessionUser) {
-            next()
-        } else if (queryUsername && queryPassword) {
-            const user = await UserService.queryByUsername(queryUsername)
-            if (user?.password && await bcrypt.compare(queryPassword, user?.password)) {
-                next()
-            } else {
-                res.status(401).send({ code: 1 })
-            }
-        } else {
-            res.status(401).send({ code: 1, message: 'Invalid credentials' })
-        }
-    }
     // registerEventCallback
     oimi.registerEventCallback((data) => {
         const { name, status } = data
@@ -84,6 +62,7 @@ function createServer ({ port, oimi }) {
     app.use(checkAuth)
     app.use('/sys/', createSystemRouter(oimi))
     app.use('/user', createUserRouter(oimi))
+    app.use('/plugin', createPluginRouter(oimi))
     app.use('/', createDownloadRouter(oimi))
     // websocket
     ws(app).getWss('/')

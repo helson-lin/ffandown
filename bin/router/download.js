@@ -15,8 +15,8 @@ function createDownloadRouter (oimi) {
     downloadRouter.post('/down', jsonParser, async (req, res) => {
         let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix } = req.body
         // if the config option have preset and outputformat, and body have't will auto replace
-        if (!preset && this.config.preset) preset = this.config.preset
-        if (!outputformat && this.config.outputformat) outputformat = this.config.outputformat
+        if (!preset && oimi.config.preset) preset = oimi.config.preset
+        if (!outputformat && oimi.config.outputformat) outputformat = oimi.config.outputformat
         // 解析所有的地址
         url = Utils.getRealUrl(url)
         if (!url) {

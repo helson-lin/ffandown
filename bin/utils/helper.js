@@ -2,6 +2,7 @@ const childProcess = require('child_process')
 const fse = require('fs-extra')
 const path = require('path')
 const os = require('os')
+const colors = require('colors')
 const ffmpeg = require('fluent-ffmpeg')
 const download = require('download')
 
@@ -109,7 +110,7 @@ const Helper = {
         if (type === 'ffprobe') {
             ffmpeg.setFfprobePath(path)
         }
-        console.log(`\x1b[32m[ffandown] ${type}: env variable is set successfully\x1b[0m`)
+        console.log(colors.blue(`${type.toUpperCase()}: Environment variable setting successful`))
     },
     /**
      * is need download
@@ -151,7 +152,7 @@ const Helper = {
             this.setEnv(type, libPath)
             await this.chmod(libPath)
         } catch (e) {
-            console.warn('download and set env failed:' + String(e).trim())
+            console.warn(colors.bgRed('download and set env failed:' + String(e).trim()))
         }
     },
     /**
@@ -176,11 +177,12 @@ const Helper = {
         })
     },
     /**
-     * @description: make sure directory exists
-     * @param {string} _path configuration path
-     * @return {string} real download directory
+     * @description: make sure directory exists 确保目录存在
+     * @param {string} _path configuration path 配置的下载目录地址
+     * @return {string} real download directory 真实的下载目录地址
      */
     ensurePath  (_path) {
+        // 以@开头的路径，表示是绝对路径
         if (_path.startsWith('@')) {
             const relPath = _path.replace('@', '')
             fse.ensureDirSync(relPath)

@@ -23,19 +23,28 @@ class Oimi {
     resumeMission
     eventCallback
     constructor (OUTPUT_DIR, { thread = true, verbose = false, maxDownloadNum = 5, eventCallback, enableTimeSuffix }) {
+        // helper 类
         this.helper = helper
+        // 数据库操作
         this.dbOperation = dbOperation
+        // 文件下载目录
         if (OUTPUT_DIR) this.OUTPUT_DIR = this.helper.ensurePath(OUTPUT_DIR)
         this.missionList = []
         // 终止的任务
         this.stopMission = []
+        // 重启的任务
         this.resumeMission = []
+        // 解析插件
         this.parserPlugins = []
+        // 任务的最大线程数
         this.thread = thread && this.getCpuNum()
+        // 任务同时最大下载数
         this.maxDownloadNum = maxDownloadNum || 5
+        // 是否开启时间后缀
         this.enableTimeSuffix = enableTimeSuffix
         log.level = verbose ? 'verbose' : 'silent'
         this.verbose = verbose
+        // 回调事件
         this.eventCallback = eventCallback
     }
 
@@ -81,23 +90,30 @@ class Oimi {
     }
 
     /**
-     * @description get file download path by name
-     * @param {string} name
-     * @param {string} dir
-     * @param {string} outputFormat
+     * @description get file download path by name ｜ 根据文件名获取下载路径
+     * @param {string} name  文件名称
+     * @param {string} dir 目录地址
+     * @param {string} outputFormat 输出格式
      * @returns {{fileName: string, filePath: string}} path
      */
     getDownloadFilePathAndName (name, dir, outputFormat) {
         const tm = String(new Date().getTime())
+        // 如果没有名称，就用时间戳作为名称
         let fileName = name ? name.split('/').pop() : tm
+        // 获取文件下载的目录地址，在下载目录的基础上追加自定义二级目录
         const dirPath = path.join(this.OUTPUT_DIR ?? process.cwd(), dir ?? '')
+        // 确保二级目录存在
         this.helper.ensureMediaDir(dirPath)
         const getFileName = () => {
             const fileFormat = outputFormat || 'mp4'
+            // 如果开启了全局的时间戳配置，那么追加上时间戳
             if (name && this.enableTimeSuffix) return name + '_' + tm + `.${fileFormat}`
+            // 没有全局的时间戳配置，直接返回名称
             if (name && !this.enableTimeSuffix) return name + `.${fileFormat}`
+            // 如果没有传入名称，就用时间戳作为名称
             return tm + `.${fileFormat}`
         }
+        // 获取下载文件的名称
         const filePath = path.join(dirPath, getFileName())
         return { fileName, filePath }
     }
@@ -243,8 +259,11 @@ class Oimi {
         const uid = mission.uid
         log.info('start download mission: ', JSON.stringify(mission))
         try {
+            // isNeedInsert为 true 表示需要新增任务到数据库
             if (isNeedInsert) await this.dbOperation.DownloadService.create(mission)
-            ffmpegHelper.setInputFile(mission.url, mission.useragent)
+            // 设置 ffmpeg 参数
+            // 设置下载任务地址和用户代理
+            ffmpegHelper.setInputFile(mission.url)
             ffmpegHelper.setOutputFile(mission.filePath)
             .setUserAgent(mission.useragent)
             .setThreads(this.thread)
@@ -254,25 +273,28 @@ class Oimi {
                 // 实时更新任务信息
                 this.updateMission(uid, { ...mission, status: params.percent >= 100 ? '3' : '1', ...params })
             }).then(() => {
+                // 任务下载完成
                 log.info(`success download mission: ${mission.name}`)
-                // todo: create download mission support downloaded callback
                 this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
             }).catch((e) => {
-                log.warn('catched downloading error:', String(e))
                 // 为什么终止下载会执行多次 catch
                 // 下载中发生错误
+                log.warn('catched downloading error:', String(e))
+                // 以下两种错误信息都是任务被暂停 （ffmpeg-fluent 任务暂停是通过杀掉进程实现的）
                 if ([
                     'ffmpeg was killed with signal SIGKILL', 
                     'ffmpeg exited with code 255',
                 ].some(error => String(e).indexOf(error) !== -1)) {
-                    // 任务被暂停
+                    // 任务被暂停 更新任务状态为暂停
                     this.updateMission(uid, { ...mission, status: '3', message: 'mission stopped' })
                 } else {
+                    // 更新任务状态为下载失败
                     this.updateMission(uid, { ...mission, status: '4', message: String(e) })
                 }
             })
             return 0
         } catch (e) {
+            // 下载过程出现异常，更新任务状态为下载失败
             log.warn('downloading error:', e)
             await this.updateMission(uid, { ...mission, status: '4', message: String(e) })
             return 1
@@ -280,7 +302,7 @@ class Oimi {
     }
 
     /**
-     * @description create download mission
+     * @description create download mission 创建下载任务
      * @param {object} query url: download url, name: download mission name outputformat
      */
     async createDownloadMission (query) {
@@ -301,16 +323,17 @@ class Oimi {
             preset,
             outputformat,
         }
-        // log.info('mission info', JSON.stringify(mission))
-        // over max download mission
+        // over max download mission 超过设置的最大同时下载任务
         if (this.missionList.length >= this.maxDownloadNum) {
-            mission.status = '5' // set mission status is waiting
-            // add misson to db
+            mission.status = '5' // set mission status is waiting 设置任务状态为等待
+            // 添加任务到数据库
             await this.insertWaitingMission(mission)
+            // 发送创建任务通知消息
             msg(this.config.webhooks, 
                 this.config.webhookType, 
                 i18n._('msg_title'),
                 `${i18n._('create_success')}\n${i18n._('name')}: ${fileName}\n${i18n._('site')}: ${url}`)
+            .catch(e => log.error(e))
             return { uid: mission.uid, name: mission.name }
         } else {
             // continue download
@@ -319,10 +342,12 @@ class Oimi {
             this.missionList.push({ ...mission, ffmpegHelper })
             await this.startDownload({ ffmpegHelper, mission, outputformat, preset }, true)
             // log.verbose(`current missionList have ${this.missionList.length}s missions`)
+            // 发送创建任务通知消息
             msg(this.config.webhooks, 
                 this.config.webhookType, 
                 i18n._('msg_title'),
                 `${i18n._('create_success')}\n${i18n._('name')}: ${fileName}\n${i18n._('site')}: ${url}`)
+            .catch(e => log.error(e))
             return { uid: mission.uid, name: mission.name }
         }
     }

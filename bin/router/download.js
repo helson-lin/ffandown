@@ -1,6 +1,6 @@
 const express = require('express')
 const i18n = require('../utils/locale')
-const autoParser = require('../utils/parser')
+const { autoParser } = require('../utils/parser')
 const bodyParser = require('body-parser')
 const Utils = require('../utils/index')
 const jsonParser = bodyParser.json()

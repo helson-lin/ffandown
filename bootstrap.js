@@ -6,7 +6,7 @@ const config = Utils.readConfig()
 const figlet = require('figlet')
 const colors = require('colors')
 
-console.log(colors.blue(figlet.textSync('ffandown', 'ANSI Shadow')))
+console.log(colors.blue(figlet.textSync('ffandown', 'Small Slant')))
 const oimi = new Oimi(
     config.downloadDir, 
     { 

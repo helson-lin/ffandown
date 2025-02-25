@@ -1,7 +1,8 @@
 {
     "delay": 1000,
     "watch": [
-      "bin"
+      "bin",
+      "bootstrap.js"
     ],
     "env": {
       "NODE_ENV": "development"

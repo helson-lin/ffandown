@@ -1,6 +1,9 @@
 const express = require('express')
+const { getPlugin } = require('../utils/parser')
 const validate = require('../middleware/validate')
-const { query } = require('express-validator')
+const { query, body } = require('express-validator')
+const bodyParser = require('body-parser')
+const jsonParser = bodyParser.json()
 const PluginService = require('../sql/pluginService')
 const pluginRouter = express.Router()
 
@@ -34,6 +37,19 @@ function createPluginRouter() {
             })
         }
         // }
+    })
+    // 新增插件
+    pluginRouter.post('/create',[jsonParser, validate([
+        body('name').isString().notEmpty().withMessage('name is required'),
+        body('url').isString().notEmpty().withMessage('url is required'),
+    ])], async (req, res) => {
+        const { name, url } = req.body
+        try {
+            await getPlugin(url)
+            res.send({ code: 0 })
+        } catch (e) {
+            res.send({ code: 1, message: String(e) })
+        }
     })
     return pluginRouter
 }

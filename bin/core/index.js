@@ -25,24 +25,28 @@ class FfmpegHelper {
         this.downloadedBytes = 0
     }
 
+    /**
+     * @description 设置用户代理
+     * @param {string} USER_AGENT 
+     */
     setUserAgent (USER_AGENT) {
         if (USER_AGENT) this.USER_AGENT = USER_AGENT
         return this
     }
 
     /**
-      * Sets the input file
+      * @description 设置输入文件地址
       * @param {String} filename M3U8 file path. You can use remote URL
       * @returns {Function}
       */
-    setInputFile (M3U8_FILE, USER_AGENT) {
+    setInputFile (M3U8_FILE) {
         if (!M3U8_FILE) throw new Error('You must specify the M3U8 file address')
         this.M3U8_FILE = M3U8_FILE
         return this
     }
 
     /**
-    * Sets the output file
+    * @description 设置输出文件地址
     * @param {String} filename Output file path. Has to be local :)
     * @returns {Function}
     */
@@ -53,32 +57,30 @@ class FfmpegHelper {
     }
 
     /**
-    * Sets the thread
+    * @description 设置线程数 Sets the thread
     * @param {Number} number thread number
     * @returns {Function}
     */
     setThreads (number) {
-        if (number) {
-            this.THREADS = number
-        }
+        if (number) this.THREADS = number
         return this
     }
 
     /**
-     * set video preset
+     * @description 设置视频预设 set video preset
      * @param {String} preset video preset
      */
     setPreset (preset) {
-        if (preset) {
-            this.PRESET = preset
-        }
+        if (preset) this.PRESET = preset
         return this
     }
 
+    /**
+     * @description 设置输出视频格式 set video outputformat
+     * @param {string} outputformat 
+     */
     setOutputFormat (outputformat) {
-        if (outputformat) {
-            this.OUTPUTFORMAT = outputformat
-        }
+        if (outputformat) this.OUTPUTFORMAT = outputformat
         return this
     }
 
@@ -91,41 +93,48 @@ class FfmpegHelper {
     }
 
     /**
-     *  check the download url file contentType
+     * @description 通过ffmpeg.ffprobe获取视频的格式
      * @param {String} url
      * @return {Promise<m3u8|unknown>} 
      * @memberof FfmpegHelper
      */
     checkUrlContentType (url, USER_AGENT) {
         // 既然可以通过ffmpeg.ffprobe获取到视频的格式和时长，那么可以通过这个方法来判断视频的格式
-        return new Promise((resolve, reject) => {
-            // prefetch media need carry User-Agent
-            ffmpeg.ffprobe(url, ['-user_agent', `${USER_AGENT}`], (err, metadata) => {
-                if (err) {
-                    resolve('unknown')
-                } else {
-                    const { format_name, duration } = metadata?.format
-                    this.duration = duration ?? 0
-                    log.verbose('format_name: ' + format_name + ' duration: ' + duration)
-                    if (format_name === 'hls') {
-                        resolve('m3u8')
-                    } else if (format_name.split(',').includes('mp4')) {
-                        resolve('mp4')
-                    } else {
+        return new Promise((resolve) => {
+            try {
+                // prefetch media need carry User-Agent
+                ffmpeg.ffprobe(url, ['-user_agent', `${USER_AGENT}`], (err, metadata) => {
+                    if (err) {
                         resolve('unknown')
+                    } else {
+                        const format = metadata && metadata.format
+                        const format_name = format ? format.format_name : undefined
+                        const duration = format ? format.duration : undefined
+                        this.duration = duration ?? 0
+                        log.verbose('format_name: ' + format_name + ' duration: ' + duration)
+                        if (format_name === 'hls') {
+                            resolve('m3u8')
+                        } else if (format_name && format_name.split(',').includes('mp4')) {
+                            resolve('mp4')
+                        } else {
+                            resolve('unknown')
+                        }
                     }
-                }
-            })
+                })
+            } catch {
+                resolve('unknown')
+            }
         })
     }
 
     /**
-      * 获取地址协议
+      * @description 获取地址协议
       * @param {string} url
       * @returns {("live" | "m3u8" | "mp4" | "unknown")}
       */
     async getProtocol (url, USER_AGENT) {
         switch (true) {
+            // 如果地址是 rtmp rtsp 开头的，那么就是直播流
             case url.startsWith('rtmp://'):
             case url.startsWith('rtsp://'):
                 return 'live'
@@ -133,12 +142,13 @@ class FfmpegHelper {
             case url.indexOf('.flv') !== -1:
                 return 'm3u8'
             default:
+                // 通过ffmpeg.ffprobe获取到视频的格式和时长，那么可以通过这个方法来判断视频的格式
                 return await this.checkUrlContentType(url, USER_AGENT)
         }
     }
 
     /**
-     * Gets the metadata of the input file.
+     * @description 获取输入文件的元数据 Gets the metadata of the input file.
      * @returns {Promise<void>} A promise that resolves when the metadata is retrieved.
      */
     async getMetadata () {
@@ -146,15 +156,20 @@ class FfmpegHelper {
     }
 
     /**
-   * Sets the input options for ffmpeg.
-   */
+     * @description 设置 ffmpeg 输入配置  Sets the input options for ffmpeg.
+     */
     setInputOption () {
+        // eslint-disable-next-line max-len
         const USER_AGENT = this.USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
+        // 通过正则从输入地址内提取referer
+        // Extract referer from input address with regular expressions
         const REFERER_RGX = /^(?<referer>http|https:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+)(?::\d+)?\/[^ "]+$/u
         const match = this.M3U8_FILE.match(REFERER_RGX)
         const [referer] = match === null ? ['unknown'] : match.slice(1)
         const options = []
+        // 设置用户代理
         if (USER_AGENT) options.push('-user_agent', `${USER_AGENT}`)
+        // 如果存在 referer 设置 referer
         if (referer !== 'unknown') options.push('-referer', `${referer}`)
         options.length && this.ffmpegCmd.inputOptions(options)
     }
@@ -163,6 +178,7 @@ class FfmpegHelper {
    * Sets the output options for ffmpeg.
    */
     setOutputOption () {
+        // 设置线程数
         if (this.THREADS) {
             this.ffmpegCmd.outputOptions([
                 `-threads ${this.THREADS}`,
@@ -172,6 +188,7 @@ class FfmpegHelper {
         if (this.TIMEMARK) {
             this.ffmpegCmd.seekInput(this.TIMEMARK)
         }
+        // 设置输出的质量
         this.ffmpegCmd.outputOptions(`-preset ${this.PRESET || 'veryfast'}`)
         // PROTOCOL_TYPE为预留字段
         const liveProtocol = this.PROTOCOL_TYPE
@@ -238,7 +255,9 @@ class FfmpegHelper {
         const elapsedSeconds = (Date.now() - this.startTime) / 1000
         const averageSpeedKbps = this.downloadedBytes / elapsedSeconds
         const currentMbs = formatSpeed(averageSpeedKbps)
-        let percent = progress.percent ? toFixed(progress.percent * 100) / 100 : toFixed((timemarkToSeconds(progress.timemark) / this.duration) * 100)
+        let percent = progress.percent 
+            ? toFixed(progress.percent * 100) / 100 
+            : toFixed((timemarkToSeconds(progress.timemark) / this.duration) * 100)
         if (Number.isNaN(percent)) this.PROTOCOL_TYPE = 'live'
         if (callback && typeof callback === 'function') {
             const params = {
@@ -255,7 +274,9 @@ class FfmpegHelper {
     }
 
     /**
-    * Start download mission
+    * @description 开始下载任务 Start download mission
+    * @param {Function} listenProcess 监听下载进度的回调函数 Callback function for listening to download progress
+    * @returns {Promise}
     */
     start (listenProcess) {
         return new Promise((resolve, reject) => {
@@ -297,7 +318,7 @@ class FfmpegHelper {
     }
 
     /**
-   * Kills the ffmpeg process.
+   * @description  杀掉 ffmepg 进程  Kills the ffmpeg process.
    * @param {string} signal The signal to send to the process.
    */
     kill (signal) {

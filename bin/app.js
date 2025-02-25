@@ -101,7 +101,7 @@ function createServer ({ port, oimi }) {
         }
         const list = await getNetwork()
         const listenString = list.reduce((pre, val) => {
-            return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + port + '/')}`
+            return pre + `\n ${colors.white('   -')} ${colors.blue('http://' + val + ':' + port + '/')}`
         }, colors.white('[ffandown] server running at:\n'))
         const isWorker = cluster.isWorker
         if (isWorker && cluster.worker.id === 1 || !isWorker) {

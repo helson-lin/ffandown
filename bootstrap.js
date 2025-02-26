@@ -40,5 +40,5 @@ process.on('SIGINT', async function () {
 process.on('exit', async () => {
     // 退出之前，杀掉进程
     await oimi.killAll()
-    console.log('\n Server stop')
+    console.log('\nServer stop')
 })

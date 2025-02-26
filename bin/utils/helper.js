@@ -4,15 +4,16 @@ const path = require('path')
 const os = require('os')
 const ffmpeg = require('fluent-ffmpeg')
 const download = require('download')
+const colors = require('colors')
 
 const Helper = {
-    version: '4.4.1',
+    version: '6.1',
     registryUrl: 'https://storage.helson-lin.cn',
     registryMap: {
         github: 'https://nn.oimi.space/https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1',
         selfCdn: 'https://storage.helson-lin.cn',
     },
-    decencyList: ['ffmpeg', 'ffprobe'],
+    dependencyList: ['ffmpeg', 'ffprobe'],
     /**
      * @description change ffmpeg dependency download registry
      * @param {string} nameOrBaseUrl
@@ -80,28 +81,33 @@ const Helper = {
     detectPlatform () {
         let type = (os.type()).toLowerCase()
         let arch = (os.arch()).toLowerCase()
-        if (type === 'darwin') {
-            return 'osx-64'
-        }
-        if (type === 'windows_nt') {
-            return arch === 'x64' ? 'windows-64' : 'windows-32'
-        }
+        // macos 系统
+        if (type === 'darwin') return 'osx-64'
+        // windows 系统 将不支持 windows-32
+        if (type === 'windows_nt') return arch === 'x64' ? 'windows-64' : null
+        // linux 系统
         if (type === 'linux') {
-            if (arch === 'arm' || arch === 'arm64') {
-                return 'linux-armel'
-            }
+            if (arch === 'arm' || arch === 'arm64') return 'linux-arm-64'
             return arch === 'x64' ? 'linux-64' : 'linux-32'
         }
         return null
     },
     /**
-     * get binaries download urls
+     * @description get binaries download urls ｜ 获取依赖下载地址
      * @param {String} component ffmpeg ffprobe
      * @returns {String} download url
     */
     getDownloadUrl (component, version = '4.4.1') {
+        const platform = this.detectPlatform()
+        // 如果没有平台信息，那么直接 return null
+        if (!platform) return null
         return `${this.registryUrl}/${component}-${version}-${this.detectPlatform()}.zip`
     },
+    /**
+     * @description 设置环境变量
+     * @param {String} type 
+     * @param {String} path 
+     */
     setEnv (type, path) {
         if (type === 'ffmpeg') {
             ffmpeg.setFfmpegPath(path)
@@ -112,7 +118,7 @@ const Helper = {
         console.log(`\x1b[32m[ffandown] ${type}: env variable is set successfully\x1b[0m`)
     },
     /**
-     * is need download
+     * @description is need download 是否需要下载依赖
      * @param {String} type ffmpeg ffprobe
      * @returns {boolean} true: need to download ffmpeg
     */
@@ -126,6 +132,7 @@ const Helper = {
         return true
     },
     /**
+    * @description 获取依赖信息
     * @param {ffmpeg|ffprobe} type
     * @returns
     */
@@ -133,12 +140,12 @@ const Helper = {
         return {
             type,
             libPath: this.getLibPath(type),
-            downloadURL: this.getDownloadUrl(type, '4.4.1'),
+            downloadURL: this.getDownloadUrl(type, this.version),
             download: this.needDownload(type),
         }
     },
     /**
-     * @description
+     * @description 下载依赖并设置环境变量
      * @param {string} url download url
      * @param {string} libPath lib path
      * @param {string} type 类型 ffmpeg/ffprobe
@@ -146,6 +153,13 @@ const Helper = {
      */
     async downloadAndSetEnv (url, libPath, type) {
         try {
+            console.log(colors.blue(`[ffandown] Downloading ${type} dependencies...`))
+            if (!url) {
+                // 提示手动下载依赖
+                console.log(colors.red(`You need to manually download ${type} dependencies for you device. 
+                    Website: https://ffbinaries.com/downloads`))
+                return
+            }
             // download ffmpeg or ffprobe dependency
             await download(url, 'lib', { extract: true })
             this.setEnv(type, libPath)
@@ -155,11 +169,11 @@ const Helper = {
         }
     },
     /**
-     * download ffbinary
+     * @description download ffbinary 下载依赖
      * @param {Array} libs
      * @returns
     */
-    downloadDependency (libs = this.decencyList) {
+    downloadDependency (libs = this.dependencyList) {
         return new Promise((resolve, reject) => {
             const arr = libs
             .map(i => this.getLibsStatus(i))
@@ -194,24 +208,6 @@ const Helper = {
     getUrlFileExt (url) {
         const parsedUrl = new URL(`http://${url}`)
         return parsedUrl.pathname.split('.').pop()
-    },
-    removeFile (path) {
-        fse.removeSync(path)
-    },
-    checkM3uFile (url, USER_AGENT) {
-        return new Promise((resolve, reject) => {
-            // prefetch media need carry User-Agent
-            fetch(url, 
-                { headers: { 'User-Agent': USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36' },
-                }).then(async (res) => {
-                const data = await res.text()
-                if (data.startsWith('#EXTM3U')) {
-                    resolve(data)
-                } else {
-                    reject(new Error(`${url}: this is not a m3u url`))
-                }
-            }).catch(e => reject(e))
-        })
     },
 }
 

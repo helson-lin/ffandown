@@ -1,7 +1,10 @@
 const express = require('express')
+const fse = require('fs-extra')
+const i18n = require('../utils/locale')
 const { getPlugin } = require('../utils/parser')
 const validate = require('../middleware/validate')
 const { query, body } = require('express-validator')
+const { v4: uuidv4 } = require('uuid')
 const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json()
 const PluginService = require('../sql/pluginService')
@@ -40,17 +43,44 @@ function createPluginRouter() {
     })
     // 新增插件
     pluginRouter.post('/create',[jsonParser, validate([
-        body('name').isString().notEmpty().withMessage('name is required'),
+        body('name').isString().optional(),
         body('url').isString().notEmpty().withMessage('url is required'),
     ])], async (req, res) => {
-        const { name, url } = req.body
+        const data = req.body
+        // const { url } = req.body
         try {
-            await getPlugin(url)
-            res.send({ code: 0 })
+            const pluginInfo = await getPlugin(data.url)
+            // 存储数据到数据库内
+            await PluginService.create({
+                uid: uuidv4(),
+                name: data.name || pluginInfo?.name, 
+                url: pluginInfo.url, 
+                author: pluginInfo?.author || '',
+                description: pluginInfo.description || '',
+                localUrl: pluginInfo?.localUrl || '',
+                status: '1',
+            })
+            res.send({ code: 0, data: pluginInfo })
         } catch (e) {
             res.send({ code: 1, message: String(e) })
         }
     })
+    // 删除插件
+    pluginRouter.get('/delete', validate([
+        query('uid').isString().notEmpty().withMessage('uid is required'),
+    ]), async (req, res) => {
+        try {
+            const deletedPlugin = await PluginService.delete(req.query?.uid)
+            if (deletedPlugin) {
+                // 通过deletedPlugin.localUrl 删除文件
+                fse.removeSync(deletedPlugin.localUrl)
+            }
+            res.send({ code: 0, data: !deletedPlugin ? i18n._('query_error') : i18n._('delete_success') })
+        } catch (e) {
+            res.send({ code: 1, message: String(e) })
+        }
+    })
+    // 修改插件信息
     return pluginRouter
 }
 

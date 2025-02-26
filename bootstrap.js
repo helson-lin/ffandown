@@ -18,6 +18,7 @@ const oimi = new Oimi(
 )
 Oimi.prototype.config = config
 
+// oimi 服务启动之后创建接口服务
 oimi.ready().then(() => {
     createServer({
         oimi, 

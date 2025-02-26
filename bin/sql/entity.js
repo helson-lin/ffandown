@@ -153,7 +153,7 @@ const SysPluginsDb = sequelize.define('sys_plugins', {
         type: Sequelize.STRING,
         allowNull: false,
     },
-    locateUrl: {
+    localUrl: {
         type: Sequelize.STRING,
         allowNull: false,
     },

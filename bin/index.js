@@ -81,7 +81,7 @@ class Oimi {
     }
 
     /**
-     * @description get current device cpu numbers
+     * @description get current device cpu numbers ｜ 获取当前设备的cpu核心数量
      * @returns {number} cpu numbers
      */
 
@@ -149,6 +149,7 @@ class Oimi {
                     // 如果是下载失败，添加错误的信息
                     if (status === '4') updateOption.message = message
                     await this.dbOperation.DownloadService.update(uid, updateOption)
+                    // 回调下载任务
                     this.callbackStatus({ uid, name, status: updateOption.status, message, url: info.url })
                     if (this.stopMission.findIndex(i => i.uid === uid) !== -1) {
                         const missionToStop = this.stopMission.find(i => i.uid === uid)

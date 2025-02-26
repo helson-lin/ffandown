@@ -8,18 +8,22 @@ const fs = require('fs')
  * @returns 
  */
 const extractScriptBlock = (text) => {
+    let textRemoveComments = text
     const allAnnotations = text.match(/\/\/.+\n/g)
     if (allAnnotations && allAnnotations.length) {
         let code = 0
-        return allAnnotations.reduce((pre, value) => {
+        const pluginInfo =  allAnnotations.reduce((pre, value) => {
             const splitSpaceAndLine = (str) => str.replace(/^\/\/\s*/gm, '').trim()
             if (splitSpaceAndLine(value) === '==FFandownScript==') {
                 code = 1
+                textRemoveComments = textRemoveComments.replace(value, '')
                 return pre
             } else if (splitSpaceAndLine(value) === '==/FFandownScript==') {
                 code = 0
+                textRemoveComments = textRemoveComments.replace(value, '')
                 return pre
             } else if (code === 1 && value)  {
+                textRemoveComments = textRemoveComments.replace(value, '')
                 const info = splitSpaceAndLine(value)
                 let [key, val] = info.split(' ')
                 key = key && key.replace('@','').trim()
@@ -28,10 +32,26 @@ const extractScriptBlock = (text) => {
             } 
             return pre
         }, {})
+        return {
+            pluginInfo,
+            textRemoveComments,
+        }
     } else {
-        return null
+        return { pluginInfo: null, textRemoveComments }
     }
 }
+
+/**
+ * @description 异常注释信息
+ * @param {String} code 
+ * @returns {String}
+ */
+function removeComments(code) {
+    return code
+    .replace(/\/\*[\s\S]*?\*\//g, '') // 移除多行注释
+    .replace(/\/\/.*$/gm, '')        // 移除单行注释
+}
+
 
 /**
  * @description 解析插件代码并创建解析器实例
@@ -45,8 +65,8 @@ const makeParser = (jsCode) => {
     }
     try {
         const Parser = new Function(`return ${jsCode}`)()
+        // console.log(jsCode,Parser)
         if (typeof Parser !== 'function') {
-            console.log(Parser)
             throw new Error('Parser must be a constructor function')
         }
         Parser.prototype.fetch = fetch
@@ -85,7 +105,7 @@ const getAllParsers = () => {
             allParsers.push(parser)
         } catch (e) {
             // 解析器构建失败时输出错误信息
-            console.error('解析器构建失败', jsFile)
+            console.error('解析器构建失败', e)
         }
     })
     return allParsers
@@ -115,10 +135,20 @@ const autoParser = async (url) => {
     }
 }
 
+const savePlugin = (pluginInfo, pluginContent) => {
+    const randomStr = () => Math.random().toString(36).slice(2)
+    const name = pluginInfo.name ? pluginInfo.name + '_' + randomStr() : randomStr()
+    const pluginPath = path.join(process.cwd(), `./parsers/${name}.js`)
+    fs.writeFileSync(pluginPath, pluginContent, 'utf8')
+    pluginInfo.localUrl = pluginPath
+    // 存储到数据库内
+    return pluginInfo
+}
+
 /**
  * @description 获取插件内容
  * @param {String} url 
- * @param {*} tls 
+ * @param {Boolean} tls 
  * @returns 
  */
 const getPlugin = (url, tls = true) => {
@@ -126,11 +156,11 @@ const getPlugin = (url, tls = true) => {
         try {
             // 1. 下载插件内容
             fetch(url).then((res) => res.text()).then(async (pluginContent) => {
-                // try {
                 const required = ['name', 'author', 'description']
                 // 缺少注解信息
                 const lossKey = []
-                const pluginInfo = await extractScriptBlock(pluginContent)
+                const { pluginInfo,  textRemoveComments } = await extractScriptBlock(pluginContent)
+                // 2. 解析插件信息
                 required.forEach(requiredKey => {
                     if (pluginInfo[requiredKey] === undefined) lossKey.push(requiredKey)
                 })
@@ -139,17 +169,15 @@ const getPlugin = (url, tls = true) => {
                 } else {
                     pluginInfo.url = url
                     // 1. 查看插件是否可以使用
-                    const parserPlugin = makeParser(pluginContent)
+                    const parserPlugin = makeParser(textRemoveComments)
                     if (!parserPlugin.match || !parserPlugin.parser) {
                         reject('插件无法使用，缺少 match 或 parser 方法')
                     } else {
-                        // 2. 保存插件到本地目录，并存储到插件数据库
+                        // 2. 保存插件到本地目录
+                        savePlugin(pluginInfo, textRemoveComments)
                         resolve(pluginInfo)
                     }
                 }
-                // } catch (e) {
-                //     reject(e)
-                // }
             }).catch(e => {
                 reject(e)
             })

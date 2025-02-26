@@ -6,8 +6,8 @@ const PluginService = {
     async create (body) {
         try {
             const time = new Date().toLocaleString()
-            const userDto = await SysPluginsDb.create({ ...body, crt_tm: time, upd_tm: time })
-            return Promise.resolve(userDto)
+            const pluginDto = await SysPluginsDb.create({ ...body, crt_tm: time, upd_tm: time })
+            return Promise.resolve(pluginDto)
         } catch (e) {
             return Promise.reject(e)
         }
@@ -17,8 +17,10 @@ const PluginService = {
             return Promise.reject('uid is required')
         } else {
             try {
-                // 删除插件
-                const pluginDto = await SysPluginsDb.destroy({ where: { uid } })
+                // 删除插件 raw: true 查询元数据
+                const pluginDto = await SysPluginsDb.findOne({ where: { uid }, raw: true })
+                if (!pluginDto) return Promise.reject('not found any data')
+                await SysPluginsDb.destroy({ where: { uid } })
                 return Promise.resolve(pluginDto)
             }  catch (e) {
                 return Promise.reject(e)

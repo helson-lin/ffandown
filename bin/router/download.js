@@ -14,8 +14,8 @@ function createDownloadRouter (oimi) {
     downloadRouter.post('/down', jsonParser, (req, res) => {
         let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix } = req.body
         // if the config option have preset and outputformat, and body have't will auto replace
-        if (!preset && this.config.preset) preset = this.config.preset
-        if (!outputformat && this.config.outputformat) outputformat = this.config.outputformat
+        if (!preset && oimi.config?.preset) preset = oimi.config.preset
+        if (!outputformat && oimi.config.outputformat) outputformat = oimi.config.outputformat
         url = Utils.getRealUrl(url)
         if (!url) {
             res.send({ code: 1, message: i18n._('query_error') })
@@ -35,7 +35,7 @@ function createDownloadRouter (oimi) {
                         }).then(() => {
                             Utils.LOG.info(`${i18n._('create_success')}:` + urlItem)
                         }).catch((e) => {
-                            Utils.LOG.warn(`${i18n._('create_failed')}:` + e)
+                            Utils.LOG.error(`${i18n._('create_failed')}:` + e)
                         })
                     }
                 } else {
@@ -50,7 +50,7 @@ function createDownloadRouter (oimi) {
                     }).then(() => {
                         Utils.LOG.info(`${i18n._('create_success')}:` + url)
                     }).catch((e) => {
-                        Utils.LOG.warn(`${i18n._('create_failed')}:` + e)
+                        Utils.LOG.error(`${i18n._('create_failed')}:` + e)
                     })
                 }
                 res.send({ code: 0, message: `${url}: ${i18n._('create_success')}` })

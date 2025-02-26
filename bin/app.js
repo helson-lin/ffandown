@@ -57,9 +57,9 @@ function createServer ({ port, oimi }) {
                         `${i18n._('download_failed')}\n${i18n._('name')}: ${name}\n${i18n._('site')}: ${data.url}\n${i18n._('error_reason')}: ${data.message}`
                 }`,
         )
-        .then(() => Utils.LOG.warn(i18n._('send_success')))
+        .then(() => Utils.LOG.info(i18n._('send_success')))
         .catch(e => {
-            Utils.LOG.warn(`${i18n._('send_failed')}:` + e)
+            Utils.LOG.error(`${i18n._('send_failed')}: ` + e)
         }) 
     })
     // express static server

@@ -5,7 +5,7 @@
   "main": "bootstrap.js",
   "bin": "bootstrap.js",
   "scripts": {
-    "start": "node bootstrap.js --debug=true",
+    "start": "node bootstrap.js --debug=false",
     "dev": "nodemon",
     "clean": "rimraf dist",
     "pkg": "node build.js",
@@ -41,7 +41,7 @@
     "sqlite3": "^5.1.6",
     "systeminformation": "^5.17.12",
     "uuid": "^9.0.0",
-    "winston": "^3.8.2",
+    "winston": "^3.17.0",
     "winston-daily-rotate-file": "^4.7.1",
     "yamljs": "^0.3.0"
   },

@@ -34,7 +34,7 @@ class Oimi {
         this.thread = thread && this.getCpuNum()
         this.maxDownloadNum = maxDownloadNum || 5
         this.enableTimeSuffix = enableTimeSuffix
-        log.level = verbose ? 'verbose' : 'silent'
+        log.level = verbose ? 'verbose' : 'warn'
         this.verbose = verbose
         this.eventCallback = eventCallback
     }
@@ -254,11 +254,11 @@ class Oimi {
                 // 实时更新任务信息
                 this.updateMission(uid, { ...mission, status: params.percent >= 100 ? '3' : '1', ...params })
             }).then(() => {
-                log.info(`success download mission: ${mission.name}`)
+                log.info(`Successfully downloaded task: ${mission.name}`)
                 // todo: create download mission support downloaded callback
                 this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
             }).catch((e) => {
-                log.warn('catched downloading error:', String(e))
+                log.error('Catched downloading error:', String(e))
                 // 为什么终止下载会执行多次 catch
                 // 下载中发生错误
                 if ([
@@ -273,7 +273,7 @@ class Oimi {
             })
             return 0
         } catch (e) {
-            log.warn('downloading error:', e)
+            log.error('downloading error:', e)
             await this.updateMission(uid, { ...mission, status: '4', message: String(e) })
             return 1
         }
@@ -311,6 +311,7 @@ class Oimi {
                 this.config.webhookType, 
                 i18n._('msg_title'),
                 `${i18n._('create_success')}\n${i18n._('name')}: ${fileName}\n${i18n._('site')}: ${url}`)
+            .catch(e => log.error(`${i18n._('send_failed')}: ` + e))
             return { uid: mission.uid, name: mission.name }
         } else {
             // continue download
@@ -323,6 +324,7 @@ class Oimi {
                 this.config.webhookType, 
                 i18n._('msg_title'),
                 `${i18n._('create_success')}\n${i18n._('name')}: ${fileName}\n${i18n._('site')}: ${url}`)
+            .catch(e => log.error(`${i18n._('send_failed')}: ` + e))
             return { uid: mission.uid, name: mission.name }
         }
     }
@@ -451,7 +453,7 @@ class Oimi {
                 try {
                     await this.updateMission(mission.uid, { ...mission, status: '2' })
                 } catch (e) {
-                    log.warn(e.message)
+                    log.error(e.message)
                 }
             }
         }

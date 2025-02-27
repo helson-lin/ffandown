@@ -258,7 +258,7 @@ class Oimi {
                 // todo: create download mission support downloaded callback
                 this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
             }).catch((e) => {
-                log.error('Catched downloading error:', String(e))
+                log.error('Catched downloading error:', String(e.message))
                 // 为什么终止下载会执行多次 catch
                 // 下载中发生错误
                 if ([
@@ -351,15 +351,16 @@ class Oimi {
     * @param {string} uid
     */
     async resumeDownload (uid) {
-        // log.info('resumeDownload')
+        log.info('resumeDownload')
         // 恢复下载任务存在两种情况 missionList里面已经存在数据 直接调用kill('恢复')
         const mission = this.missionList.find(i => i.uid === uid)
         if (mission) {
             mission.ffmpegHelper.kill('SIGCONT')
+            log.info('mission in missionList')
             return { code: 0 }
         } else {
             let mission = await this.dbOperation.DownloadService.queryOne(uid)
-            // log.info('resumeDownload mission', JSON.stringify(mission))
+            log.info('resumeDownload mission', JSON.stringify(mission))
             if (mission) {
                 try {
                     mission = mission.toJSON()
@@ -440,7 +441,7 @@ class Oimi {
 
     async getMissionList (current, pageSize, status) {
         return await this.dbOperation.DownloadService.queryByPage({
-            pageNumber: current, pageSize, status, sortField: 'crt_tm', sortOrder: 'ASC',
+            pageNumber: current, pageSize, status, sortField: 'crt_tm', sortOrder: 'DESC',
         })
     }
     /**

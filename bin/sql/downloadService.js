@@ -1,5 +1,5 @@
 const { SysDownloadDb } = require('./entity')
-const { Op } = require('sequelize')
+const { Op, col } = require('sequelize')
 const DownloadService = {
     /**
      * @description create download record
@@ -56,7 +56,7 @@ const DownloadService = {
             const options = {
                 limit: pageSize,
                 offset,
-                order: [[sortField, sortOrder]],
+                order: [[col(sortField), sortOrder]],
                 where: { 
                     status: { [Op.in]: statusList },
                 },

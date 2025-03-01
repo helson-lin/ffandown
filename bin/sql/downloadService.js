@@ -1,5 +1,5 @@
 const { SysDownloadDb } = require('./entity')
-const { Op, col } = require('sequelize')
+const { Op } = require('sequelize')
 const DownloadService = {
     /**
      * @description create download record

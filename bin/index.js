@@ -87,15 +87,18 @@ class Oimi {
      * @param {string} outputFormat
      * @returns {{fileName: string, filePath: string}} path
      */
-    getDownloadFilePathAndName (name, dir, outputFormat) {
+    getDownloadFilePathAndName (name, dir, outputFormat, enableTimeSuffix) {
         const tm = String(new Date().getTime())
         let fileName = name ? name.split('/').pop() : tm
         const dirPath = path.join(this.OUTPUT_DIR ?? process.cwd(), dir ?? '')
         this.helper.ensureMediaDir(dirPath)
+        // 是否需要时间戳后缀
+        const isNeedTimeSuffix = enableTimeSuffix || this.enableTimeSuffix
         const getFileName = () => {
             const fileFormat = outputFormat || 'mp4'
-            if (name && this.enableTimeSuffix) return name + '_' + tm + `.${fileFormat}`
-            if (name && !this.enableTimeSuffix) return name + `.${fileFormat}`
+            // 只有自定义名称的情况下，才考虑是否拼接时间戳后缀
+            if (name && isNeedTimeSuffix) return name + '_' + tm + `.${fileFormat}`
+            if (name && !isNeedTimeSuffix) return name + `.${fileFormat}`
             return tm + `.${fileFormat}`
         }
         const filePath = path.join(dirPath, getFileName())
@@ -285,10 +288,10 @@ class Oimi {
      */
     async createDownloadMission (query) {
         // let enableTimeSuffix = false
-        const { name, url, outputformat, preset, useragent, dir } = query
+        const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix } = query
         if (!url) throw new Error('url is required')
         log.info('createDownloadMission', JSON.stringify(query))
-        const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat)
+        const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat, enableTimeSuffix)
         const mission = { 
             uid: uuidv4(),
             name: fileName,

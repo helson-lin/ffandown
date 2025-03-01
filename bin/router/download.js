@@ -30,7 +30,7 @@ function createDownloadRouter (oimi) {
                             url: urlItem, 
                             dir, 
                             preset, 
-                            enableTimeSuffix: enableTimeSuffix ?? false, 
+                            enableTimeSuffix, 
                             useragent, 
                             outputformat,
                         }).then(() => {
@@ -45,7 +45,7 @@ function createDownloadRouter (oimi) {
                         url,
                         dir,
                         preset,
-                        enableTimeSuffix: enableTimeSuffix ?? false,
+                        enableTimeSuffix,
                         useragent,
                         outputformat, 
                     }).then(() => {

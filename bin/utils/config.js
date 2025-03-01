@@ -27,7 +27,9 @@ const DEFAULT_OPTIONS = {
     enableTimeSuffix: false,
     secret: generateRandomString(32),
 }
-const OUTPUTFORMAT_OPTIONS = ['mp4', 'mov', 'flv', 'avi']
+// 支持的视频格式
+const OUTPUTFORMAT_OPTIONS = ['mp4', 'mov', 'flv', 'avi', 'mkv', 'ts']
+// 支持的ffmpeg preset
 const PRESET_OPTIONS = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow']
 /**
  * @description: find config.yaml location

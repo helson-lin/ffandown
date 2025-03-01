@@ -439,9 +439,9 @@ class Oimi {
     }
 
 
-    async getMissionList (current, pageSize, status) {
+    async getMissionList (current, pageSize, status, order = 'DESC', sort = 'crt_tm') {
         return await this.dbOperation.DownloadService.queryByPage({
-            pageNumber: current, pageSize, status, sortField: 'crt_tm', sortOrder: 'DESC',
+            pageNumber: current, pageSize, status, sortField: sort || 'crt_tm', sortOrder: order || 'DESC',
         })
     }
     /**

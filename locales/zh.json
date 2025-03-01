@@ -21,5 +21,6 @@
   "stop_success": "终止成功",
   "invalid_credentials": "没有权限",
   "login_failed": "登录失败，请检查用户名和密码",
-  "login_success": "登录成功"
+  "login_success": "登录成功",
+  "videoPath_required": "videoPath为必填参数"
 }

@@ -4,6 +4,7 @@ const bodyParser = require('body-parser')
 const Utils = require('../utils/index')
 const jsonParser = bodyParser.json()
 const downloadRouter = express.Router()
+const DownloadService = require('../sql/downloadService')
 
 /**
  * @description create download router
@@ -61,9 +62,15 @@ function createDownloadRouter (oimi) {
     })
     // get download list
     downloadRouter.get('/list', async (req, res) => {
-        const { current, pageSize, status } = req.query
+        const { current, pageSize, status, order, sort } = req.query
         try {
-            const list = await oimi.getMissionList(current, pageSize, status)
+            const list =  await DownloadService.queryByPage({
+                pageNumber: current, 
+                pageSize, 
+                status, 
+                sortField: sort || 'crt_tm', 
+                sortOrder: order || 'DESC',
+            })
             res.send({ code: 0, data: list })
         } catch (e) {
             Utils.LOG.error(e)

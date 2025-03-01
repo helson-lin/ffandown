@@ -35,7 +35,7 @@ class FfmpegHelper {
       * @param {String} filename M3U8 file path. You can use remote URL
       * @returns {Function}
       */
-    setInputFile (M3U8_FILE, USER_AGENT) {
+    setInputFile (M3U8_FILE) {
         if (!M3U8_FILE) throw new Error('You must specify the M3U8 file address')
         this.M3U8_FILE = M3U8_FILE
         return this
@@ -98,14 +98,18 @@ class FfmpegHelper {
      */
     checkUrlContentType (url, USER_AGENT) {
         // 既然可以通过ffmpeg.ffprobe获取到视频的格式和时长，那么可以通过这个方法来判断视频的格式
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             // prefetch media need carry User-Agent
             ffmpeg.ffprobe(url, ['-user_agent', `${USER_AGENT}`], (err, metadata) => {
                 if (err) {
                     resolve('unknown')
                 } else {
-                    const { format_name, duration } = metadata?.format
+                    const { format_name, duration } = metadata && metadata.format ? 
+                        metadata.format : 
+                        { format_name: undefined, duration: undefined }
+                    // 视频时长
                     this.duration = duration ?? 0
+                    // 
                     log.verbose('format_name: ' + format_name + ' duration: ' + duration)
                     if (format_name === 'hls') {
                         resolve('m3u8')
@@ -149,7 +153,8 @@ class FfmpegHelper {
    * Sets the input options for ffmpeg.
    */
     setInputOption () {
-        const USER_AGENT = this.USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
+        const USER_AGENT = this.USER_AGENT || 
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
         const REFERER_RGX = /^(?<referer>http|https:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+)(?::\d+)?\/[^ "]+$/u
         const match = this.M3U8_FILE.match(REFERER_RGX)
         const [referer] = match === null ? ['unknown'] : match.slice(1)
@@ -238,7 +243,9 @@ class FfmpegHelper {
         const elapsedSeconds = (Date.now() - this.startTime) / 1000
         const averageSpeedKbps = this.downloadedBytes / elapsedSeconds
         const currentMbs = formatSpeed(averageSpeedKbps)
-        let percent = progress.percent ? toFixed(progress.percent * 100) / 100 : toFixed((timemarkToSeconds(progress.timemark) / this.duration) * 100)
+        let percent = progress.percent ? 
+            toFixed(progress.percent * 100) / 100 : 
+            toFixed((timemarkToSeconds(progress.timemark) / this.duration) * 100)
         if (Number.isNaN(percent)) this.PROTOCOL_TYPE = 'live'
         if (callback && typeof callback === 'function') {
             const params = {
@@ -270,13 +277,13 @@ class FfmpegHelper {
                     // setOutputOption is dependen on protocol type
                     await _this.setOutputOption()
                     // set the transform file suffix
-                    _this.ffmpegCmd.format(_this.OUTPUTFORMAT || 'mp4')
+                    // _this.ffmpegCmd.format(_this.OUTPUTFORMAT || 'mp4')
                     _this.ffmpegCmd
                     .on('progress', (progress) => {
                         _this.handlerProcess(progress, listenProcess)
                     })
                     .on('stderr', function (stderrLine) {
-                        // log.verbose('Stderr output:' + stderrLine)
+                        log.verbose('Stderr output:' + stderrLine)
                     })
                     .on('start', function (commandLine) {
                         _this.startTime = Date.now()

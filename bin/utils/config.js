@@ -19,7 +19,7 @@ const DEFAULT_OPTIONS = {
     downloadDir: '/media/', 
     webhooks: '',
     webhookType: 'bark',
-    thread: true,
+    thread: false,
     useFFmpegLib: true,
     maxDownloadNum: 5,
     preset: 'medium',

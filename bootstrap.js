@@ -6,7 +6,7 @@ const config = Utils.readConfig()
 const figlet = require('figlet')
 const colors = require('colors')
 
-console.log(colors.blue(figlet.textSync('ffandown', 'ANSI Shadow')))
+console.log(colors.blue(figlet.textSync('ffandown', 'Small Slant')))
 const oimi = new Oimi(
     config.downloadDir, 
     { 
@@ -16,6 +16,7 @@ const oimi = new Oimi(
         enableTimeSuffix: config.enableTimeSuffix || false,
     },
 )
+
 Oimi.prototype.config = config
 
 oimi.ready().then(() => {

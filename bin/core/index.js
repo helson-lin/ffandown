@@ -159,10 +159,8 @@ class FfmpegHelper {
      * @description 设置 ffmpeg 输入配置  Sets the input options for ffmpeg.
      */
     setInputOption () {
-        // eslint-disable-next-line max-len
-        const USER_AGENT = this.USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
-        // 通过正则从输入地址内提取referer
-        // Extract referer from input address with regular expressions
+        const USER_AGENT = this.USER_AGENT || 
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
         const REFERER_RGX = /^(?<referer>http|https:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+)(?::\d+)?\/[^ "]+$/u
         const match = this.M3U8_FILE.match(REFERER_RGX)
         const [referer] = match === null ? ['unknown'] : match.slice(1)
@@ -291,13 +289,13 @@ class FfmpegHelper {
                     // setOutputOption is dependen on protocol type
                     await _this.setOutputOption()
                     // set the transform file suffix
-                    _this.ffmpegCmd.format(_this.OUTPUTFORMAT || 'mp4')
+                    // _this.ffmpegCmd.format(_this.OUTPUTFORMAT || 'mp4')
                     _this.ffmpegCmd
                     .on('progress', (progress) => {
                         _this.handlerProcess(progress, listenProcess)
                     })
                     .on('stderr', function (stderrLine) {
-                        // log.verbose('Stderr output:' + stderrLine)
+                        log.verbose('Stderr output:' + stderrLine)
                     })
                     .on('start', function (commandLine) {
                         _this.startTime = Date.now()

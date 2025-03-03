@@ -8,7 +8,7 @@ const DownloadService = {
      */
     async create (body) {
         try {
-            const time = new Date().toLocaleString()
+            const time = new Date().toISOString()
             const download = await SysDownloadDb.create({ ...body, crt_tm: time, upd_tm: time })
             return Promise.resolve(download)
         } catch (e) {
@@ -26,7 +26,7 @@ const DownloadService = {
     async update (uid, body) {
         try {
             const mission = body
-            if (!mission.upd_tm) mission.upd_tm = new Date().toLocaleString()
+            if (!mission.upd_tm) mission.upd_tm = new Date().toISOString()
             const download = await SysDownloadDb.update(mission, { where: { uid } })
             return Promise.resolve(download)
         } catch (e) {
@@ -49,7 +49,7 @@ const DownloadService = {
             return Promise.reject(e)
         }
     },
-    async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'ASC', status = '1' }) {
+    async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'DESC', status = '1' }) {
         try {
             const statusList = String(status || '1').split(',').map(item => Number(item.trim()))
             const offset = (pageNumber - 1) * pageSize

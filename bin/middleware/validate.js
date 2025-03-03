@@ -14,7 +14,7 @@ const validate = (validations) => {
         // 如果有错误，返回 400 Bad Request 响应
         const message = errors.array().reduce((pre, val) => {
             return pre + `${val.msg}. `
-        }, i18n._('query_error') + ': ')
+        }, '')
         if (!errors.isEmpty()) {
             return res.status(400).json({
                 code: 1,

@@ -126,7 +126,6 @@ const msg = (url, type, text, more) => {
                 body: JSON.stringify(sendInfo.data),
             }, (error, _, body) => {
                 if (error) {
-                    console.log(error)
                     reject(error)
                 }
                 if (body) {

@@ -20,5 +20,6 @@
   "stop_success": "Terminated successfully",
   "invalid_credentials": "Invalid credentials",
   "login_failed": "Login failed, Please check username and password",
-  "login_success": "Login successfully"
+  "login_success": "Login successfully",
+  "videoPath_required": "videoPath is required"
 }

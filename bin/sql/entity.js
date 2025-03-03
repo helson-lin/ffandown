@@ -82,12 +82,14 @@ const SysDownloadDb = sequelize.define('sys_download', {
         allowNull: false,
     },
     crt_tm: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
         allowNull: false,
+        default: Sequelize.NOW,
     },
     upd_tm: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
         allowNull: false,
+        default: Sequelize.NOW,
     },
 })
 
@@ -115,11 +117,13 @@ const SysUsersDb = sequelize.define('sys_users', {
         default: '1',
     },
     crt_tm: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
+        default: Sequelize.NOW,
         allowNull: false,
     },
     upd_tm: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
+        default: Sequelize.NOW,
         allowNull: false,
     },
 })

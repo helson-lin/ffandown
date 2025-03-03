@@ -16,6 +16,7 @@ const oimi = new Oimi(
         enableTimeSuffix: config.enableTimeSuffix || false,
     },
 )
+
 Oimi.prototype.config = config
 
 // oimi 服务启动之后创建接口服务
@@ -41,5 +42,5 @@ process.on('SIGINT', async function () {
 process.on('exit', async () => {
     // 退出之前，杀掉进程
     await oimi.killAll()
-    console.log('\n Server stop')
+    console.log('\nServer stop')
 })

@@ -42,7 +42,7 @@ class Oimi {
         this.maxDownloadNum = maxDownloadNum || 5
         // 是否开启时间后缀
         this.enableTimeSuffix = enableTimeSuffix
-        log.level = verbose ? 'verbose' : 'silent'
+        log.level = verbose ? 'verbose' : 'warn'
         this.verbose = verbose
         // 回调事件
         this.eventCallback = eventCallback
@@ -96,7 +96,7 @@ class Oimi {
      * @param {string} outputFormat 输出格式
      * @returns {{fileName: string, filePath: string}} path
      */
-    getDownloadFilePathAndName (name, dir, outputFormat) {
+    getDownloadFilePathAndName (name, dir, outputFormat, enableTimeSuffix) {
         const tm = String(new Date().getTime())
         // 如果没有名称，就用时间戳作为名称
         let fileName = name ? name.split('/').pop() : tm
@@ -104,13 +104,13 @@ class Oimi {
         const dirPath = path.join(this.OUTPUT_DIR ?? process.cwd(), dir ?? '')
         // 确保二级目录存在
         this.helper.ensureMediaDir(dirPath)
+        // 是否需要时间戳后缀
+        const isNeedTimeSuffix = enableTimeSuffix || this.enableTimeSuffix
         const getFileName = () => {
             const fileFormat = outputFormat || 'mp4'
-            // 如果开启了全局的时间戳配置，那么追加上时间戳
-            if (name && this.enableTimeSuffix) return name + '_' + tm + `.${fileFormat}`
-            // 没有全局的时间戳配置，直接返回名称
-            if (name && !this.enableTimeSuffix) return name + `.${fileFormat}`
-            // 如果没有传入名称，就用时间戳作为名称
+            // 只有自定义名称的情况下，才考虑是否拼接时间戳后缀
+            if (name && isNeedTimeSuffix) return name + '_' + tm + `.${fileFormat}`
+            if (name && !isNeedTimeSuffix) return name + `.${fileFormat}`
             return tm + `.${fileFormat}`
         }
         // 获取下载文件的名称
@@ -274,10 +274,11 @@ class Oimi {
                 // 实时更新任务信息
                 this.updateMission(uid, { ...mission, status: params.percent >= 100 ? '3' : '1', ...params })
             }).then(() => {
-                // 任务下载完成
-                log.info(`success download mission: ${mission.name}`)
+                log.info(`Successfully downloaded task: ${mission.name}`)
+                // todo: create download mission support downloaded callback
                 this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
             }).catch((e) => {
+                log.error('Catched downloading error:', String(e.message))
                 // 为什么终止下载会执行多次 catch
                 // 下载中发生错误
                 log.warn('catched downloading error:', String(e))
@@ -295,8 +296,7 @@ class Oimi {
             })
             return 0
         } catch (e) {
-            // 下载过程出现异常，更新任务状态为下载失败
-            log.warn('downloading error:', e)
+            log.error('downloading error:', e)
             await this.updateMission(uid, { ...mission, status: '4', message: String(e) })
             return 1
         }
@@ -308,10 +308,10 @@ class Oimi {
      */
     async createDownloadMission (query) {
         // let enableTimeSuffix = false
-        const { name, url, outputformat, preset, useragent, dir } = query
+        const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix } = query
         if (!url) throw new Error('url is required')
         log.info('createDownloadMission', JSON.stringify(query))
-        const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat)
+        const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat, enableTimeSuffix)
         const mission = { 
             uid: uuidv4(),
             name: fileName,
@@ -334,7 +334,7 @@ class Oimi {
                 this.config.webhookType, 
                 i18n._('msg_title'),
                 `${i18n._('create_success')}\n${i18n._('name')}: ${fileName}\n${i18n._('site')}: ${url}`)
-            .catch(e => log.error(e))
+            .catch(e => log.error(`${i18n._('send_failed')}: ` + e))
             return { uid: mission.uid, name: mission.name }
         } else {
             // continue download
@@ -348,7 +348,7 @@ class Oimi {
                 this.config.webhookType, 
                 i18n._('msg_title'),
                 `${i18n._('create_success')}\n${i18n._('name')}: ${fileName}\n${i18n._('site')}: ${url}`)
-            .catch(e => log.error(e))
+            .catch(e => log.error(`${i18n._('send_failed')}: ` + e))
             return { uid: mission.uid, name: mission.name }
         }
     }
@@ -375,15 +375,16 @@ class Oimi {
     * @param {string} uid
     */
     async resumeDownload (uid) {
-        // log.info('resumeDownload')
+        log.info('resumeDownload')
         // 恢复下载任务存在两种情况 missionList里面已经存在数据 直接调用kill('恢复')
         const mission = this.missionList.find(i => i.uid === uid)
         if (mission) {
             mission.ffmpegHelper.kill('SIGCONT')
+            log.info('mission in missionList')
             return { code: 0 }
         } else {
             let mission = await this.dbOperation.DownloadService.queryOne(uid)
-            // log.info('resumeDownload mission', JSON.stringify(mission))
+            log.info('resumeDownload mission', JSON.stringify(mission))
             if (mission) {
                 try {
                     mission = mission.toJSON()
@@ -462,9 +463,9 @@ class Oimi {
     }
 
 
-    async getMissionList (current, pageSize, status) {
+    async getMissionList (current, pageSize, status, order = 'DESC', sort = 'crt_tm') {
         return await this.dbOperation.DownloadService.queryByPage({
-            pageNumber: current, pageSize, status, sortField: 'crt_tm', sortOrder: 'ASC',
+            pageNumber: current, pageSize, status, sortField: sort || 'crt_tm', sortOrder: order || 'DESC',
         })
     }
     /**
@@ -477,7 +478,7 @@ class Oimi {
                 try {
                     await this.updateMission(mission.uid, { ...mission, status: '2' })
                 } catch (e) {
-                    log.warn(e.message)
+                    log.error(e.message)
                 }
             }
         }

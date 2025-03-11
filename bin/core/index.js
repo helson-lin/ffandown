@@ -6,19 +6,23 @@
  */
 const ffmpeg = require('fluent-ffmpeg')
 const { LOG: log } = require('../utils/index')
+
+const DEFAULT_USER_AGENT = 
+'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
 /**
   * A class to convert M3U8 to MP4
   * @class
   */
 class FfmpegHelper {
+    INPUT_FILE
     PRESET
     OUTPUTFORMAT
     USER_AGENT
+    HEADERS
     THREADS
-    M3U8_FILE
-    VERBOSE
     PROTOCOL_TYPE
     duration
+    VERBOSE
     constructor (options) {
         if (options?.THREADS) this.THREADS = options.THREADS
         if (options?.VERBOSE) log.level = options.VERBOSE ? 'verbose' : 'silent'
@@ -39,9 +43,9 @@ class FfmpegHelper {
       * @param {String} filename M3U8 file path. You can use remote URL
       * @returns {Function}
       */
-    setInputFile (M3U8_FILE) {
-        if (!M3U8_FILE) throw new Error('You must specify the M3U8 file address')
-        this.M3U8_FILE = M3U8_FILE
+    setInputFile (INPUT_FILE) {
+        if (!INPUT_FILE) throw new Error('You must specify the M3U8 file address')
+        this.INPUT_FILE = INPUT_FILE
         return this
     }
 
@@ -63,6 +67,17 @@ class FfmpegHelper {
     */
     setThreads (number) {
         if (number) this.THREADS = number
+        return this
+    }
+
+    /**
+     * @description 设置请求头
+     * @param {Object} headers 
+     * @returns 
+     */
+    setHeaders (headers) {
+        if (Object.prototype.toString.call(headers) !== '[object Array]') return this
+        if (headers && headers.length > 0) this.HEADERS = headers
         return this
     }
 
@@ -152,24 +167,47 @@ class FfmpegHelper {
      * @returns {Promise<void>} A promise that resolves when the metadata is retrieved.
      */
     async getMetadata () {
-        this.PROTOCOL_TYPE = await this.getProtocol(this.M3U8_FILE, this.USER_AGENT)
+        this.PROTOCOL_TYPE = await this.getProtocol(this.INPUT_FILE, this.USER_AGENT)
     }
 
+    /**
+     * @description 将 headers 转换为 ffmpeg的 input options
+     */
+    headersToOptions (headers) {
+        return headers.reduce((pre, val) => {
+            const [key, value] = val
+            if (!key || !value) return pre
+            return pre + `${key}: ${value}\r\n`
+        }, '')
+    }
+
+    optionsHaveKey (key, options) {
+        if (typeof key !== 'string') return false
+        return options.some((option) => {
+            const [k, v] = option
+            // options 内存在 key 并且 value 不为空，那么返回 true  
+            // key对比统一转换为大写对比
+            if (key.toUpperCase() === k.toUpperCase() && v) return true
+            return false
+        })
+    }
     /**
      * @description 设置 ffmpeg 输入配置  Sets the input options for ffmpeg.
      */
     setInputOption () {
-        const USER_AGENT = this.USER_AGENT || 
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
-        const REFERER_RGX = /^(?<referer>http|https:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+)(?::\d+)?\/[^ "]+$/u
-        const match = this.M3U8_FILE.match(REFERER_RGX)
-        const [referer] = match === null ? ['unknown'] : match.slice(1)
-        const options = []
-        // 设置用户代理
-        if (USER_AGENT) options.push('-user_agent', `${USER_AGENT}`)
-        // 如果存在 referer 设置 referer
-        if (referer !== 'unknown') options.push('-referer', `${referer}`)
-        options.length && this.ffmpegCmd.inputOptions(options)
+        // 先检查 headers 是否存在
+        const headers = this.HEADERS.map((item) => [item.key, item.value])
+        if (!this.optionsHaveKey('user-agent', headers)) {
+            // 如果请求头内没有用户代理，那么设置用户代理
+            const USER_AGENT = this.USER_AGENT || DEFAULT_USER_AGENT
+            headers.push(['user_agent', USER_AGENT])
+        }
+        if (!this.optionsHaveKey('referer', headers)) {
+            // 如果请求头内没有 referer，那么设置 referer
+            const referer = new URL(this.INPUT_FILE)?.origin
+            if (referer !== 'unknown') headers.push(['referer', referer])
+        }
+        this.ffmpegCmd.inputOptions('-headers', this.headersToOptions(headers))
     }
 
     /**
@@ -280,11 +318,11 @@ class FfmpegHelper {
         return new Promise((resolve, reject) => {
             const _this = this;
             (async () => {
-                if (!_this.M3U8_FILE || !_this.OUTPUT_FILE) {
+                if (!_this.INPUT_FILE || !_this.OUTPUT_FILE) {
                     reject(new Error('You must specify the input and the output files'))
                 } else {
                     await _this.getMetadata()
-                    _this.ffmpegCmd = ffmpeg(_this.M3U8_FILE)
+                    _this.ffmpegCmd = ffmpeg(_this.INPUT_FILE)
                     _this.setInputOption()
                     // setOutputOption is dependen on protocol type
                     await _this.setOutputOption()
@@ -300,13 +338,14 @@ class FfmpegHelper {
                     .on('start', function (commandLine) {
                         _this.startTime = Date.now()
                         log.verbose('FFmpeg exec command: ' + commandLine)
+                        console.log(commandLine)
                     })
                     .on('error', (error) => {
                         log.error('FFmpeg error happed: ' + error)
                         reject(error)
                     })
                     .on('end', () => {
-                        log.verbose(`finish mission: ${_this.M3U8_FILE}`)
+                        log.verbose(`finish mission: ${_this.INPUT_FILE}`)
                         resolve('')
                     })
                     .run()

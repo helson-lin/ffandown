@@ -56,6 +56,11 @@ function createUserRouter () {
         }
     })
 
+    userRouter.get('/logout', (req, res) => {
+        req.session.destroy()
+        res.send({ message: i18n._('logout_success'), code: 0 })
+    })
+
     userRouter.post('/resetPassword', [jsonParser, validate([
         body('username').isString().notEmpty().withMessage('username is required'),
         body('password').isString().notEmpty().withMessage('password is required'),

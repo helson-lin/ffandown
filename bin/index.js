@@ -218,6 +218,7 @@ class Oimi {
                 mission, 
                 outputformat: mission.outputformat || 'mp4', 
                 preset: mission.preset || 'medium',
+                headers: mission.headers || {},
             }, false)
         }
     }
@@ -247,6 +248,7 @@ class Oimi {
                     mission, 
                     outputformat: mission.outputformat || 'mp4', 
                     preset: mission.preset || 'medium',
+                    headers: mission.headers || {},
                 }, false)
             }
         }
@@ -256,7 +258,7 @@ class Oimi {
      * @description 开始下载任务
      *
      * */
-    async startDownload ({ mission, ffmpegHelper, outputformat, preset }, isNeedInsert = true) {
+    async startDownload ({ mission, ffmpegHelper, outputformat, preset, headers }, isNeedInsert = true) {
         const uid = mission.uid
         log.info('start download mission: ', JSON.stringify(mission))
         try {
@@ -267,6 +269,7 @@ class Oimi {
             ffmpegHelper.setInputFile(mission.url)
             ffmpegHelper.setOutputFile(mission.filePath)
             .setUserAgent(mission.useragent)
+            .setHeaders(headers)
             .setThreads(this.thread)
             .setPreset(preset)
             .setOutputFormat(outputformat)
@@ -308,7 +311,7 @@ class Oimi {
      */
     async createDownloadMission (query) {
         // let enableTimeSuffix = false
-        const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix } = query
+        const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix, headers } = query
         if (!url) throw new Error('url is required')
         log.info('createDownloadMission', JSON.stringify(query))
         const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat, enableTimeSuffix)
@@ -323,6 +326,7 @@ class Oimi {
             useragent,
             preset,
             outputformat,
+            headers,
         }
         // over max download mission 超过设置的最大同时下载任务
         if (this.missionList.length >= this.maxDownloadNum) {
@@ -341,7 +345,7 @@ class Oimi {
             // 创建下载任务实例
             const ffmpegHelper = new FfmpegHelper({ VERBOSE: this.verbose })
             this.missionList.push({ ...mission, ffmpegHelper })
-            await this.startDownload({ ffmpegHelper, mission, outputformat, preset }, true)
+            await this.startDownload({ ffmpegHelper, mission, outputformat, preset, headers }, true)
             // log.verbose(`current missionList have ${this.missionList.length}s missions`)
             // 发送创建任务通知消息
             msg(this.config.webhooks, 
@@ -397,6 +401,7 @@ class Oimi {
                         mission, 
                         outputformat: mission.outputformat || suffix, 
                         preset: mission.preset || 'medium',
+                        headers: mission.headers || {},
                     }, 
                     false)
                     return { code: 0 }

@@ -18,13 +18,13 @@ function createDownloadRouter (oimi) {
     downloadRouter.post('/down', [jsonParser, validate([
         body('name').optional().isString(),
         body('url').notEmpty().isURL().withMessage('url must be a valid URL'),
-        body('dir').optional().isString(),
-        body('preset').optional().isString(),
-        body('outputformat').optional().isString(),
-        body('useragent').optional().isString(),
-        body('enableTimeSuffix').optional().isBoolean(),
+        body('preset').optional().isString().withMessage('preset must be a string'),
+        body('outputformat').optional().isString().withMessage('outputformat must be a string'),
+        body('useragent').optional().isString().withMessage('useragent must be a string'),
+        body('enableTimeSuffix').optional().isBoolean().withMessage('enableTimeSuffix must be a boolean'),
+        body('headers').optional().isArray().withMessage('headers must be an array'),
     ])], async (req, res) => {
-        let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix } = req.body
+        let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix, headers } = req.body
         // if the config option have preset and outputformat, and body have't will auto replace
         if (!preset && oimi.config?.preset) preset = oimi.config.preset
         if (!outputformat && oimi.config.outputformat) outputformat = oimi.config.outputformat
@@ -46,6 +46,7 @@ function createDownloadRouter (oimi) {
                             enableTimeSuffix, 
                             useragent, 
                             outputformat,
+                            headers,
                         }).then(() => {
                             Utils.LOG.info(`${i18n._('create_success')}:` + urlItem)
                         }).catch((e) => {
@@ -63,6 +64,7 @@ function createDownloadRouter (oimi) {
                         enableTimeSuffix,
                         useragent,
                         outputformat, 
+                        headers,
                     }).then(() => {
                         Utils.LOG.info(`${i18n._('create_success')}:` + url)
                     }).catch((e) => {

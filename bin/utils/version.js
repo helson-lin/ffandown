@@ -157,6 +157,7 @@ const autoUpdateFrontEnd = async () => {
     moveDistFile()
     // 添加版本信息到本地
     addVersionFile(version, 'update successfully')
+    log.info('frontend update successfully')
 }
 
 /**

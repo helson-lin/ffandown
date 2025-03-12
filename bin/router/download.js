@@ -17,7 +17,7 @@ function createDownloadRouter (oimi) {
     // create download mission
     downloadRouter.post('/down', [jsonParser, validate([
         body('name').optional().isString(),
-        body('url').notEmpty().isURL().withMessage('url must be a valid URL'),
+        body('url').notEmpty().withMessage('url must be a valid URL'),
         body('preset').optional().isString().withMessage('preset must be a string'),
         body('outputformat').optional().isString().withMessage('outputformat must be a string'),
         body('useragent').optional().isString().withMessage('useragent must be a string'),

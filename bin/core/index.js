@@ -22,10 +22,9 @@ class FfmpegHelper {
     THREADS
     PROTOCOL_TYPE
     duration
-    VERBOSE
     constructor (options) {
         if (options?.THREADS) this.THREADS = options.THREADS
-        if (options?.VERBOSE) log.level = options.VERBOSE ? 'verbose' : 'silent'
+        this.HEADERS = []
         this.downloadedBytes = 0
     }
 
@@ -174,11 +173,16 @@ class FfmpegHelper {
      * @description 将 headers 转换为 ffmpeg的 input options
      */
     headersToOptions (headers) {
-        return headers.reduce((pre, val) => {
-            const [key, value] = val
-            if (!key || !value) return pre
-            return pre + `${key}: ${value}\r\n`
-        }, '')
+        log.verbose(headers)
+        return headers  
+        .map(([key, value]) => `${key}: ${value}\r\n`)  
+        .join('')
+        // return headers.reduce((pre, val, index) => {
+        //     const [key, value] = val
+        //     if (!key || !value) return pre
+        //     if (index === headers.length - 1)  return pre + `${key}: ${value}\r\n"`
+        //     else return pre + `${key}: ${value}\r\n`
+        // }, '"')
     }
 
     optionsHaveKey (key, options) {
@@ -200,14 +204,21 @@ class FfmpegHelper {
         if (!this.optionsHaveKey('user-agent', headers)) {
             // 如果请求头内没有用户代理，那么设置用户代理
             const USER_AGENT = this.USER_AGENT || DEFAULT_USER_AGENT
-            headers.push(['user_agent', USER_AGENT])
+            headers.push(['user-agent', USER_AGENT])
         }
         if (!this.optionsHaveKey('referer', headers)) {
             // 如果请求头内没有 referer，那么设置 referer
             const referer = new URL(this.INPUT_FILE)?.origin
-            if (referer !== 'unknown') headers.push(['referer', referer])
+            if (referer && !['unknown', 'null'].includes(referer)) headers.push(['referer', referer])
         }
-        this.ffmpegCmd.inputOptions('-headers', this.headersToOptions(headers))
+        let headerString = this.headersToOptions(headers)
+        // headerString = JSON.stringify(headerString)
+        log.verbose('headers:' + headerString)
+        // 通过 ffmpeg.inputOption 设置 headers
+        // rtsp/rtmp 直播无法通过该方式设置
+        this.ffmpegCmd.inputOption(
+            '-headers', headerString,
+        )
     }
 
     /**
@@ -333,12 +344,11 @@ class FfmpegHelper {
                         _this.handlerProcess(progress, listenProcess)
                     })
                     .on('stderr', function (stderrLine) {
-                        log.verbose('Stderr output:' + stderrLine)
+                        log.verbose('Stderr output: ' + stderrLine)
                     })
                     .on('start', function (commandLine) {
                         _this.startTime = Date.now()
-                        log.verbose('FFmpeg exec command: ' + commandLine)
-                        console.log(commandLine)
+                        log.verbose(`FFmpeg exec command: "${commandLine}"`)
                     })
                     .on('error', (error) => {
                         log.error('FFmpeg error happed: ' + error)

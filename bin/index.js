@@ -16,13 +16,12 @@ class Oimi {
     missionList
     parserPlugins
     helper
-    verbose
     dbOperation
     // event callback
     stopMission
     resumeMission
     eventCallback
-    constructor (OUTPUT_DIR, { thread = true, verbose = false, maxDownloadNum = 5, eventCallback, enableTimeSuffix }) {
+    constructor (OUTPUT_DIR, { thread = true, maxDownloadNum = 5, eventCallback, enableTimeSuffix }) {
         // helper 类
         this.helper = helper
         // 数据库操作
@@ -42,8 +41,6 @@ class Oimi {
         this.maxDownloadNum = maxDownloadNum || 5
         // 是否开启时间后缀
         this.enableTimeSuffix = enableTimeSuffix
-        log.level = verbose ? 'verbose' : 'warn'
-        this.verbose = verbose
         // 回调事件
         this.eventCallback = eventCallback
     }
@@ -210,7 +207,7 @@ class Oimi {
         // 继续恢复下载任务     
         const missions = allMissions.slice(0, this.maxDownloadNum)
         for (let mission of missions) {
-            const ffmpegHelper = new FfmpegHelper({ VERBOSE: this.verbose })
+            const ffmpegHelper = new FfmpegHelper()
             this.missionList.push({ ...mission.dataValues, ffmpegHelper })
             log.info('initMission for start download')
             await this.startDownload({ 
@@ -240,7 +237,7 @@ class Oimi {
             const insertMissions = waitingMissions.slice(0, insertMissionNum)
             for (let mission of insertMissions) {
                 log.info('add new mission')
-                const ffmpegHelper = new FfmpegHelper({ VERBOSE: this.verbose })
+                const ffmpegHelper = new FfmpegHelper()
                 // mission.dataValues is json data
                 this.missionList.push({ ...mission.dataValues, ffmpegHelper })
                 await this.startDownload({ 
@@ -260,7 +257,6 @@ class Oimi {
      * */
     async startDownload ({ mission, ffmpegHelper, outputformat, preset, headers }, isNeedInsert = true) {
         const uid = mission.uid
-        log.info('start download mission: ', JSON.stringify(mission))
         try {
             // isNeedInsert为 true 表示需要新增任务到数据库
             if (isNeedInsert) await this.dbOperation.DownloadService.create(mission)
@@ -281,10 +277,10 @@ class Oimi {
                 // todo: create download mission support downloaded callback
                 this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
             }).catch((e) => {
-                log.error('Catched downloading error:', String(e.message))
+                log.error('Catched downloading error:' + String(e.message))
                 // 为什么终止下载会执行多次 catch
                 // 下载中发生错误
-                log.warn('catched downloading error:', String(e))
+                log.warn('catched downloading error:' +  String(e))
                 // 以下两种错误信息都是任务被暂停 （ffmpeg-fluent 任务暂停是通过杀掉进程实现的）
                 if ([
                     'ffmpeg was killed with signal SIGKILL', 
@@ -299,7 +295,7 @@ class Oimi {
             })
             return 0
         } catch (e) {
-            log.error('downloading error:', e)
+            log.error('downloading error:' + String(e))
             await this.updateMission(uid, { ...mission, status: '4', message: String(e) })
             return 1
         }
@@ -313,7 +309,7 @@ class Oimi {
         // let enableTimeSuffix = false
         const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix, headers } = query
         if (!url) throw new Error('url is required')
-        log.info('createDownloadMission', JSON.stringify(query))
+        log.verbose(`createDownloadMission: ${JSON.stringify(query)}`)
         const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat, enableTimeSuffix)
         const mission = { 
             uid: uuidv4(),
@@ -343,7 +339,7 @@ class Oimi {
         } else {
             // continue download
             // 创建下载任务实例
-            const ffmpegHelper = new FfmpegHelper({ VERBOSE: this.verbose })
+            const ffmpegHelper = new FfmpegHelper()
             this.missionList.push({ ...mission, ffmpegHelper })
             await this.startDownload({ ffmpegHelper, mission, outputformat, preset, headers }, true)
             // log.verbose(`current missionList have ${this.missionList.length}s missions`)

@@ -1,5 +1,5 @@
 /* createLogger  */
-const { format, createLogger } = require('winston')
+const { format, createLogger, transports } = require('winston')
 const DailyRotateFile = require('winston-daily-rotate-file')
 const path = require('path')
 const { combine, timestamp, label, printf } = format
@@ -13,7 +13,6 @@ const log = (() => {
     let logger
     if (!logger) {
         logger = createLogger({
-            level: 'info',
             format: combine(
                 label({ label: 'ffandown' }),
                 timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -23,8 +22,7 @@ const log = (() => {
                 new DailyRotateFile({
                     filename: logPath('server'),
                     datePattern: 'YYYY-MM-DD',
-                    maxSize: '20m',
-                    level: 'info',
+                    maxSize: '2m',
                     maxFiles: '5d',
                     format: combine(
                         timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -33,6 +31,16 @@ const log = (() => {
                 }),
             ],
         })
+    }
+    if (process.env.NODE_ENV === 'development') {
+        // 开发环境设置 Console 输出日志
+        logger.add(new transports.Console({
+            level: 'debug',
+            format: combine(
+                format.colorize(),
+                customFormat,
+            ),
+        }))
     }
     return logger
 })()

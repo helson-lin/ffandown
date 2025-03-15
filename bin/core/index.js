@@ -159,7 +159,10 @@ class FfmpegHelper {
         const match = this.M3U8_FILE.match(REFERER_RGX)
         const [referer] = match === null ? ['unknown'] : match.slice(1)
         const options = []
-        if (USER_AGENT) options.push('-user_agent', `${USER_AGENT}`)
+        // rtmp/rtsp协议不需要指定user-agent
+        if (USER_AGENT && !['rtsp://', 'rtmp://'].some(prefix => this.M3U8_FILE.startsWith(prefix))) {
+            options.push('-user_agent', `${USER_AGENT}`)
+        }
         if (referer !== 'unknown') options.push('-referer', `${referer}`)
         options.length && this.ffmpegCmd.inputOptions(options)
     }

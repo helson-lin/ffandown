@@ -80,7 +80,56 @@ function createPluginRouter() {
             res.send({ code: 1, message: String(e) })
         }
     })
-    // 修改插件信息
+    // 批量删除插件
+    pluginRouter.get('/batchDelete', validate([
+        query('uids').isString().notEmpty().withMessage('uids is required'),
+    ]), async (req, res) => {
+        try {
+            const uids = req.query?.uids?.split(',')
+            const deletedPlugins = await PluginService.batchDelete(uids)
+            if (deletedPlugins) {
+                // 通过deletedPlugin.localUrl 删除文件
+                deletedPlugins.forEach(plugin => {
+                    fse.removeSync(plugin.localUrl)
+                })
+            }
+            res.send({ code: 0, data:!deletedPlugins? i18n._('query_error') : i18n._('delete_success') })
+        } catch (e) {
+            res.send({ code: 1, message: String(e) })
+        }
+    })
+    pluginRouter.post('/batchStatus', [jsonParser, validate([
+        body('uids').isString().notEmpty().withMessage('uids is required'),
+        body('status').isString().notEmpty().withMessage('status is required'),
+    ])], async (req, res) => {
+        try {
+            const { uids, status } = req.body
+            // uids 是字符串，需要转换为数组
+            let uidsArray
+            try {
+                uidsArray = uids.split(',')
+            } catch {
+                throw new Error('uids is not legal  string')
+            }
+            const plugins = await PluginService.batchStatus(uidsArray,  status)
+            res.send({ code: 0, data: plugins })
+        } catch (e) {
+            res.send({ code: 1, message: String(e) })
+        }
+    })
+    // 是否启用插件
+    pluginRouter.post('/status',[jsonParser, validate([
+        body('uid').isString().notEmpty().withMessage('uid is required'),
+        body('status').isString().notEmpty().withMessage('status is required'),
+    ])], async (req, res) => {
+        try {
+            const { uid, status } = req.body
+            const plugin = await PluginService.update(uid, { status })
+            res.send({ code: 0, data: plugin })
+        } catch (e) {
+            res.send({ code: 1, message: String(e) })
+        }
+    })
     return pluginRouter
 }
 

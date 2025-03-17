@@ -199,6 +199,8 @@ class FfmpegHelper {
      * @description 设置 ffmpeg 输入配置  Sets the input options for ffmpeg.
      */
     setInputOption () {
+        // rtmp/rtsp 直播无法通过该方式设置
+        if (['rtsp://', 'rtmp://'].some(prefix => this.INPUT_FILE.startsWith(prefix))) return
         // 先检查 headers 是否存在
         const headers = this.HEADERS.map((item) => [item.key, item.value])
         if (!this.optionsHaveKey('user-agent', headers)) {

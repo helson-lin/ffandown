@@ -61,8 +61,13 @@ const DownloadService = {
                     status: { [Op.in]: statusList },
                 },
             }
-            const allMissions = await SysDownloadDb.findAndCountAll(options)
-            return allMissions
+            const { count, rows } = await SysDownloadDb.findAndCountAll(options)
+            const total = Math.ceil(count / pageSize) // 计算总页数
+            return {
+                count,
+                rows,
+                total,
+            }
         } catch (e) {
             return Promise.reject(e)
         }

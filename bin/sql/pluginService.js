@@ -12,6 +12,22 @@ const PluginService = {
             return Promise.reject(e)
         }
     },
+    // 批量删除插件
+    async batchDelete (uids) {
+        if (!uids || uids.length === 0) {
+            return Promise.reject('uid is required')
+        } else {
+            try {
+                const pluginDtos = await SysPluginsDb.findAll({ where: { uid: { [Op.in]: uids } } })
+                if (!pluginDtos || pluginDtos.length === 0) return Promise.reject('not found any data')
+                await SysPluginsDb.destroy({ where: { uid: { [Op.in]: uids } } })
+                return Promise.resolve(pluginDtos)
+            }  catch (e) {
+                return Promise.reject(e)
+            }
+        }
+    },
+    // 删除插件
     async delete(uid) {
         if (!uid) {
             return Promise.reject('uid is required')
@@ -27,7 +43,40 @@ const PluginService = {
             }
         }
     },
-    async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'ASC', status = '1' }) {
+    // 更新插件
+    async update (data) {
+        try {
+            const { uid } = data
+            if (!uid) {
+                return Promise.reject('uid is required')
+            } else {
+                const pluginDto = await SysPluginsDb.findOne({ where: { uid }, raw: true })
+                if (!pluginDto) return Promise.reject('not found any data')
+                const time = new Date().toLocaleString()
+                await SysPluginsDb.update({ ...data, upd_tm: time }, { where: { uid } })
+                return Promise.resolve(pluginDto)
+            }
+        } catch (e) {
+            return Promise.reject(e)
+        }
+    },
+    async batchStatus (uids, status) {
+        try {
+            if (!uids || uids.length === 0) {
+                return Promise.reject('uid is required')
+            } else {
+                console.warn(uids, status)
+                const pluginDtos = await SysPluginsDb.findAll({ where: { uid: { [Op.in]: uids } } })
+                if (!pluginDtos || pluginDtos.length === 0) return Promise.reject('not found any data')
+                const time = new Date().toLocaleString()
+                await SysPluginsDb.update({ status, upd_tm: time }, { where: { uid: { [Op.in]: uids } } })
+                return Promise.resolve(pluginDtos)
+            }
+        } catch (e) {
+            return Promise.reject(e)
+        }
+    },
+    async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'ASC', status = '1,0' }) {
         try {
             const statusList = String(status || '1').split(',').map(item => Number(item.trim()))
             const offset = (pageNumber - 1) * pageSize
@@ -39,7 +88,13 @@ const PluginService = {
                     status: { [Op.in]: statusList },
                 },
             }
-            return await SysPluginsDb.findAndCountAll(options)
+            const { count, rows } = await SysPluginsDb.findAndCountAll(options)
+            const total = Math.ceil(count / pageSize) // 计算总页数
+            return {
+                count,
+                rows,
+                total,
+            }
         } catch (e) {
             return Promise.reject(e)
         }

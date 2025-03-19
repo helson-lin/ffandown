@@ -58,6 +58,10 @@ function createPluginRouter() {
                 author: pluginInfo?.author || '',
                 description: pluginInfo.description || '',
                 localUrl: pluginInfo?.localUrl || '',
+                version: pluginInfo?.version || '',
+                icon: pluginInfo?.icon || '',
+                homepage: pluginInfo?.homepage || '',
+                settings: pluginInfo?.settings || '',
                 status: '1',
             })
             res.send({ code: 0, data: pluginInfo })

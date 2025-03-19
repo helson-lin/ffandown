@@ -5,7 +5,7 @@ const PluginService = {
     // 新增插件
     async create (body) {
         try {
-            const time = new Date().toLocaleString()
+            const time = new Date().toISOString()
             const pluginDto = await SysPluginsDb.create({ ...body, crt_tm: time, upd_tm: time })
             return Promise.resolve(pluginDto)
         } catch (e) {
@@ -52,7 +52,7 @@ const PluginService = {
             } else {
                 const pluginDto = await SysPluginsDb.findOne({ where: { uid }, raw: true })
                 if (!pluginDto) return Promise.reject('not found any data')
-                const time = new Date().toLocaleString()
+                const time = new Date().toISOString()
                 await SysPluginsDb.update({ ...data, upd_tm: time }, { where: { uid } })
                 return Promise.resolve(pluginDto)
             }
@@ -68,7 +68,7 @@ const PluginService = {
                 console.warn(uids, status)
                 const pluginDtos = await SysPluginsDb.findAll({ where: { uid: { [Op.in]: uids } } })
                 if (!pluginDtos || pluginDtos.length === 0) return Promise.reject('not found any data')
-                const time = new Date().toLocaleString()
+                const time = new Date().toISOString()
                 await SysPluginsDb.update({ status, upd_tm: time }, { where: { uid: { [Op.in]: uids } } })
                 return Promise.resolve(pluginDtos)
             }
@@ -76,7 +76,7 @@ const PluginService = {
             return Promise.reject(e)
         }
     },
-    async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'ASC', status = '1,0' }) {
+    async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'DESC', status = '1,0' }) {
         try {
             const statusList = String(status || '1').split(',').map(item => Number(item.trim()))
             const offset = (pageNumber - 1) * pageSize

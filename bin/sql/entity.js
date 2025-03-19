@@ -161,6 +161,28 @@ const SysPluginsDb = sequelize.define('sys_plugins', {
         type: Sequelize.STRING,
         allowNull: false,
     },
+    version: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    icon: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    homepage: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    settings: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        comment: 'plugin settings json',
+    },
+    options: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        comment: 'plugin settings value',
+    },
     crt_tm: {
         type: Sequelize.DATE,
         default: Sequelize.NOW,

@@ -9,6 +9,21 @@ const downloadRouter = express.Router()
 const DownloadService = require('../sql/downloadService')
 const { query, body } = require('express-validator')
 
+async function createDonwloadMission (oimi, options) {
+    const parsedData = await autoParser(options.url)
+    if (!parsedData || !parsedData?.url) {
+        Utils.LOG.error('parser url error:' + options.url)
+    } else {
+        const data = Object.assign(options, { url: parsedData.url  })
+        // 创建下载任务
+        oimi.createDownloadMission(data).then(() => {
+            Utils.LOG.info(`${i18n._('create_success')}:` + options.url)
+        }).catch((e) => {
+            Utils.LOG.error(`${i18n._('create_failed')}:` + e)
+        })
+    }
+}
+
 /**
  * @description create download router
  * @returns 
@@ -18,57 +33,49 @@ function createDownloadRouter (oimi) {
     downloadRouter.post('/down', [jsonParser, validate([
         body('name').optional().isString(),
         body('url').notEmpty().withMessage('url must be a valid URL'),
+        body('audioUrl').optional().isString().withMessage('audioUrl must be a valid URL'),
         body('preset').optional().isString().withMessage('preset must be a string'),
         body('outputformat').optional().isString().withMessage('outputformat must be a string'),
         body('useragent').optional().isString().withMessage('useragent must be a string'),
         body('enableTimeSuffix').optional().isBoolean().withMessage('enableTimeSuffix must be a boolean'),
         body('headers').optional().isArray().withMessage('headers must be an array'),
     ])], async (req, res) => {
-        let { name, url, preset, outputformat, useragent, dir, enableTimeSuffix, headers } = req.body
+        let { name, url, preset, outputformat, useragent, dir, audioUrl, enableTimeSuffix, headers } = req.body
         // if the config option have preset and outputformat, and body have't will auto replace
+        // 如果没有 preset/outputformat那么采用配置文件
         if (!preset && oimi.config?.preset) preset = oimi.config.preset
         if (!outputformat && oimi.config.outputformat) outputformat = oimi.config.outputformat
+        // url 可能为多链接，这里进行处理
         url = Utils.getRealUrl(url)
         if (!url) {
             res.send({ code: 1, message: i18n._('query_error') })
         } else {
             try {
-                const isMultiple = Array.isArray(url)
-                // 如果url是逗号分隔的多个链接处理
-                if (isMultiple) {
+                if (Array.isArray(url)) {
                     for (const urlItem of url) {
-                        // todo: 解析地址
-                        const parserUrl = await autoParser(urlItem)
-                        oimi.createDownloadMission({ 
-                            url: parserUrl, 
+                        createDonwloadMission(oimi, {
+                            url: urlItem, 
                             dir, 
+                            audioUrl,
                             preset, 
                             enableTimeSuffix, 
                             useragent, 
                             outputformat,
                             headers,
-                        }).then(() => {
-                            Utils.LOG.info(`${i18n._('create_success')}:` + urlItem)
-                        }).catch((e) => {
-                            Utils.LOG.error(`${i18n._('create_failed')}:` + e)
                         })
                     }
                 } else {
-                    // todo: 解析地址
-                    const parserUrl = await autoParser(url)
-                    oimi.createDownloadMission({ 
+                    // todo: 解析地址,返回的数据格式为{url, audioUrl}
+                    createDonwloadMission(oimi, {
+                        url,
                         name, 
-                        url: parserUrl,
                         dir,
                         preset,
+                        audioUrl,
                         enableTimeSuffix,
                         useragent,
                         outputformat, 
                         headers,
-                    }).then(() => {
-                        Utils.LOG.info(`${i18n._('create_success')}:` + url)
-                    }).catch((e) => {
-                        Utils.LOG.error(`${i18n._('create_failed')}:` + e)
                     })
                 }
                 res.send({ code: 0, message: `${url}: ${i18n._('create_success')}` })

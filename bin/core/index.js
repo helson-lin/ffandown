@@ -15,6 +15,8 @@ const DEFAULT_USER_AGENT =
   */
 class FfmpegHelper {
     INPUT_FILE
+    OUTPUT_FILE
+    INPUT_AUDIO_FILE
     PRESET
     OUTPUTFORMAT
     USER_AGENT
@@ -40,11 +42,21 @@ class FfmpegHelper {
     /**
       * @description 设置输入文件地址
       * @param {String} filename M3U8 file path. You can use remote URL
-      * @returns {Function}
       */
     setInputFile (INPUT_FILE) {
         if (!INPUT_FILE) throw new Error('You must specify the M3U8 file address')
         this.INPUT_FILE = INPUT_FILE
+        return this
+    }
+
+    /**
+     * @description 设置音频地址
+     * @param {String} INPUT_FILE 
+     */
+    setInputAudioFile (INPUT_FILE) {
+        log.verbose('setInputAudioFile: ' + INPUT_FILE)
+        if (!INPUT_FILE) return this
+        this.INPUT_AUDIO_FILE = INPUT_FILE
         return this
     }
 
@@ -329,27 +341,28 @@ class FfmpegHelper {
     */
     start (listenProcess) {
         return new Promise((resolve, reject) => {
-            const _this = this;
+            const self = this;
             (async () => {
-                if (!_this.INPUT_FILE || !_this.OUTPUT_FILE) {
+                if (!self.INPUT_FILE || !self.OUTPUT_FILE) {
                     reject(new Error('You must specify the input and the output files'))
                 } else {
-                    await _this.getMetadata()
-                    _this.ffmpegCmd = ffmpeg(_this.INPUT_FILE)
-                    _this.setInputOption()
+                    await self.getMetadata()
+                    self.ffmpegCmd = ffmpeg(self.INPUT_FILE)
+                    if (self.INPUT_AUDIO_FILE) self.ffmpegCmd.input(self.INPUT_AUDIO_FILE)
+                    self.setInputOption()
                     // setOutputOption is dependen on protocol type
-                    await _this.setOutputOption()
+                    await self.setOutputOption()
                     // set the transform file suffix
-                    // _this.ffmpegCmd.format(_this.OUTPUTFORMAT || 'mp4')
-                    _this.ffmpegCmd
+                    // self.ffmpegCmd.format(self.OUTPUTFORMAT || 'mp4')
+                    self.ffmpegCmd
                     .on('progress', (progress) => {
-                        _this.handlerProcess(progress, listenProcess)
+                        self.handlerProcess(progress, listenProcess)
                     })
                     .on('stderr', function (stderrLine) {
                         log.verbose('Stderr output: ' + stderrLine)
                     })
                     .on('start', function (commandLine) {
-                        _this.startTime = Date.now()
+                        self.startTime = Date.now()
                         log.verbose(`FFmpeg exec command: "${commandLine}"`)
                     })
                     .on('error', (error) => {
@@ -357,7 +370,7 @@ class FfmpegHelper {
                         reject(error)
                     })
                     .on('end', () => {
-                        log.verbose(`finish mission: ${_this.INPUT_FILE}`)
+                        log.verbose(`finish mission: ${self.INPUT_FILE}`)
                         resolve('')
                     })
                     .run()

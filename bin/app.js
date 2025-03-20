@@ -59,6 +59,7 @@ function createServer ({ port, oimi }) {
         i18n.setLocale(userLang) // 使用自定义 `setLocale` 方法
         next()
     })
+    app.use(express.json())
     app.use(checkAuth)
     app.use('/sys/', createSystemRouter(oimi))
     app.use('/user', createUserRouter(oimi))

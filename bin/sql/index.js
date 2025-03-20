@@ -1,7 +1,5 @@
 const colors = require('colors')
 const { sequelize, SysDownloadDb } = require('./entity')
-const UserService = require('./userService')
-const DownloadService = require('./downloadService')
 const dbOperation = {
     async sync () {
         try {
@@ -13,8 +11,6 @@ const dbOperation = {
             console.log(colors.red('Database synchronization failed:' + String(e).trim()))
         }
     },
-    DownloadService,
-    UserService,
 }
 
 module.exports = dbOperation

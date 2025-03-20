@@ -102,6 +102,7 @@ function createPluginRouter() {
             res.send({ code: 1, message: String(e) })
         }
     })
+    // 修改插件
     pluginRouter.post('/batchStatus', [jsonParser, validate([
         body('uids').isString().notEmpty().withMessage('uids is required'),
         body('status').isString().notEmpty().withMessage('status is required'),
@@ -113,22 +114,34 @@ function createPluginRouter() {
             try {
                 uidsArray = uids.split(',')
             } catch {
-                throw new Error('uids is not legal  string')
+                throw new Error('uids is an illegal string')
             }
             const plugins = await PluginService.batchStatus(uidsArray,  status)
+            if (status === '0') {
+                // 更新状态完毕之后，如果状态是禁用，直接删除本地的插件。
+                plugins.forEach(plugin =>  fse.removeSync(plugin.localUrl))
+            } else {
+                // 如果状态为启用，并且本地没有改插件，那么下载插件。
+                plugins.forEach(plugin => {
+                    // 1. 判断文件是否存在
+                    const isExist = fse.pathExistsSync(plugin.localUrl)
+                    // 2. 不存在，下载插件
+                    if (!isExist) getPlugin(plugin.url, plugin.localUrl)
+                })
+            }
             res.send({ code: 0, data: plugins })
         } catch (e) {
             res.send({ code: 1, message: String(e) })
         }
     })
-    // 是否启用插件
-    pluginRouter.post('/status',[jsonParser, validate([
+    // 存储插件设置数据
+    pluginRouter.post('/options',[jsonParser, validate([
         body('uid').isString().notEmpty().withMessage('uid is required'),
-        body('status').isString().notEmpty().withMessage('status is required'),
+        body('options').isString().notEmpty().withMessage('settings is required'),
     ])], async (req, res) => {
         try {
-            const { uid, status } = req.body
-            const plugin = await PluginService.update(uid, { status })
+            const { uid, options } = req.body
+            const plugin = await PluginService.update({ uid, options })
             res.send({ code: 0, data: plugin })
         } catch (e) {
             res.send({ code: 1, message: String(e) })

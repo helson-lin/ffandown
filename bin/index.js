@@ -1,6 +1,7 @@
 const FfmpegHelper = require('./core/index')
 const { HELPER: helper } = require('./utils/index')
 const dbOperation = require('./sql/index')
+const DownloadService = require('./sql/downloadService')
 const path = require('path')
 const os = require('os')
 const i18n = require('./utils/locale')
@@ -72,8 +73,11 @@ class Oimi {
      */
 
     async ready () {
+        // 下载依赖 ffmpeg/ffprobe
         await this.helper.downloadDependency()
+        // 同步数据库
         await this.dbOperation.sync()
+        // 初始化下载任务
         await this.initMission()
     }
 
@@ -135,7 +139,7 @@ class Oimi {
                     oldMission.status = status || '1' // 更新任务的状态：如果状态丢失那么默认为初始化状态
                     const updateOptions = { name, percent, speed, timemark, size, message, status: status || '1' }
                     if (info.protocolType) updateOptions.protocolType = info.protocolType
-                    await this.dbOperation.DownloadService.update(uid, updateOptions)
+                    await DownloadService.update(uid, updateOptions)
                     // this.callbackStatus({ uid, status: status || '1' })
                 } else if ((finish || ['3', '4'].includes(status)) && status !== 2) {
                     // 更新任务状态为下载完成(下载失败、完成下载)：只需要更新下载状态
@@ -145,7 +149,7 @@ class Oimi {
                     if (status === '3') updateOption.percent = '100'
                     // 如果是下载失败，添加错误的信息
                     if (status === '4') updateOption.message = message
-                    await this.dbOperation.DownloadService.update(uid, updateOption)
+                    await DownloadService.update(uid, updateOption)
                     // 回调下载任务
                     this.callbackStatus({ uid, name, status: updateOption.status, message, url: info.url })
                     if (this.stopMission.findIndex(i => i.uid === uid) !== -1) {
@@ -159,7 +163,7 @@ class Oimi {
                     log.info('manual stop mission')
                     // 手动停止下载
                     oldMission.status = '2'
-                    await this.dbOperation.DownloadService.update(uid, { status: '2' })
+                    await DownloadService.update(uid, { status: '2' })
                     this.callbackStatus({ uid, name, status: '2' })
                     // 终止下载是异步逻辑，需要通过 stopMission内的终止任务的 callback 来回调终止成功的信息
                     if (this.stopMission.findIndex(i => i.uid === uid) !== -1) {
@@ -171,7 +175,7 @@ class Oimi {
                 }
             } else {
                 // 如果没有下载任务管理内不存在任务, 直接更新库的数据
-                await this.dbOperation.DownloadService.update(uid, { 
+                await DownloadService.update(uid, { 
                     name, 
                     percent, 
                     speed, 
@@ -194,7 +198,7 @@ class Oimi {
      * @returns {*}
      */
     async insertWaitingMission (mission) {
-        await this.dbOperation.DownloadService.create(mission)
+        await DownloadService.create(mission)
     }
     
     /**
@@ -203,12 +207,12 @@ class Oimi {
      * @returns {*}
      */
     async initMission () {
-        const allMissions = await this.dbOperation.DownloadService.queryMissionByType('needResume')    
+        const allMissions = await DownloadService.queryMissionByType('needResume')    
         // 继续恢复下载任务     
         const missions = allMissions.slice(0, this.maxDownloadNum)
         for (let mission of missions) {
             const ffmpegHelper = new FfmpegHelper()
-            this.missionList.push({ ...mission.dataValues, ffmpegHelper })
+            this.missionList.push({ ...mission, ffmpegHelper })
             log.info('initMission for start download')
             await this.startDownload({ 
                 ffmpegHelper, 
@@ -227,7 +231,7 @@ class Oimi {
      */
     async insertNewMission () {
         log.info('insertNewMission')
-        const waitingMissions = await this.dbOperation.DownloadService.queryMissionByType()
+        const waitingMissions = await DownloadService.queryMissionByType()
         const missionListLen = this.missionList.length
         // 插入的任务的数量
         log.info('waitingMissions length', waitingMissions.length, 'current Mission List length', missionListLen)
@@ -239,7 +243,7 @@ class Oimi {
                 log.info('add new mission')
                 const ffmpegHelper = new FfmpegHelper()
                 // mission.dataValues is json data
-                this.missionList.push({ ...mission.dataValues, ffmpegHelper })
+                this.missionList.push({ ...mission, ffmpegHelper })
                 await this.startDownload({ 
                     ffmpegHelper, 
                     mission, 
@@ -259,10 +263,12 @@ class Oimi {
         const uid = mission.uid
         try {
             // isNeedInsert为 true 表示需要新增任务到数据库
-            if (isNeedInsert) await this.dbOperation.DownloadService.create(mission)
+            if (isNeedInsert) await DownloadService.create(mission)
             // 设置 ffmpeg 参数
             // 设置下载任务地址和用户代理
             ffmpegHelper.setInputFile(mission.url)
+            // 如果存在 audioUrl，那么追加音频地址
+            ffmpegHelper.setInputAudioFile(mission?.audioUrl)
             ffmpegHelper.setOutputFile(mission.filePath)
             .setUserAgent(mission.useragent)
             .setHeaders(headers)
@@ -323,6 +329,7 @@ class Oimi {
             preset,
             outputformat,
             headers,
+            audioUrl: query?.audioUrl || '',
         }
         // over max download mission 超过设置的最大同时下载任务
         if (this.missionList.length >= this.maxDownloadNum) {
@@ -383,7 +390,7 @@ class Oimi {
             log.info('mission in missionList')
             return { code: 0 }
         } else {
-            let mission = await this.dbOperation.DownloadService.queryOne(uid)
+            let mission = await DownloadService.queryOne(uid)
             log.info('resumeDownload mission', JSON.stringify(mission))
             if (mission) {
                 try {
@@ -427,7 +434,7 @@ class Oimi {
                     this.missionList.splice(missionIndex, 1)
                     // 数据库内删除
                 }
-                this.dbOperation.DownloadService.delete(uid).then(() => resolve()).catch(e => reject(e))
+                DownloadService.delete(uid).then(() => resolve()).catch(e => reject(e))
             } catch (e) {
                 reject(e)
             }
@@ -465,7 +472,7 @@ class Oimi {
 
 
     async getMissionList (current, pageSize, status, order = 'DESC', sort = 'crt_tm') {
-        return await this.dbOperation.DownloadService.queryByPage({
+        return await DownloadService.queryByPage({
             pageNumber: current, pageSize, status, sortField: sort || 'crt_tm', sortOrder: order || 'DESC',
         })
     }

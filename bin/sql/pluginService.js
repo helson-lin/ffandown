@@ -76,6 +76,14 @@ const PluginService = {
             return Promise.reject(e)
         }
     },
+    async getAll () {
+        try {
+            const pluginDtos = await SysPluginsDb.findAll({ where: { status: '1' }, raw: true })
+            return Promise.resolve(pluginDtos)
+        } catch (e) {
+            return Promise.reject(e)
+        }
+    },
     async queryByPage ({ pageNumber = 1, pageSize = 1, sortField = 'crt_tm', sortOrder = 'DESC', status = '1,0' }) {
         try {
             const statusList = String(status || '1').split(',').map(item => Number(item.trim()))

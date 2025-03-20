@@ -3,6 +3,7 @@ const fetch = require('node-fetch')
 const vm = require('vm')
 const fs = require('fs')
 const log = require('./log')
+const pluginService = require('../sql/pluginService')
 
 /**
  * @description 从文本中提取注解
@@ -83,7 +84,7 @@ const makeParser = (jsCode) => {
  * @description 获取所有解析器
  * @returns {Array} 返回所有可用的解析器数组
  */
-const getAllParsers = () => {
+const getAllParsers = async () => {
     // 获取解析器插件目录路径
     const parsersPluginDir = path.join(process.cwd(), './parsers')
     // 检查插件目录是否存在
@@ -96,15 +97,18 @@ const getAllParsers = () => {
     const allParsers = []
     // 过滤出所有js文件并获取完整路径
     const jsFiles = allFiles.map(i => path.join(parsersPluginDir, i)).filter(file => file.endsWith('.js'))
+    // 从数据库内拿到所有的启用插件
+    const allPlugins = await pluginService.getAll()
     // 遍历所有js文件
     jsFiles.forEach(jsFile => {
         // 读取js文件内容
+        const plugin = allPlugins.find(plugin => plugin.localUrl === jsFile)
         const jsFileContent = fs.readFileSync(jsFile, 'utf8')
         try {
             // 构建解析器实例
             const parser = makeParser(jsFileContent)
             // 将解析器添加到数组中
-            allParsers.push(parser)
+            allParsers.push({ func: parser, options: plugin?.options || '{}' })
         } catch (e) {
             // 解析器构建失败时输出错误信息
             console.error('解析器构建失败', e)
@@ -121,26 +125,36 @@ const getAllParsers = () => {
 const autoParser = async (url) => {
     try {
         // 获取所有可用的解析器
-        const parsers = getAllParsers()
+        const parsers = await getAllParsers()
         // 查找第一个能匹配当前URL的解析器
-        const parserMatched = parsers.find(item => item.match(url))
+        const parserMatched = parsers.find(item => item.func?.match(url))
         if (parserMatched) {
+            log.verbose('Matched Plugin: '  + url)
+            let options
+            try {
+                options = JSON.parse(parserMatched?.options)
+            } catch {
+                options = {}
+            }
             // 使用匹配的解析器处理URL
-            return await parserMatched.parser(url)
+            const parsedData =  await parserMatched.func?.parser(url, options)
+            if (!parsedData) return { url }
+            else return parsedData
         } else {
+            log.verbose('No Matched Plugin: ' + url)
             // 如果没有匹配的解析器，返回原始URL
-            return url
+            return { url }
         }
     } catch {
         // 解析过程出现错误时，返回原始URL
-        return url
+        return { url }
     }
 }
 
-const savePlugin = (pluginInfo, pluginContent) => {
+const savePlugin = (pluginInfo, pluginContent, localUrl) => {
     const randomStr = () => Math.random().toString(36).slice(2)
     const name = pluginInfo.name ? pluginInfo.name + '_' + randomStr() : randomStr()
-    const pluginPath = path.join(process.cwd(), `./parsers/${name}.js`)
+    const pluginPath = localUrl ?? path.join(process.cwd(), `./parsers/${name}.js`)
     fs.writeFileSync(pluginPath, pluginContent, 'utf8')
     pluginInfo.localUrl = pluginPath
     // 存储到数据库内
@@ -153,7 +167,7 @@ const savePlugin = (pluginInfo, pluginContent) => {
  * @param {Boolean} tls 
  * @returns 
  */
-const getPlugin = (url, tls = true) => {
+const getPlugin = (url, localUrl) => {
     return new Promise( (resolve, reject) => {
         try {
             // 1. 下载插件内容
@@ -176,9 +190,8 @@ const getPlugin = (url, tls = true) => {
                         reject('Plugin cannot be used, missing match or parser methods')
                     } else {
                         // 2. 保存插件到本地目录
-                        console.log(pluginInfo)
                         log.verbose('plugininfo: ', JSON.stringify(pluginInfo))
-                        savePlugin(pluginInfo, textRemoveComments)
+                        savePlugin(pluginInfo, textRemoveComments, localUrl)
                         resolve(pluginInfo)
                     }
                 }

@@ -84,6 +84,7 @@ const DownloadService = {
             const allMissions = await SysDownloadDb.findAll({ 
                 where: { status: { [Op.in]: statusMap[type] } }, 
                 order: [['crt_tm', 'ASC']],
+                raw: true,
             })
             return Promise.resolve(allMissions)
         } catch (e) {

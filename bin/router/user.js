@@ -64,18 +64,21 @@ function createUserRouter () {
     userRouter.post('/resetPassword', [jsonParser, validate([
         body('username').isString().notEmpty().withMessage('username is required'),
         body('password').isString().notEmpty().withMessage('password is required'),
+        body('currentPassword').isString().notEmpty().withMessage('currentPassword is required'),
     ])], async (req, res) => {
         try {
-            const { username, password } = req.body
+            const { username, password, currentPassword } = req.body
             const userFined = await UserService.queryByUsername(username)
-            if (userFined && userFined.username === username) {
-                const user = await UserService.update(userFined?.uid, { password })
-                res.send({ code: 0, data: {  username: user.username } })
+            const currentPasswordIsCorrect = await bcrypt.compare(currentPassword, userFined?.password)
+            if (userFined && userFined.username === username && currentPasswordIsCorrect) {
+                const hashedPassword = await bcrypt.hash(password, 10)
+                await UserService.update(userFined?.uid, { password: hashedPassword })
+                res.send({ code: 0, data: {  username } })
             } else {
                 res.send({ code: 1, message: i18n._('query_error')  })
             }
         } catch (e) {
-            res.send({ code: 1, message: e.message })
+            res.send({ code: 1, message: String(e) })
         }
     })
     return userRouter

@@ -28,7 +28,7 @@ const UserService = {
         try {
             const user = body
             if (!user.upd_tm) user.upd_tm = new Date().toISOString()
-            const userDto = await SysUsersDb.update(user, { where: { uid } })
+            const userDto = await SysUsersDb.update(user, { where: { uid }, raw: true })
             return Promise.resolve(userDto)
         } catch (e) {
             return Promise.reject(e)

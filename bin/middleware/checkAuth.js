@@ -18,7 +18,7 @@ async function checkAuth (req, res, next) {
         if (user?.password && await bcrypt.compare(queryPassword, user?.password)) {
             next()
         } else {
-            res.status(401).send({ code: 1 })
+            res.status(401).send({ code: 1, message: 'Invalid credentials' })
         }
     } else {
         res.status(401).send({ code: 1, message: 'Invalid credentials' })

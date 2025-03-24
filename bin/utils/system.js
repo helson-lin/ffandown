@@ -1,4 +1,6 @@
 const childProcess = require('child_process')
+const logger = require('./log')
+const colors = require('colors')
 const si = require('systeminformation')
 const fs = require('fs')
 const path = require('path')
@@ -112,4 +114,37 @@ const getRealUrl = (str) => {
     return urlArray
 }
 
-module.exports = { getCpuNum, getNetwork, chmod, execCmd, getDirectories, getRealUrl }
+/**
+ * @description set termial proxy
+ * @param {string} proxyUrl 
+ */
+const setProxy = async (proxyUrl) => {
+    try {
+        if (!proxyUrl) {
+            // 取消代理
+            if (process.platform === 'win32') {
+                await execCmd('set http_proxy=')
+                await execCmd('set https_proxy=')
+            } else {
+                await execCmd('unset http_proxy')
+                await execCmd('unset https_proxy')
+            }
+            console.log(colors.blue('- Proxy cancelled'))
+            return
+        }
+        // 设置代理
+        if (process.platform === 'win32') {
+            await execCmd(`set http_proxy=${proxyUrl}`)
+            await execCmd(`set https_proxy=${proxyUrl}`)
+        } else {
+            await execCmd(`export http_proxy=${proxyUrl}`)
+            await execCmd(`export https_proxy=${proxyUrl}`)
+        }
+        console.log(colors.blue('- Proxy has been set up'))
+    } catch (error) {
+        logger.error(error)
+    }
+}
+
+
+module.exports = { getCpuNum, getNetwork, chmod, execCmd, getDirectories, getRealUrl, setProxy }

@@ -115,7 +115,7 @@ const Helper = {
         if (type === 'ffprobe') {
             ffmpeg.setFfprobePath(path)
         }
-        console.log(colors.blue(`${type.toUpperCase()}: Environment variable setting successful`))
+        console.log(colors.blue(`- ${type.toUpperCase()}: Environment variable setting successful`))
     },
     /**
      * @description is need download 是否需要下载依赖

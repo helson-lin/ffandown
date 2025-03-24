@@ -23,7 +23,8 @@ Utils.LOG.level = process.env.DEBUG ? 'debug' : 'info'
 Oimi.prototype.config = config
 
 // oimi 服务启动之后创建接口服务
-oimi.ready().then(() => {
+oimi.ready().then(async () => {
+    if (config?.proxy) await Utils.setProxy(config.proxy)
     createServer({
         oimi, 
         port: config.port,

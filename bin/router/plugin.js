@@ -6,6 +6,7 @@ const validate = require('../middleware/validate')
 const { query, body } = require('express-validator')
 const { v4: uuidv4 } = require('uuid')
 const bodyParser = require('body-parser')
+const log = require('../utils/log')
 const jsonParser = bodyParser.json()
 const PluginService = require('../sql/pluginService')
 const pluginRouter = express.Router()
@@ -51,6 +52,7 @@ function createPluginRouter() {
         try {
             const pluginInfo = await getPlugin(data.url)
             // 存储数据到数据库内
+            log.verbose(JSON.stringify(pluginInfo, null, 4))
             await PluginService.create({
                 uid: uuidv4(),
                 name: data.name || pluginInfo?.name, 
@@ -66,6 +68,7 @@ function createPluginRouter() {
             })
             res.send({ code: 0, data: pluginInfo })
         } catch (e) {
+            log.error(e)
             res.send({ code: 1, message: String(e) })
         }
     })

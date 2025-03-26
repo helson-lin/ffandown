@@ -4,6 +4,7 @@ const { autoParser } = require('../utils/parser')
 const bodyParser = require('body-parser')
 const Utils = require('../utils/index')
 const validate = require('../middleware/validate')
+const log = require('../utils/log')
 const jsonParser = bodyParser.json()
 const downloadRouter = express.Router()
 const DownloadService = require('../sql/downloadService')
@@ -11,10 +12,28 @@ const { query, body } = require('express-validator')
 
 async function createDonwloadMission (oimi, options) {
     const parsedData = await autoParser(options.url)
+    // 解析的数据内可能存在 cookie /audioUrl 等信息
     if (!parsedData || !parsedData?.url) {
         Utils.LOG.error('parser url error:' + options.url)
     } else {
-        const data = Object.assign(options, { url: parsedData.url  })
+        log.verbose(JSON.stringify(parsedData, null, 4))
+        const data = Object.assign(options, { url: parsedData.url })
+        // parsedData 的 cookies 信息存储到 headers 内
+        if (parsedData.audioUrl) data.audioUrl = parsedData.audioUrl
+        // 解析的数据内存在请求头信息
+        if (parsedData?.headers && Array.isArray(parsedData?.headers)) {
+            if (!data.headers) data.headers = []
+            const headers = parsedData.headers.reduce((pre, item) => {
+                // 如果 headers 存储的不是数组，那么不符合规范直接忽略
+                if (!Array.isArray(item)) return pre
+                // headers 存储的格式为 [key, value]
+                if (item?.length !== 2) return pre
+                const [key, value] = item
+                pre.push({ key, value })
+                return pre
+            }, [])
+            data.headers = data.headers.concat(headers)
+        }
         // 创建下载任务
         oimi.createDownloadMission(data).then(() => {
             Utils.LOG.info(`${i18n._('create_success')}:` + options.url)

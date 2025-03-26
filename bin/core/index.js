@@ -185,16 +185,12 @@ class FfmpegHelper {
      * @description 将 headers 转换为 ffmpeg的 input options
      */
     headersToOptions (headers) {
-        log.verbose(headers)
-        return headers  
-        .map(([key, value]) => `${key}: ${value}\r\n`)  
-        .join('')
-        // return headers.reduce((pre, val, index) => {
-        //     const [key, value] = val
-        //     if (!key || !value) return pre
-        //     if (index === headers.length - 1)  return pre + `${key}: ${value}\r\n"`
-        //     else return pre + `${key}: ${value}\r\n`
-        // }, '"')
+        return headers.reduce((pre, val, index) => {
+            const [key, value] = val
+            if (!key || !value) return pre
+            if (index === headers.length - 1)  return pre + `${key}: ${value};`
+            else return pre + `${key}: ${value};\r\n`
+        }, '')
     }
 
     optionsHaveKey (key, options) {
@@ -214,6 +210,7 @@ class FfmpegHelper {
         // rtmp/rtsp 直播无法通过该方式设置
         if (['rtsp://', 'rtmp://'].some(prefix => this.INPUT_FILE.startsWith(prefix))) return
         // 先检查 headers 是否存在
+        log.verbose('HEADERS:' + JSON.stringify(this.HEADERS))
         const headers = this.HEADERS.map((item) => [item.key, item.value])
         if (!this.optionsHaveKey('user-agent', headers)) {
             // 如果请求头内没有用户代理，那么设置用户代理
@@ -225,11 +222,15 @@ class FfmpegHelper {
             const referer = new URL(this.INPUT_FILE)?.origin
             if (referer && !['unknown', 'null'].includes(referer)) headers.push(['referer', referer])
         }
+        // cookie 通过 -cookies 设置
+        if (this.optionsHaveKey('cookie', headers)) {
+            const cookieIndex = headers.findIndex((item) => item[0].toUpperCase() === 'COOKIE')
+            this.ffmpegCmd.inputOption('-cookies', `"${headers[cookieIndex][1]}"`)
+            if (cookieIndex !== -1) headers.splice(cookieIndex, 1)
+        }
         let headerString = this.headersToOptions(headers)
-        // headerString = JSON.stringify(headerString)
         log.verbose('headers:' + headerString)
         // 通过 ffmpeg.inputOption 设置 headers
-        // rtsp/rtmp 直播无法通过该方式设置
         this.ffmpegCmd.inputOption(
             '-headers', headerString,
         )
@@ -261,6 +262,7 @@ class FfmpegHelper {
                 .output(this.OUTPUT_FILE)
                 break
         }
+        this.ffmpegCmd.outputOptions('-v debug')
     }
 
     handlerProcess (progress, callback) {
@@ -343,37 +345,42 @@ class FfmpegHelper {
         return new Promise((resolve, reject) => {
             const self = this;
             (async () => {
-                if (!self.INPUT_FILE || !self.OUTPUT_FILE) {
-                    reject(new Error('You must specify the input and the output files'))
-                } else {
-                    await self.getMetadata()
-                    self.ffmpegCmd = ffmpeg(self.INPUT_FILE)
-                    if (self.INPUT_AUDIO_FILE) self.ffmpegCmd.input(self.INPUT_AUDIO_FILE)
-                    self.setInputOption()
-                    // setOutputOption is dependen on protocol type
-                    await self.setOutputOption()
-                    // set the transform file suffix
-                    // self.ffmpegCmd.format(self.OUTPUTFORMAT || 'mp4')
-                    self.ffmpegCmd
-                    .on('progress', (progress) => {
-                        self.handlerProcess(progress, listenProcess)
-                    })
-                    .on('stderr', function (stderrLine) {
-                        log.verbose('Stderr output: ' + stderrLine)
-                    })
-                    .on('start', function (commandLine) {
-                        self.startTime = Date.now()
-                        log.verbose(`FFmpeg exec command: "${commandLine}"`)
-                    })
-                    .on('error', (error) => {
-                        log.error('FFmpeg error happed: ' + error)
-                        reject(error)
-                    })
-                    .on('end', () => {
-                        log.verbose(`finish mission: ${self.INPUT_FILE}`)
-                        resolve('')
-                    })
-                    .run()
+                try {
+                    if (!self.INPUT_FILE || !self.OUTPUT_FILE) {
+                        reject(new Error('You must specify the input and the output files'))
+                    } else {
+                        await self.getMetadata()
+                        self.ffmpegCmd = ffmpeg(self.INPUT_FILE)
+                        self.setInputOption()
+                        if (self.INPUT_AUDIO_FILE) self.ffmpegCmd.input(self.INPUT_AUDIO_FILE)
+                        // setOutputOption is dependen on protocol type
+                        await self.setOutputOption()
+                        // set the transform file suffix
+                        // self.ffmpegCmd.format(self.OUTPUTFORMAT || 'mp4')
+                        self.ffmpegCmd
+                        .on('progress', (progress) => {
+                            self.handlerProcess(progress, listenProcess)
+                        })
+                        .on('stderr', function (stderrLine) {
+                            log.verbose('Stderr output: ' + stderrLine)
+                        })
+                        .on('start', function (commandLine) {
+                            self.startTime = Date.now()
+                            log.verbose(`FFmpeg exec command: "${commandLine}"`)
+                        })
+                        .on('error', (error) => {
+                            log.error('FFmpeg error happed: ' + error)
+                            reject(error)
+                        })
+                        .on('end', () => {
+                            log.verbose(`finish mission: ${self.INPUT_FILE}`)
+                            resolve('')
+                        })
+                        .run()
+                    }
+                } catch (e) {
+                    log.error(e)
+                    reject(e)
                 }
             })()
         })
@@ -390,11 +397,11 @@ class FfmpegHelper {
         // SIGKILL 杀死进程
         log.verbose(`kill process with signal: ${signal}`)
         try {
-            if (signal) this.ffmpegCmd.ffmpegProc.kill(signal)
+            if (signal) this.ffmpegCmd.ffmpegProc?.kill(signal)
             else if (this.PROTOCOL_TYPE === 'live') {
-                this.ffmpegCmd.ffmpegProc.kill('SIGINT')
+                this.ffmpegCmd.ffmpegProc?.kill('SIGINT')
             } else {
-                this.ffmpegCmd.ffmpegProc.kill('SIGINT')
+                this.ffmpegCmd.ffmpegProc?.kill('SIGINT')
             }
         } catch (e) {
             log.error('error happend in kill process: ', e)

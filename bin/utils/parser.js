@@ -26,7 +26,6 @@ const extractScriptBlock = (text) => {
                 textRemoveComments = textRemoveComments.replace(value, '')
                 return pre
             } else if (code === 1 && value)  {
-                textRemoveComments = textRemoveComments.replace(value, '')
                 const info = splitSpaceAndLine(value)
                 const match = info.match(/^@(\w+)\s+(.+)$/)
                 if (!match) return pre
@@ -35,6 +34,7 @@ const extractScriptBlock = (text) => {
                 key = key && key.trim()
                 val = val && val.trim()
                 if (key && val) pre[key] = val
+                textRemoveComments = textRemoveComments.replace(value, '')
             } 
             return pre
         }, {})
@@ -60,6 +60,8 @@ const makeParser = (jsCode) => {
     const sandbox = {
         fetch: fetch,
         log,
+        URL,
+        URLSearchParams,
         console,
     }
     try {
@@ -138,6 +140,7 @@ const autoParser = async (url) => {
             }
             // 使用匹配的解析器处理URL
             const parsedData =  await parserMatched.func?.parser(url, options)
+            log.verbose('Parsed Data:' + JSON.stringify(parsedData))
             if (!parsedData) return { url }
             else return parsedData
         } else {
@@ -145,7 +148,8 @@ const autoParser = async (url) => {
             // 如果没有匹配的解析器，返回原始URL
             return { url }
         }
-    } catch {
+    } catch (e) {
+        log.error('Parse error: ' + String(e))
         // 解析过程出现错误时，返回原始URL
         return { url }
     }
@@ -184,18 +188,21 @@ const getPlugin = (url, localUrl) => {
                     reject(`Lack of annotation information: ${lossKey.join(', ')}`)
                 } else {
                     pluginInfo.url = url
+                    log.verbose('Check Plugin is available')
                     // 1. 查看插件是否可以使用
                     const parserPlugin = makeParser(textRemoveComments)
                     if (!parserPlugin.match || !parserPlugin.parser) {
+                        log.verbose('Plugin cannot be used, missing match or parser methods')
                         reject('Plugin cannot be used, missing match or parser methods')
                     } else {
                         // 2. 保存插件到本地目录
-                        log.verbose('plugininfo: ', JSON.stringify(pluginInfo))
+                        log.verbose('Save Plugin to local directory')
                         savePlugin(pluginInfo, textRemoveComments, localUrl)
                         resolve(pluginInfo)
                     }
                 }
             }).catch(e => {
+                log.error(e)
                 reject(e)
             })
             // 2. 解析插件

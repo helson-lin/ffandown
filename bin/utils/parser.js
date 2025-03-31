@@ -3,8 +3,81 @@ const fetch = require('node-fetch')
 const vm = require('vm')
 const fs = require('fs')
 const log = require('./log')
+const bcrypt = require('bcrypt')
 const pluginService = require('../sql/pluginService')
 
+/**
+ * @description 创建一个受限的文件系统接口
+ * @param {string} allowedDir 允许访问的目录
+ * @returns {Object} 包含受限文件操作方法的对象
+ */
+function createSandboxedFs(allowedDir) {
+    // 确保目录存在
+    if (!fs.existsSync(allowedDir)) {
+        fs.mkdirSync(allowedDir, { recursive: true })
+    }
+    
+    // 验证路径是否在允许的目录内
+    const isPathAllowed = (filePath) => {
+        const resolvedPath = path.resolve(filePath)
+        return resolvedPath.startsWith(allowedDir)
+    }
+    
+    // 创建受限的文件系统操作对象
+    return {
+        readFileSync: (filePath, options) => {
+            if (!isPathAllowed(filePath)) {
+                throw new Error('Access denied: Cannot read files outside the permitted directory')
+            }
+            return fs.readFileSync(filePath, options)
+        },
+        
+        writeFileSync: (filePath, data, options) => {
+            if (!isPathAllowed(filePath)) {
+                throw new Error('Access denied: Cannot write files outside the permitted directory')
+            }
+            return fs.writeFileSync(filePath, data, options)
+        },
+        
+        existsSync: (filePath) => {
+            if (!isPathAllowed(filePath)) {
+                throw new Error('Access denied: Cannot check files outside the permitted directory')
+            }
+            return fs.existsSync(filePath)
+        },
+        
+        mkdirSync: (dirPath, options) => {
+            if (!isPathAllowed(dirPath)) {
+                throw new Error('Access denied: Cannot create directories outside the permitted directory')
+            }
+            return fs.mkdirSync(dirPath, options)
+        },
+        
+        readdirSync: (dirPath, options) => {
+            if (!isPathAllowed(dirPath)) {
+                throw new Error('Access denied: Cannot read directories outside the permitted directory')
+            }
+            return fs.readdirSync(dirPath, options)
+        },
+        
+        // 可以根据需要添加更多方法，如 unlinkSync, statSync 等
+        unlinkSync: (filePath) => {
+            if (!isPathAllowed(filePath)) {
+                throw new Error('Access denied: Cannot delete files outside the permitted directory')
+            }
+            return fs.unlinkSync(filePath)
+        },
+        
+        statSync: (filePath) => {
+            if (!isPathAllowed(filePath)) {
+                throw new Error('Access denied: Cannot stat files outside the permitted directory')
+            }
+            return fs.statSync(filePath)
+        },
+    }
+}
+
+// ... rest of the file ...
 /**
  * @description 从文本中提取注解
  * @param {*} text 
@@ -58,11 +131,27 @@ const makeParser = (jsCode) => {
         throw new Error('Invalid parser code')
     }
     const sandbox = {
-        fetch: fetch,
+        fetch,
         log,
+        bcrypt,
+        console,
         URL,
         URLSearchParams,
-        console,
+        CWD_PATH: process.cwd(),
+        // 提供受限的文件系统操作
+        fs: createSandboxedFs(path.join(process.cwd(), './tmp')),
+        path: {
+            join: (...args) => {
+                // 只允许在指定目录内操作
+                const basePath = path.join(process.cwd(), './tmp')
+                const requestedPath = path.join(...args)
+                // 确保路径不会超出基础目录
+                if (!path.resolve(requestedPath).startsWith(basePath)) {
+                    throw new Error('Access denied: Cannot access paths outside the permitted directory')
+                }
+                return requestedPath
+            },
+        },
     }
     try {
         // 将沙箱对象包装到 VM 中
@@ -181,6 +270,7 @@ const getPlugin = (url, localUrl) => {
                 const lossKey = []
                 const { pluginInfo,  textRemoveComments } = await extractScriptBlock(pluginContent)
                 // 2. 解析插件信息
+                console.log(pluginInfo, textRemoveComments)
                 required.forEach(requiredKey => {
                     if (pluginInfo[requiredKey] === undefined) lossKey.push(requiredKey)
                 })

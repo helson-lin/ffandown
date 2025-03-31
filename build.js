@@ -44,6 +44,7 @@ const moveNodeSqlite = (targetPlatform, packageName = 'node_sqlite3', targetPath
             console.error(`\n ❗️ Unsupported target platform：${targetPlatform} \n`)
     }
     if (targetFile) {
+        console.log(`\n 🚀 start copy ${path.join(sourcePath, targetFile)} to ${ path.join(targetPath, `${packageName}.node`)}\n`)
         if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath, { recursive: true })
         // 复制文件
         fs.copyFileSync(
@@ -52,9 +53,9 @@ const moveNodeSqlite = (targetPlatform, packageName = 'node_sqlite3', targetPath
         )
 
         console.log(
-      `\n ✅ Copied ${path.join(sourcePath, targetFile)} to ${path.join(
+      `\n ✅ Copied \n${path.join(sourcePath, targetFile)} to \n${path.join(
           targetPath,
-          'node_sqlite3.node',
+          `${packageName}.node`,
       )}\n`,
         )
     }
@@ -73,6 +74,8 @@ const pkgRelease = (targetPlatform) => {
 
 const start = () => {
     try {
+        console.log('🚀 start read package.json')
+        // 读取 package.json
         const dataString = fs.readFileSync(
             path.join(__dirname, 'package.json'),
             'utf-8',
@@ -80,6 +83,9 @@ const start = () => {
         const data = JSON.parse(dataString)
         const platforms = data.pkg.targets
         releaseName = data.name
+        console.log('🚀 read package.json success')
+        console.log('🚀 start build')
+        // 遍历 platforms 数组，执行打包命令
         for (let item of platforms) {
             pkgRelease(item)
         }

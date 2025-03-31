@@ -120,8 +120,15 @@ const getRealUrl = (str) => {
  */
 const setProxy = async (proxyUrl) => {
     try {
+        // 存储当前代理设置到 process.env，这样子进程会继承这些环境变量
         if (!proxyUrl) {
             // 取消代理
+            process.env.http_proxy = ''
+            process.env.https_proxy = ''
+            process.env.HTTP_PROXY = ''
+            process.env.HTTPS_PROXY = ''
+            
+            // 同时在当前终端会话中取消代理(仅为了保持行为一致)
             if (process.platform === 'win32') {
                 await execCmd('set http_proxy=')
                 await execCmd('set https_proxy=')
@@ -132,7 +139,14 @@ const setProxy = async (proxyUrl) => {
             console.log(colors.blue('- Proxy cancelled'))
             return
         }
-        // 设置代理
+        
+        // 设置代理到 process.env
+        process.env.http_proxy = proxyUrl
+        process.env.https_proxy = proxyUrl
+        process.env.HTTP_PROXY = proxyUrl
+        process.env.HTTPS_PROXY = proxyUrl
+        
+        // 同时在当前终端会话中设置代理(仅为了保持行为一致)
         if (process.platform === 'win32') {
             await execCmd(`set http_proxy=${proxyUrl}`)
             await execCmd(`set https_proxy=${proxyUrl}`)

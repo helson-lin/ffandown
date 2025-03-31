@@ -6,6 +6,18 @@ const Utils = require('./bin/utils/index')
 const Oimi = require('./bin/index.js')
 const config = Utils.readConfig()
 
+// 添加进程未捕获异常的处理
+process.on('uncaughtException', (err) => {
+    Utils.LOG.error(`uncaughtException: ${err.message}`)
+    Utils.LOG.error(err.stack)
+    console.error(colors.red(`[Fatal Error] uncaught exception: ${err.message}`))
+})
+
+process.on('unhandledRejection', (reason) => {
+    Utils.LOG.error(`Unprocessed Promise Rejected: ${reason}`)
+    console.error(colors.red(`[Fatal Error] Unprocessed Promise Rejected: ${reason}`))
+})
+
 console.log(colors.blue(figlet.textSync('ffandown', 'Small Slant')))
 
 const oimi = new Oimi(
@@ -29,6 +41,11 @@ oimi.ready().then(async () => {
         oimi, 
         port: config.port,
     })
+}).catch(err => {
+    Utils.LOG.error(`Oimi Server startup failed: ${err.message}`)
+    Utils.LOG.error(err.stack)
+    console.error(colors.red(`Service startup failed: ${err.message}`))
+    process.exit(1)
 })
 
 process.on('SIGTERM', async () => {

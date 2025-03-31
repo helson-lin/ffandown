@@ -11,6 +11,7 @@ const createDownloadRouter = require('./router/download')
 const createSystemRouter = require('./router/system')
 const createPluginRouter = require('./router/plugin')
 const checkAuth = require('./middleware/checkAuth')
+const requestLogger = require('./middleware/requestLogger')
 
 const app = express()
 const { getNetwork, initializeFrontEnd } = Utils
@@ -42,6 +43,8 @@ function createServer ({ port, oimi }) {
     })
     // express static server
     app.use(express.static(path.join(process.cwd(), 'public')))
+    // 使用请求计时中间件
+    app.use(requestLogger)
     // 配置 session 中间件
     app.use(
         session({

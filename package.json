@@ -1,6 +1,6 @@
 {
   "name": "ffandown",
-  "version": "5.1.2",
+  "version": "5.1.3",
   "description": "ffandown is a m3u8 downloader",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",
@@ -84,6 +84,6 @@
     "rimraf": "^4.4.0"
   },
   "engines": {
-    "node": ">=18.20.3"
+    "node": "18.20.3"
   }
 }

@@ -44,7 +44,7 @@ oimi.ready().then(async () => {
 }).catch(err => {
     Utils.LOG.error(`Oimi Server startup failed: ${err.message}`)
     Utils.LOG.error(err.stack)
-    console.error(colors.red(`Service startup failed: ${err.message}`))
+    console.error(colors.red(`[ffandown] Service startup failed: ${err.message}`))
     process.exit(1)
 })
 
@@ -63,5 +63,5 @@ process.on('SIGINT', async function () {
 process.on('exit', async () => {
     // 退出之前，杀掉进程
     await oimi.killAll()
-    console.log('\nServer stop')
+    console.log('\n[ffandown] Server stop')
 })

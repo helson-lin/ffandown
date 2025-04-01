@@ -153,7 +153,7 @@ const Helper = {
      */
     async downloadAndSetEnv (url, libPath, type) {
         try {
-            console.log(colors.blue(`[ffandown] Downloading ${type} dependencies...`))
+            console.log(colors.blue(`[ffandown] Fetching ${type} binary...`))
             if (!url) {
                 // 提示手动下载依赖
                 console.log(colors.red(`You need to manually download ${type} dependencies for you device. 
@@ -165,7 +165,8 @@ const Helper = {
             this.setEnv(type, libPath)
             await this.chmod(libPath)
         } catch (e) {
-            console.warn(colors.bgRed('download and set env failed:' + String(e).trim()))
+            const errorMsg = `[ffandown] download and set env failed:\nURL: ${url}\nError: ${String(e).trim()}`
+            console.warn(colors.bgRed(errorMsg))
         }
     },
     /**

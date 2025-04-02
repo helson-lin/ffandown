@@ -362,7 +362,7 @@ class FfmpegHelper {
                             self.handlerProcess(progress, listenProcess)
                         })
                         .on('stderr', function (stderrLine) {
-                            log.verbose('Stderr output: ' + stderrLine)
+                            log.verbose(`URL: ${self.INPUT_FILE}/StderrLine:` + stderrLine)
                         })
                         .on('start', function (commandLine) {
                             self.startTime = Date.now()
@@ -395,7 +395,7 @@ class FfmpegHelper {
         // SIGSTOP 挂起ffmpeg
         // SIGCONT 恢复下载
         // SIGKILL 杀死进程
-        log.verbose(`kill process with signal: ${signal}`)
+        log.info(`kill process with signal: ${signal}`)
         try {
             if (signal) this.ffmpegCmd.ffmpegProc?.kill(signal)
             else if (this.PROTOCOL_TYPE === 'live') {

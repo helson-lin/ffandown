@@ -2,6 +2,7 @@ const path = require('path')
 const fetch = require('node-fetch')
 const vm = require('vm')
 const fs = require('fs')
+const fse = require('fs-extra')
 const log = require('./log')
 const bcrypt = require('bcrypt')
 const pluginService = require('../sql/pluginService')
@@ -247,7 +248,11 @@ const autoParser = async (url) => {
 const savePlugin = (pluginInfo, pluginContent, localUrl) => {
     const randomStr = () => Math.random().toString(36).slice(2)
     const name = pluginInfo.name ? pluginInfo.name + '_' + randomStr() : randomStr()
-    const pluginPath = localUrl ?? path.join(process.cwd(), `./parsers/${name}.js`)
+    const parsersDir = path.join(process.cwd(), './parsers')
+    // 确保 parsers 文件夹存在
+    fse.ensureDirSync(parsersDir)
+    // 生成插件文件名
+    const pluginPath = localUrl ?? path.join(parsersDir, `/${name}.js`)
     fs.writeFileSync(pluginPath, pluginContent, 'utf8')
     pluginInfo.localUrl = pluginPath
     // 存储到数据库内

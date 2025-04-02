@@ -1,6 +1,7 @@
 const express = require('express')
 const ws = require('express-ws')
 const session = require('express-session')
+const FileStore = require('session-file-store')(session)
 const cluster = require('cluster')
 const path = require('path')
 const colors = require('colors')
@@ -48,10 +49,16 @@ function createServer ({ port, oimi }) {
     // 配置 session 中间件
     app.use(
         session({
+            store: new FileStore({ 
+                useAsync: false, 
+                encoding: 'utf8',
+                path: './sessions',
+            }),
             secret: oimi.config?.secret, // 替换为你自己的密钥，用于加密
             resave: false, // 避免每次请求都重新保存会话
             saveUninitialized: false, // 只保存已修改的会话
             cookie: {
+                sameSite: 'lax',
                 maxAge: 24 * 60 * 60 * 1000, // 设置 cookie 有效期为 1 天（免登录时长）
             },
         }),

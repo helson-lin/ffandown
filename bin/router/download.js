@@ -126,6 +126,45 @@ function createDownloadRouter (oimi) {
             res.send({ code: 1, message: String(e) })
         }
     })
+
+    // get download list
+    downloadRouter.get('/list/sse', validate([
+        query('current').notEmpty().withMessage('current is required'),
+        query('pageSize').notEmpty().withMessage('pageSize is required'),
+        query('status').notEmpty().isString().withMessage('status is required'),
+        query('order').optional().isString(),
+        query('sort').optional().isString(),
+    ]), async (req, res) => {
+        const { current, pageSize, status, order, sort } = req.query
+        // 1. 设置 SSE 必需的响应头
+        res.setHeader('Content-Type', 'text/event-stream')
+        res.setHeader('Cache-Control', 'no-cache')
+        res.setHeader('Connection', 'keep-alive')
+        res.flushHeaders() // 立即发送头
+        async function sendData () {
+            try {
+                const list =  await DownloadService.queryByPage({
+                    pageNumber: current, 
+                    pageSize, 
+                    status, 
+                    sortField: sort || 'crt_tm', 
+                    sortOrder: order || 'DESC',
+                })
+                res.write(`data: ${JSON.stringify({ code: 0, data: list })}\n\n`)
+            } catch (e) {
+                Utils.LOG.error(e)
+                res.write(`data: ${JSON.stringify({ code: 1, message: String(e) })}\n\n`)
+            }
+        }
+        const intervalId = setInterval(sendData, 2000)
+        sendData()
+        // 4. 客户端断开连接时清理
+        req.on('close', () => {
+            clearInterval(intervalId)
+            res.write('event: end\ndata: send error\n\n')
+            res.end()
+        })
+    })
     // pause download
     downloadRouter.get('/pause', validate([
         query('uid').notEmpty().withMessage('uid is required'),

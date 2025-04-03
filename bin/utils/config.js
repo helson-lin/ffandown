@@ -82,7 +82,7 @@ const EnsureDonwloadPath = (_path) => {
 const readConfig = (option = DEFAULT_OPTIONS) => {
     const configPath = getConfigPath()
     if (!configPath) {
-        console.log('not found config file, auto create config.yml')
+        console.log('[ffandown] not found config file, auto create config.yml')
         createYml({ ...option, downloadDir: '/media/' })
     } else {
         const data = YAML.parse(fs.readFileSync(configPath).toString())

@@ -5,16 +5,17 @@ const jsonParser = bodyParser.json()
 const UserService = require('../sql/userService')
 const { v4: uuidv4 } = require('uuid')
 const bcrypt = require('bcrypt')
+const validate = require('../middleware/validate')
+const { body } = require('express-validator')
 const i18n = require('../utils/locale')
 
 function createUserRouter () {
-    userRouter.post('/register', jsonParser, async (req, res) => {
+    userRouter.post('/register', [jsonParser, validate([
+        body('username').isString().notEmpty().withMessage('username is required'),
+        body('password').isString().notEmpty().withMessage('password is required'),
+    ])], async (req, res) => {
         try {
             const { username, password } = req.body
-            if (!username || !password) {
-                res.send({ code: 0, message: i18n._('query_error') })
-                return
-            }
             // 判断是否存在相同的角色
             const userFined = await UserService.queryByUsername(username)
             if (userFined && userFined.username === username) {
@@ -29,9 +30,11 @@ function createUserRouter () {
         }
     })
 
-    userRouter.post('/login', jsonParser, async (req, res) => {
+    userRouter.post('/login', [jsonParser, validate([
+        body('username').isString().notEmpty().withMessage('username is required'),
+        body('password').isString().notEmpty().withMessage('password is required'),
+    ])], async (req, res) => {
         const { username, password } = req.body
-        if (!username || !password) return res.send({ code: 1, message: i18n._('query_error') })
         const userCount = await UserService.count()
         // 判断一些数据库内是否存在用户数据，如果没有那么默认登录的第一个用户会自动新增到数据库内
         if (userCount === 0) {
@@ -53,22 +56,29 @@ function createUserRouter () {
         }
     })
 
-    userRouter.post('/resetPassword', jsonParser, async (req, res) => {
+    userRouter.get('/logout', (req, res) => {
+        req.session.destroy()
+        res.send({ message: i18n._('logout_success'), code: 0 })
+    })
+
+    userRouter.post('/resetPassword', [jsonParser, validate([
+        body('username').isString().notEmpty().withMessage('username is required'),
+        body('password').isString().notEmpty().withMessage('password is required'),
+        body('currentPassword').isString().notEmpty().withMessage('currentPassword is required'),
+    ])], async (req, res) => {
         try {
-            const { username, password } = req.body
-            if (!username || !password) {
-                res.send({ code: 0, message: i18n._('query_error') })
-                return
-            }
+            const { username, password, currentPassword } = req.body
             const userFined = await UserService.queryByUsername(username)
-            if (userFined && userFined.username === username) {
-                const user = await UserService.update(userFined?.uid, { password })
-                res.send({ code: 0, data: {  username: user.username } })
+            const currentPasswordIsCorrect = await bcrypt.compare(currentPassword, userFined?.password)
+            if (userFined && userFined.username === username && currentPasswordIsCorrect) {
+                const hashedPassword = await bcrypt.hash(password, 10)
+                await UserService.update(userFined?.uid, { password: hashedPassword })
+                res.send({ code: 0, data: {  username } })
             } else {
                 res.send({ code: 1, message: i18n._('query_error')  })
             }
         } catch (e) {
-            res.send({ code: 1, message: e.message })
+            res.send({ code: 1, message: String(e) })
         }
     })
     return userRouter

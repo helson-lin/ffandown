@@ -2,9 +2,9 @@ const childProcess = require('child_process')
 const fse = require('fs-extra')
 const path = require('path')
 const os = require('os')
+const colors = require('colors')
 const ffmpeg = require('fluent-ffmpeg')
 const download = require('download')
-const colors = require('colors')
 
 const Helper = {
     version: '6.1',
@@ -115,7 +115,7 @@ const Helper = {
         if (type === 'ffprobe') {
             ffmpeg.setFfprobePath(path)
         }
-        console.log(`\x1b[32m[ffandown] ${type}: env variable is set successfully\x1b[0m`)
+        console.log(colors.blue(`- ${type.toUpperCase()}: Environment variable setting successful`))
     },
     /**
      * @description is need download 是否需要下载依赖
@@ -153,7 +153,7 @@ const Helper = {
      */
     async downloadAndSetEnv (url, libPath, type) {
         try {
-            console.log(colors.blue(`[ffandown] Downloading ${type} dependencies...`))
+            console.log(colors.blue(`[ffandown] Fetching ${type} binary...`))
             if (!url) {
                 // 提示手动下载依赖
                 console.log(colors.red(`You need to manually download ${type} dependencies for you device. 
@@ -165,7 +165,8 @@ const Helper = {
             this.setEnv(type, libPath)
             await this.chmod(libPath)
         } catch (e) {
-            console.warn('download and set env failed:' + String(e).trim())
+            const errorMsg = `[ffandown] download and set env failed:\nURL: ${url}\nError: ${String(e).trim()}`
+            console.warn(colors.bgRed(errorMsg))
         }
     },
     /**
@@ -190,11 +191,12 @@ const Helper = {
         })
     },
     /**
-     * @description: make sure directory exists
-     * @param {string} _path configuration path
-     * @return {string} real download directory
+     * @description: make sure directory exists 确保目录存在
+     * @param {string} _path configuration path 配置的下载目录地址
+     * @return {string} real download directory 真实的下载目录地址
      */
     ensurePath  (_path) {
+        // 以@开头的路径，表示是绝对路径
         if (_path.startsWith('@')) {
             const relPath = _path.replace('@', '')
             fse.ensureDirSync(relPath)

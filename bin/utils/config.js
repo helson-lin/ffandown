@@ -104,6 +104,8 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
         // if secret is undefined, auto create a secret
         if (!secret) option.secret = generateRandomString(32)
         if (debug) process.env.DEBUG = true
+        // 支持代理设置
+        if (data.proxy) option.proxy = data.proxy
     }
     return option
 }

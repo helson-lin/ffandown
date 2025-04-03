@@ -74,7 +74,8 @@ const SysDownloadDb = sequelize.define('sys_download', {
         type: Sequelize.STRING,
         allowNull: false,
         default: '0',
-        comment: '0/initial status; 1/ downloading status; 2/stopped status; 3/ finish status;/ 4 error happed,5 waiting download',
+        comment: `
+        0/initial status 1/ downloading status; 2/stopped status; 3/ finish status;/ 4 error happed,5 waiting download`,
     },
     message: {
         type: Sequelize.STRING,
@@ -127,4 +128,71 @@ const SysUsersDb = sequelize.define('sys_users', {
     },
 })
 
-module.exports = { SysDownloadDb, SysUsersDb, sequelize }
+// system plugins 
+const SysPluginsDb = sequelize.define('sys_plugins', {
+    uid: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        primaryKey: true,
+    },
+    name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    author: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    status: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        default: '0',
+        comment: '0/stop 1/using',
+    },
+    description: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    url: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    localUrl: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    version: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
+    icon: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    homepage: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    settings: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        comment: 'plugin settings json',
+    },
+    options: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        comment: 'plugin settings value',
+    },
+    crt_tm: {
+        type: Sequelize.DATE,
+        default: Sequelize.NOW,
+        allowNull: false,
+    },
+    upd_tm: {
+        type: Sequelize.DATE,
+        default: Sequelize.NOW,
+        allowNull: false,
+    },
+})
+
+module.exports = { SysDownloadDb, SysUsersDb, SysPluginsDb, sequelize }

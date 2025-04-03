@@ -2,7 +2,7 @@ const { SysUsersDb } = require('./entity')
 const UserService = {
     async create (body) {
         try {
-            const time = new Date().toLocaleString()
+            const time = new Date().toISOString()
             const userDto = await SysUsersDb.create({ ...body, crt_tm: time, upd_tm: time })
             return Promise.resolve(userDto)
         } catch (e) {
@@ -27,8 +27,8 @@ const UserService = {
     async update (uid, body) {
         try {
             const user = body
-            if (!user.upd_tm) user.upd_tm = new Date().toLocaleString()
-            const userDto = await SysUsersDb.update(user, { where: { uid } })
+            if (!user.upd_tm) user.upd_tm = new Date().toISOString()
+            const userDto = await SysUsersDb.update(user, { where: { uid }, raw: true })
             return Promise.resolve(userDto)
         } catch (e) {
             return Promise.reject(e)

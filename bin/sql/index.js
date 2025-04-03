@@ -1,19 +1,16 @@
+const colors = require('colors')
 const { sequelize, SysDownloadDb } = require('./entity')
-const UserService = require('./userService')
-const DownloadService = require('./downloadService')
 const dbOperation = {
     async sync () {
         try {
             await sequelize.sync({ alter: true })
             // 手动处理用户数据
             await SysDownloadDb.update({ preset: 'medium', outputformat: 'mp4' }, { where: { preset: null } })
-            console.log('\x1b[32m[ffandown] Database synced successfully\x1b[0m')
+            console.log(colors.blue('- Database synchronization successful'))
         } catch (e) {
-            console.log('\x1b[31m[ffandown] Database synced failed:' + String(e).trim() + '\x1b[0m')
+            console.log(colors.red('Database synchronization failed:' + String(e).trim()))
         }
     },
-    DownloadService,
-    UserService,
 }
 
 module.exports = dbOperation

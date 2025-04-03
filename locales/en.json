@@ -21,5 +21,6 @@
   "invalid_credentials": "Invalid credentials",
   "login_failed": "Login failed, Please check username and password",
   "login_success": "Login successfully",
+  "logout_success": "Logout successfully",
   "videoPath_required": "videoPath is required"
 }

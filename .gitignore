@@ -6,6 +6,7 @@ ffandown
 /database/
 node_modules
 dist/**
+sessions
 media/*
 config/*
 *.db
@@ -15,3 +16,4 @@ lib/*
 *.swp
 .DS_Store
 database/sqlite.db
+parsers

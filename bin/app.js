@@ -1,8 +1,9 @@
 const express = require('express')
 const ws = require('express-ws')
 const session = require('express-session')
-const bcrypt = require('bcrypt')
+const FileStore = require('session-file-store')(session)
 const cluster = require('cluster')
+const fs = require('fs')
 const path = require('path')
 const colors = require('colors')
 const i18n = require('./utils/locale')
@@ -10,7 +11,9 @@ const Utils = require('./utils/index')
 const createUserRouter = require('./router/user')
 const createDownloadRouter = require('./router/download')
 const createSystemRouter = require('./router/system')
-const UserService = require('./sql/userService')
+const createPluginRouter = require('./router/plugin')
+const checkAuth = require('./middleware/checkAuth')
+const requestLogger = require('./middleware/requestLogger')
 
 const app = express()
 const { getNetwork, initializeFrontEnd } = Utils
@@ -20,28 +23,6 @@ const { getNetwork, initializeFrontEnd } = Utils
  * @param {FFandown} this
  */
 function createServer ({ port, oimi }) {
-    async function checkAuth (req, res, next) {
-        const publicRoutes = ['/user/login', '/public'] // 不需要鉴权的路由列表
-        // 如果请求的路由在公开路由列表中，直接放行
-        if (publicRoutes.includes(req.path)) {
-            return next()
-        }
-        const sessionUser = req.session?.user?.username
-        const queryUsername = req.body?.username || req.query?.username
-        const queryPassword = req.body?.password || req.query?.password
-        if (sessionUser) {
-            next()
-        } else if (queryUsername && queryPassword) {
-            const user = await UserService.queryByUsername(queryUsername)
-            if (user?.password && await bcrypt.compare(queryPassword, user?.password)) {
-                next()
-            } else {
-                res.status(401).send({ code: 1 })
-            }
-        } else {
-            res.status(401).send({ code: 1, message: 'Invalid credentials' })
-        }
-    }
     // registerEventCallback
     oimi.registerEventCallback((data) => {
         const { name, status } = data
@@ -64,13 +45,27 @@ function createServer ({ port, oimi }) {
     })
     // express static server
     app.use(express.static(path.join(process.cwd(), 'public')))
+    // 使用请求计时中间件
+    app.use(requestLogger)
     // 配置 session 中间件
+    if (!fs.existsSync('./sessions')) {
+        fs.mkdirSync('./sessions', { recursive: true })
+    }
     app.use(
         session({
+            store: new FileStore({ 
+                useAsync: false, 
+                encoding: 'utf8',
+                ttl: 86400, // 1天
+                retries: 0,  // 减少重试次数
+                reapInterval: 3600, // 每小时清理过期session
+                path: './sessions',
+            }),
             secret: oimi.config?.secret, // 替换为你自己的密钥，用于加密
             resave: false, // 避免每次请求都重新保存会话
             saveUninitialized: false, // 只保存已修改的会话
             cookie: {
+                sameSite: 'lax',
                 maxAge: 24 * 60 * 60 * 1000, // 设置 cookie 有效期为 1 天（免登录时长）
             },
         }),
@@ -81,9 +76,11 @@ function createServer ({ port, oimi }) {
         i18n.setLocale(userLang) // 使用自定义 `setLocale` 方法
         next()
     })
+    app.use(express.json())
     app.use(checkAuth)
     app.use('/sys/', createSystemRouter(oimi))
     app.use('/user', createUserRouter(oimi))
+    app.use('/plugin', createPluginRouter(oimi))
     app.use('/', createDownloadRouter(oimi))
     // websocket
     ws(app).getWss('/')
@@ -122,7 +119,7 @@ function createServer ({ port, oimi }) {
         }
         const list = await getNetwork()
         const listenString = list.reduce((pre, val) => {
-            return pre + `\n ${colors.white('   -')} ${colors.brightCyan('http://' + val + ':' + port + '/')}`
+            return pre + `\n ${colors.white('   -')} ${colors.blue('http://' + val + ':' + port + '/')}`
         }, colors.white('[ffandown] server running at:\n'))
         const isWorker = cluster.isWorker
         if (isWorker && cluster.worker.id === 1 || !isWorker) {

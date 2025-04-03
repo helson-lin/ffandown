@@ -101,13 +101,16 @@ const isBase64 = (str) => {
     }
 }
 
+/**
+ * @description 获取真实的url
+ * @param {string} str 
+ * @returns {string| string[]}
+ */
 const getRealUrl = (str) => {
     let urlArray = []
+    // 支持换行符分割
     if (str.indexOf('\n') !== -1) {
         urlArray = str?.split('\n') ?? []
-    }
-    if (str.indexOf(',') !== -1) {
-        urlArray = str?.split(',') ?? []
     }
     if (urlArray.length === 0) return str
     if (urlArray.length === 1) return urlArray[0]

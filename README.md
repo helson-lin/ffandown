@@ -29,11 +29,12 @@
 ## 使用说明
 
 1. ✨ 目前支持 m3u8、rtsp、rtmp 直播下载和 m3u8、mp4、flv、视频下载
-2. ✨ 下载任务（包括直播）支持手动终止下载。
-3. ✨ 支持下载消息通知（bark、飞书、钉钉、gotify）
-4. ✨ 支持自定义下载转码格式（mp4、mov、flv、avi）
-5. ✨ 支持自定义User-Agent
-6. ✨ 全平台支持
+2. ✨ 支持下载消息通知（bark、飞书、钉钉、gotify）
+3. ✨ 支持自定义下载转码格式（mp4、mov、flv、avi）
+4. ✨ 支持自定义请求头
+5. ✨ 全平台支持
+6. ✨ 支持插件系统（v5.0.0 正式版本）
+7. ✨ 支持代理配置
    
 
 [详细使用文档地址和更新计划安排](https://ffandown.oimi.space/)
@@ -60,11 +61,13 @@ release平台可执行文件，打包仅打包了常用平台，其他平台架�
 
 shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/config:/app/config -v /Uses/helson/logs:/app/logs h55205l/ffandown:v5.1.0-Beta`
 
-`/home/media`为下载媒体的目录、默认8081端口
+`/app/media`为下载媒体的目录、默认8081端口
 
-`/Uses/helson/config`为配置文件目录
+`/app/config`为配置文件目录
 
-`/Uses/helson/logs`为日志文件目录
+`/app/logs`为日志文件目录
+
+`/app/public`为前端静态文件目录
 
 
 ## 使用
@@ -72,9 +75,11 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
 服务启动之后，可以看到`server runing on port: 8081`的字样
 直接在浏览器打开`localhost:8081`就可以看到下载页面
 
-![](https://pic.kblue.site//CleanShot%202024-12-22%20at%2010.51.30%402x.png)
+![example](./example.png)
 
 ### Api创建下载任务
+
+[API 文档](https://apifox.com/apidoc/shared-d00c4b27-4841-4ecd-932c-b04bdc3b94cd)
 
 - 接口地址：`http://localhost:8081/down`
 - 请求方式：`post`
@@ -84,8 +89,16 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
     {
         name: "videoname",
         url: "http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8",
-        outputformat: "mp4"
-        preset: "medium"
+        audioUrl: '', // 音频地址（音频地址用于合并音视频文件）
+        outputformat: "mp4",
+        preset: "medium",
+        dir: "/videos", // 保存目录
+        headers: [
+            {
+                key: 'User-Agent',
+                value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        ]
     }
     ```
 
@@ -113,8 +126,6 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
 ## 捐助和支持
 
 感谢**Gentle**、**鑫仔** 捐助支持、感谢**jk9527**技术贡献、
-
-![sponsors](https://pic.kblue.site//sponsors.png)
 
 ## Star History
 

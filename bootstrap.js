@@ -18,7 +18,7 @@ process.on('unhandledRejection', (reason) => {
     console.error(colors.red(`[Fatal Error] Unprocessed Promise Rejected: ${reason}`))
 })
 
-console.log(colors.blue(figlet.textSync('ffandown', 'Small Slant')))
+console.log(colors.blue(figlet.textSync(`FFandown ${Utils.SYSYTEM_VERSION}`, 'Small Slant')))
 
 const oimi = new Oimi(
     config.downloadDir, 

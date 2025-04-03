@@ -5,6 +5,8 @@ const path = require('path')
 const download = require('download')
 const log = require('./log')
 
+const SYSYTEM_VERSION = 'v5.0.0'
+
 /**
  * 获取最新版本信息 通过 github api https://ipera.oimi.space/为加速镜像
  * @param {string} repo 仓库名称
@@ -32,7 +34,7 @@ const getLatestVersionByOss = async () => {
     return {
         version: data.tag_name,
         urls: data.assets,
-        body: data.data,
+        body: data.body || data?.data,
     }
 }
 
@@ -91,7 +93,7 @@ const getFrontEndVersion = async () => {
     if (!localVersionInfo) return { ...versionInfo, current: null, upgrade: false }
     const { version, upd } = localVersionInfo
     const upgrade = compareVersion(versionInfo.version, version) === 1
-    return { ...versionInfo, current: localVersionInfo.version, upgrade, upd }
+    return { ...versionInfo, current: localVersionInfo.version, upgrade, upd,  backendVersion: SYSYTEM_VERSION }
 }
 
 /**
@@ -169,4 +171,4 @@ const initializeFrontEnd = async () => {
     if (isEmpty) await autoUpdateFrontEnd()
 }
 
-module.exports = { autoUpdateFrontEnd, getLatestVersion, getFrontEndVersion, initializeFrontEnd }
+module.exports = { autoUpdateFrontEnd, getLatestVersion, getFrontEndVersion, initializeFrontEnd, SYSYTEM_VERSION }

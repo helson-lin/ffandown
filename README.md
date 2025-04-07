@@ -80,6 +80,14 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
 
 ![example](./example.png)
 
+### 插件列表（v5.1.3 版本或者最新 latest 支持）
+
+| 插件名称 | 插件地址 | 插件仓库 |  插件描述 |
+| ----------- | ----------- | ----------- | ----------- |
+| bilibili | [github](https://github.com/helson-lin/ffandown-plugin/releases/download/v0.0.2/index.js) | [github](https://github.com/helson-lin/ffandown-plugin )| 支持b站直播和视频解析，如果不设置 cookie 只能下载 480p |
+
+
+
 ### Api创建下载任务
 
 [API 文档](https://apifox.com/apidoc/shared-d00c4b27-4841-4ecd-932c-b04bdc3b94cd)

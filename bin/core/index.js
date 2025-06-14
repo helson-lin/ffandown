@@ -7,6 +7,7 @@
 const ffmpeg = require('fluent-ffmpeg')
 const { LOG: log } = require('../utils/index')
 const os = require('os')
+
 const { execSync } = require('child_process')
 const path = require('path')
 const fs = require('fs')
@@ -35,7 +36,6 @@ class FfmpegHelper {
         this.HEADERS = []
         this.downloadedBytes = 0
         this.collectSystemInfo()
-        this.detectHardwareAccel()
     }
 
     /**
@@ -65,7 +65,10 @@ class FfmpegHelper {
      */
     getFFmpegVersion() {
         try {
-            return execSync('ffmpeg -version').toString().split('\n')[0]
+            const ffmpegCmd = ffmpeg()
+            ffmpegCmd._getFfmpegPath((_, libPath) => {
+                return execSync(`${libPath} -version`).toString().split('\n')[0]
+            })
         } catch (error) {
             return 'Unknown'
         }
@@ -78,8 +81,9 @@ class FfmpegHelper {
     async checkFFmpegCompatibility() {
         return new Promise((resolve) => {
             try {
-                // 检查基本功能
-                ffmpeg.ffprobe('-v', 'error', '-version', (err) => {
+                // 检查基本功能 - 使用 ffmpeg 而不是 ffprobe
+                const ffmpegCmd = ffmpeg()
+                ffmpegCmd.getAvailableFormats((err, formats) => {
                     if (err) {
                         log.error('FFmpeg compatibility check failed:', err)
                         resolve(false)
@@ -87,23 +91,16 @@ class FfmpegHelper {
                     }
 
                     // 检查编码器支持
-                    ffmpeg.ffprobe('-v', 'error', '-encoders', (err, data) => {
+                    ffmpegCmd.getAvailableEncoders((err, encoders) => {
                         if (err) {
                             log.error('Failed to check encoders:', err)
                             resolve(false)
                             return
                         }
 
-                        // 检查解码器支持
-                        ffmpeg.ffprobe('-v', 'error', '-decoders', (err, data) => {
-                            if (err) {
-                                log.error('Failed to check decoders:', err)
-                                resolve(false)
-                                return
-                            }
-
-                            resolve(true)
-                        })
+                        // 如果能获取到格式和编码器信息，说明 FFmpeg 工作正常
+                        log.info('FFmpeg compatibility check passed')
+                        resolve(true)
                     })
                 })
             } catch (error) {
@@ -119,19 +116,53 @@ class FfmpegHelper {
      * @returns {string}
      */
     generateDiagnosticReport(error) {
+        // 收集 FFmpeg 命令相关信息
+        const ffmpegCommandInfo = {
+            fullCommand: this.ffmpegCmd ? this.ffmpegCmd._currentCommand : 'Not available',
+            inputOptions: this.ffmpegCmd ? this.ffmpegCmd._inputOptions : [],
+            outputOptions: this.ffmpegCmd ? this.ffmpegCmd._outputOptions : [],
+            inputs: this.ffmpegCmd ? this.ffmpegCmd._inputs : [],
+            outputs: this.ffmpegCmd ? this.ffmpegCmd._outputs : [],
+            format: this.OUTPUTFORMAT || 'mp4',
+            preset: this.PRESET || 'veryfast',
+            threads: this.THREADS || 'auto',
+        }
+
+        // 收集配置参数
+        const configurationInfo = {
+            userAgent: this.USER_AGENT || DEFAULT_USER_AGENT,
+            headers: this.HEADERS || [],
+            hardwareAccel: this.hardwareAccel || 'none',
+            protocolType: this.PROTOCOL_TYPE || 'unknown',
+            timeMark: this.TIMEMARK || 'none',
+            duration: this.duration || 0,
+        }
+
         const report = {
             timestamp: new Date().toISOString(),
+            reportId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            status: 'ERROR',
             error: {
                 message: error.message,
                 stack: error.stack,
                 code: error.code,
+                signal: error.signal,
+                killed: error.killed,
+            },
+            ffmpegCommand: ffmpegCommandInfo,
+            configuration: configurationInfo,
+            files: {
+                inputFile: this.INPUT_FILE,
+                outputFile: this.OUTPUT_FILE,
+                inputAudioFile: this.INPUT_AUDIO_FILE || null,
             },
             systemInfo: this.systemInfo,
-            ffmpegCommand: this.ffmpegCmd ? this.ffmpegCmd._currentCommand : 'Not available',
-            inputFile: this.INPUT_FILE,
-            outputFile: this.OUTPUT_FILE,
-            hardwareAccel: this.hardwareAccel,
-            protocolType: this.PROTOCOL_TYPE,
+            executionContext: {
+                startTime: this.startTime ? new Date(this.startTime).toISOString() : null,
+                errorTime: new Date().toISOString(),
+                downloadedBytes: this.downloadedBytes || 0,
+                processMemoryUsage: process.memoryUsage(),
+            },
         }
 
         return JSON.stringify(report, null, 2)
@@ -162,64 +193,39 @@ class FfmpegHelper {
             log.info('5. Try using a different preset (e.g., "veryfast" instead of "medium")')
         }
 
+        // 检查是否是网络超时错误
+        if (error.message.includes('Operation timed out') || 
+            error.message.includes('Connection timed out') ||
+            error.message.includes('timeout') ||
+            error.message.includes('Error opening input file')) {
+            log.error('Network connection issues:')
+            log.error('1. Network connection instability or slow speed')
+            log.error('2. Server response timeout')
+            log.error('3. URL is invalid or resource is not accessible')
+            log.error('4. Firewall or proxy blocks the connection')
+            log.error('5. Server limits access frequency')
+        }
+
         // 保存诊断报告到文件
         try {
-            const reportPath = path.join(process.cwd(), 'ffmpeg-error-report.json')
+            // 生成唯一的错误报告文件名
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+            const inputFileName = this.getSimplifiedFileName(this.INPUT_FILE || 'unknown')
+            const errorCode = error.code || 'unknown-error'
+            const reportFileName = `ffmpeg-error-${timestamp}-${inputFileName}-${errorCode}.json`
+            
+            // 确保 error-reports 目录存在
+            const reportDir = path.join(process.cwd(), 'error-reports')
+            if (!fs.existsSync(reportDir)) {
+                fs.mkdirSync(reportDir, { recursive: true })
+            }
+            
+            const reportPath = path.join(reportDir, reportFileName)
             fs.writeFileSync(reportPath, diagnosticReport)
             log.info(`Diagnostic report saved to: ${reportPath}`)
         } catch (writeError) {
             log.error('Failed to save diagnostic report:', writeError)
         }
-    }
-
-    /**
-     * @description 检测系统支持的硬件加速
-     * @returns {Promise<void>}
-     */
-    async detectHardwareAccel() {
-        return new Promise((resolve) => {
-            // 首先检查 ffmpeg 是否支持硬件加速
-            ffmpeg.ffprobe('-v', 'error', '-hwaccels', (err, data) => {
-                if (err) {
-                    log.warn('Failed to detect hardware acceleration support')
-                    resolve()
-                    return
-                }
-
-                // 检测支持的硬件加速
-                const hwAccels = [
-                    { name: 'h264_nvenc', desc: 'NVIDIA GPU' },
-                    { name: 'h264_videotoolbox', desc: 'Apple VideoToolbox' },
-                    { name: 'h264_vaapi', desc: 'VAAPI' },
-                    { name: 'h264_qsv', desc: 'Intel Quick Sync' }
-                ]
-
-                let detected = false
-                const checkNextAccel = (index) => {
-                    if (index >= hwAccels.length) {
-                        if (!detected) {
-                            log.info('No hardware acceleration available, using software encoding')
-                        }
-                        resolve()
-                        return
-                    }
-
-                    const accel = hwAccels[index]
-                    ffmpeg.ffprobe('-v', 'error', '-f', accel.name, '-i', 'dummy', (err) => {
-                        if (!err) {
-                            this.hardwareAccel = accel.name
-                            log.info(`Hardware acceleration detected: ${accel.desc} (${accel.name})`)
-                            detected = true
-                            resolve()
-                        } else {
-                            checkNextAccel(index + 1)
-                        }
-                    })
-                }
-
-                checkNextAccel(0)
-            })
-        })
     }
 
     /**
@@ -246,7 +252,6 @@ class FfmpegHelper {
      * @param {String} INPUT_FILE 
      */
     setInputAudioFile (INPUT_FILE) {
-        log.verbose('setInputAudioFile: ' + INPUT_FILE)
         if (!INPUT_FILE) return this
         this.INPUT_AUDIO_FILE = INPUT_FILE
         return this
@@ -374,6 +379,87 @@ class FfmpegHelper {
     }
 
     /**
+     * @description 测试网络连接并获取元数据（整合方法，减少 ffprobe 调用）
+     * @returns {Promise<boolean>} 
+     */
+    async testConnectionAndGetMetadata() {
+        return new Promise((resolve) => {
+            try {
+                const USER_AGENT = this.USER_AGENT || DEFAULT_USER_AGENT
+                log.info(`Test network connection and get metadata: ${this.INPUT_FILE}`)
+                
+                // 首先检查是否是直播流，如果是则跳过 ffprobe
+                if (this.INPUT_FILE.startsWith('rtmp://') || this.INPUT_FILE.startsWith('rtsp://')) {
+                    this.PROTOCOL_TYPE = 'live'
+                    log.info('Detected live stream, skipping ffprobe')
+                    resolve(true)
+                    return
+                }
+                
+                // 检查是否是明显的 m3u8 或 flv 文件
+                if (this.INPUT_FILE.indexOf('.m3u8') !== -1 || this.INPUT_FILE.indexOf('.flv') !== -1) {
+                    this.PROTOCOL_TYPE = 'm3u8'
+                    log.info('Detected m3u8/flv format from URL')
+                    resolve(true)
+                    return
+                }
+                
+                // 使用 ffprobe 一次性获取所有需要的信息
+                ffmpeg.ffprobe(this.INPUT_FILE, [
+                    '-v',
+                    'error',
+                    '-user_agent',
+                    USER_AGENT,
+                    '-timeout',
+                    '15000000', // 15 seconds
+                    '-show_entries',
+                    'format=format_name,duration',
+                    '-show_streams',
+                ], (err, metadata) => {
+                    if (err) {
+                        log.error('Network connection and metadata test failed:', err.message)
+                        // 设置默认值并继续
+                        this.PROTOCOL_TYPE = 'unknown'
+                        this.duration = 0
+                        log.warn('Network connection test failed, but will continue to try to download...')
+                        resolve(true)
+                    } else {
+                        log.info('Network connection test successful')
+                        
+                        // 处理元数据
+                        const format = metadata && metadata.format
+                        const format_name = format ? format.format_name : undefined
+                        const duration = format ? format.duration : undefined
+                        
+                        // 设置持续时间
+                        this.duration = duration ?? 0
+                        
+                        // 确定协议类型
+                        if (format_name === 'hls') {
+                            this.PROTOCOL_TYPE = 'm3u8'
+                        } else if (format_name && format_name.split(',').includes('mp4')) {
+                            this.PROTOCOL_TYPE = 'mp4'
+                        } else {
+                            this.PROTOCOL_TYPE = 'unknown'
+                        }
+                        
+                        log.info(`Detected format: ${format_name}, duration: ${duration}s, ` +
+                                 `protocol: ${this.PROTOCOL_TYPE}`)
+                        resolve(true)
+                    }
+                })
+            } catch (error) {
+                log.error('Network connection and metadata test failed:', error)
+                // 设置默认值并继续
+                this.PROTOCOL_TYPE = 'unknown'
+                this.duration = 0
+                log.warn('Network connection test failed, but will continue to try to download...')
+                resolve(true)
+            }
+        })
+    }
+
+    /**
      * @description 将 headers 转换为 ffmpeg的 input options
      */
     headersToOptions (headers) {
@@ -433,12 +519,15 @@ class FfmpegHelper {
             log.verbose('headers:' + headerString)
             this.ffmpegCmd.inputOption('-headers', headerString)
 
-            // 添加重试和超时设置
-            this.ffmpegCmd.inputOption('-reconnect', '1')
-            this.ffmpegCmd.inputOption('-reconnect_at_eof', '1')
-            this.ffmpegCmd.inputOption('-reconnect_streamed', '1')
-            this.ffmpegCmd.inputOption('-reconnect_delay_max', '2')
-            this.ffmpegCmd.inputOption('-timeout', '5000000') // 5 seconds timeout
+            // 添加重试和超时设置 - 只使用最基本的选项
+            this.ffmpegCmd.inputOption('-timeout', '30000000') // 30 seconds timeout
+            
+            // 对于 HLS 流添加重连选项（使用 PROTOCOL_TYPE 判断更准确）
+            if (this.PROTOCOL_TYPE === 'm3u8') {
+                this.ffmpegCmd.inputOption('-reconnect', '1')
+                this.ffmpegCmd.inputOption('-reconnect_at_eof', '1')
+                this.ffmpegCmd.inputOption('-reconnect_delay_max', '4')
+            }
         } catch (error) {
             log.error('Error setting input options:', error)
             throw error
@@ -454,7 +543,6 @@ class FfmpegHelper {
             if (this.THREADS) {
                 this.ffmpegCmd.outputOptions([
                     `-threads ${this.THREADS}`,
-                    '-max_muxing_queue_size 9999',
                 ])
             }
             if (this.TIMEMARK) {
@@ -463,7 +551,7 @@ class FfmpegHelper {
             // 设置输出的质量
             this.ffmpegCmd.outputOptions(`-preset ${this.PRESET || 'veryfast'}`)
 
-            // 添加错误处理和恢复选项
+            // 添加错误处理和恢复选项（只设置一次）
             this.ffmpegCmd.outputOptions('-err_detect ignore_err')
             this.ffmpegCmd.outputOptions('-fflags +genpts+igndts')
             this.ffmpegCmd.outputOptions('-max_error_rate 0.0')
@@ -475,35 +563,27 @@ class FfmpegHelper {
                     if (this.hardwareAccel) {
                         // 使用硬件加速
                         this.ffmpegCmd
-                            .outputOptions(`-c:v ${this.hardwareAccel}`)
-                            .outputOptions('-c:a copy')
-                            .outputOptions('-b:v 0') // 使用硬件加速时自动选择最佳比特率
-                            .output(this.OUTPUT_FILE)
+                        .outputOptions(`-c:v ${this.hardwareAccel}`)
+                        .outputOptions('-c:a copy')
+                        .outputOptions('-b:v 0') // 使用硬件加速时自动选择最佳比特率
+                        .output(this.OUTPUT_FILE)
                     } else {
                         // 使用软件编码
                         this.ffmpegCmd
-                            .outputOptions('-c:v copy')
-                            .outputOptions('-c:a copy')
-                            .output(this.OUTPUT_FILE)
+                        .outputOptions('-c:v copy')
+                        .outputOptions('-c:a copy')
+                        .output(this.OUTPUT_FILE)
                     }
                     break
             }
 
             // 设置日志级别
-            this.ffmpegCmd.outputOptions('-v warning')
+            // this.ffmpegCmd.outputOptions('-v warning')
 
-            // 添加内存使用限制
-            this.ffmpegCmd.outputOptions('-max_muxing_queue_size 9999')
-            this.ffmpegCmd.outputOptions('-thread_queue_size 1024')
-            
-            // 添加错误恢复选项
-            this.ffmpegCmd.outputOptions('-err_detect ignore_err')
-            this.ffmpegCmd.outputOptions('-fflags +genpts+igndts')
-            this.ffmpegCmd.outputOptions('-max_error_rate 0.0')
-            
-            // 添加内存管理选项
-            this.ffmpegCmd.outputOptions('-max_alloc 50000000') // 限制最大内存分配
+            // 添加队列和内存管理选项 (合并所有相关选项，避免重复)
             this.ffmpegCmd.outputOptions('-max_muxing_queue_size 1024')
+            // this.ffmpegCmd.outputOptions('-thread_queue_size 1024')
+            this.ffmpegCmd.outputOptions('-max_alloc 50000000') // 限制最大内存分配
         } catch (error) {
             log.error('Error setting output options:', error)
             throw error
@@ -511,6 +591,12 @@ class FfmpegHelper {
     }
 
     handlerProcess (progress, callback) {
+        
+        if (!callback || typeof callback !== 'function') {
+            log.warn('Callback is not a function or not provided in handlerProcess')
+            return
+        }
+        
         const toFixed = (val, precision = 1) => {
             const multiplier = 10 ** precision
             return Math.round(val * multiplier) / multiplier
@@ -558,7 +644,6 @@ class FfmpegHelper {
 
             return totalSeconds
         }
-        // let startTime = Date.now()
         this.downloadedBytes = progress.targetSize
         const elapsedSeconds = (Date.now() - this.startTime) / 1000
         const averageSpeedKbps = this.downloadedBytes / elapsedSeconds
@@ -566,18 +651,26 @@ class FfmpegHelper {
         let percent = progress.percent 
             ? toFixed(progress.percent * 100) / 100 
             : toFixed((timemarkToSeconds(progress.timemark) / this.duration) * 100)
-        if (Number.isNaN(percent)) this.PROTOCOL_TYPE = 'live'
-        if (callback && typeof callback === 'function') {
+        
+        if (Number.isNaN(percent)) {
+            log.info('Percent is NaN, setting protocol type to live')
+            this.PROTOCOL_TYPE = 'live'
+        }
+        
+        log.verbose('Calculated percent:' + percent)
+        
+        try {
             const params = {
                 percent: percent >= 100 ? 100 : percent,
                 currentMbs,
                 timemark: progress.timemark,
                 targetSize: formatFileSize(progress.targetSize),
                 protocolType: Number.isNaN(percent) ? 'live' : 'video',
-                // percent is NaN , when the link is live
                 isLive: Number.isNaN(percent),
             }
             callback(params)
+        } catch (error) {
+            log.error('Error in progress callback:', error)
         }
     }
 
@@ -601,7 +694,13 @@ class FfmpegHelper {
                         throw new Error('You must specify the input and the output files')
                     }
 
-                    await self.getMetadata()
+                    // 整合的网络测试和元数据获取（减少 ffprobe 调用）
+                    log.info('Start testing network connection and getting metadata...')
+                    const testResult = await self.testConnectionAndGetMetadata()
+                    if (!testResult) {
+                        throw new Error('Network connection and metadata test failed')
+                    }
+                    
                     self.ffmpegCmd = ffmpeg(self.INPUT_FILE)
                     self.setInputOption()
                     if (self.INPUT_AUDIO_FILE) self.ffmpegCmd.input(self.INPUT_AUDIO_FILE)
@@ -611,6 +710,12 @@ class FfmpegHelper {
                     // self.ffmpegCmd.format(self.OUTPUTFORMAT || 'mp4')
                     self.ffmpegCmd
                     .on('progress', (progress) => {
+                        log.info('FFmpeg progress event triggered')
+                        log.verbose('Progress data:', JSON.stringify(progress))
+                        if (!listenProcess || typeof listenProcess !== 'function') {
+                            log.warn('Progress callback is not a function or not provided')
+                            return
+                        }
                         self.handlerProcess(progress, listenProcess)
                     })
                     .on('stderr', function (stderrLine) {
@@ -657,6 +762,101 @@ class FfmpegHelper {
         } catch (e) {
             log.error('error happend in kill process: ', e)
         } 
+    }
+
+    /**
+     * @description 获取简化的文件名（用于报告文件命名）
+     * @param {string} filePath 文件路径或URL
+     * @returns {string} 简化的文件名
+     */
+    getSimplifiedFileName(filePath) {
+        try {
+            // 移除查询参数和片段
+            const cleanUrl = filePath.split('?')[0].split('#')[0]
+            // 获取文件名部分
+            const fileName = cleanUrl.split('/').pop() || 'unknown'
+            // 移除特殊字符，只保留字母数字和连字符下划线点
+            return fileName.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 50)
+        } catch {
+            return 'unknown'
+        }
+    }
+
+    /**
+     * @description 清理旧的报告文件
+     * @param {number} daysToKeep 保留天数，默认30天
+     */
+    static cleanupReports(daysToKeep = 30) {
+        try {
+            const now = Date.now()
+            const keepDuration = daysToKeep * 24 * 60 * 60 * 1000 // 转换为毫秒
+            
+            const reportDirs = ['error-reports', 'success-reports']
+            let cleanedCount = 0
+            
+            reportDirs.forEach(dirName => {
+                const reportDir = path.join(process.cwd(), dirName)
+                if (fs.existsSync(reportDir)) {
+                    const files = fs.readdirSync(reportDir)
+                    files.forEach(file => {
+                        if (file.endsWith('.json')) {
+                            const filePath = path.join(reportDir, file)
+                            const stats = fs.statSync(filePath)
+                            const fileAge = now - stats.mtime.getTime()
+                            
+                            if (fileAge > keepDuration) {
+                                fs.unlinkSync(filePath)
+                                cleanedCount++
+                            }
+                        }
+                    })
+                }
+            })
+            
+            console.log(`Cleaned up ${cleanedCount} old report files`)
+        } catch (error) {
+            console.error('Failed to cleanup reports:', error)
+        }
+    }
+
+    /**
+     * @description 获取报告统计信息
+     * @returns {Object} 报告统计
+     */
+    static getReportStats() {
+        try {
+            const stats = {
+                errorReports: 0,
+                successReports: 0,
+                totalSize: 0,
+            }
+            
+            const reportDirs = [
+                { name: 'error-reports', key: 'errorReports' },
+                { name: 'success-reports', key: 'successReports' },
+            ]
+            
+            reportDirs.forEach(({ name, key }) => {
+                const reportDir = path.join(process.cwd(), name)
+                if (fs.existsSync(reportDir)) {
+                    const files = fs.readdirSync(reportDir)
+                    files.forEach(file => {
+                        if (file.endsWith('.json')) {
+                            const filePath = path.join(reportDir, file)
+                            const fileStats = fs.statSync(filePath)
+                            stats[key]++
+                            stats.totalSize += fileStats.size
+                        }
+                    })
+                }
+            })
+            
+            stats.totalSizeFormatted = `${(stats.totalSize / 1024).toFixed(2)} KB`
+            return stats
+        } catch (error) {
+            console.error('Failed to get report stats:', error)
+            return null
+        }
     }
 }
 module.exports = FfmpegHelper

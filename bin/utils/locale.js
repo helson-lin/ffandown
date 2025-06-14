@@ -1,44 +1,68 @@
 const fs = require('fs')
 const path = require('path')
 
+// 缓存翻译文件，避免重复读取
+const translationCache = new Map()
+
 const i18n = {
-    lang: 'en',
+    // 默认语言
+    _lang: 'en',
+  
+    // 解析 Accept-Language 头部
     parseAcceptLanguage(header) {
         if (!header) {
-            return 'en' // Default language
+            return 'en'
         }
 
-        // Split the header string by comma to get individual language entries
         const languages = header.split(',')
-
-        // Extract the language code and priority in descending order of quality values
         const sortedLanguages = languages
         .map(lang => {
             const [code, q = 'q=1'] = lang.trim().split(';')
             return {
-                code: code.split('-')[0], // Get language code, ignore region
+                code: code.split('-')[0], // 获取语言代码，忽略区域
                 priority: parseFloat(q.split('=')[1]),
             }
         })
-        .sort((a, b) => b.priority - a.priority) // Sort by priority descending
+        .sort((a, b) => b.priority - a.priority)
 
-        // Return the highest priority language code
         return sortedLanguages.length > 0 ? sortedLanguages[0].code : 'en'
     },
-    setLocale(lang) {
-        if (!lang) return
-        this.lang = this.parseAcceptLanguage(lang)
+    // 设置语言
+    setLocale(value) {
+        this._lang = this.parseAcceptLanguage(value)
     },
-    _: function (key) { // 改为标准函数表达式
+    // 自动检测并设置语言
+    detectAndSetLanguage() {
+        // 在 Node.js 环境中，尝试从请求头中获取语言
+        if (global.req && global.req.headers && global.req.headers['accept-language']) {
+            this._lang = this.parseAcceptLanguage(global.req.headers['accept-language'])
+        }
+        return this._lang
+    },
+  
+    // 获取翻译内容
+    _: function(key) {
+        if (!key) return ''
+    
         try {
-            if (!key) return ''
-            const langPath = path.join(process.cwd(), `/locales/${this.lang}.json`)
-            const jsonStr = fs.readFileSync(langPath, 'utf-8')
-            const data = JSON.parse(jsonStr)
-            return data?.[key] || key
-        } catch {
+            // 检查缓存中是否有该语言的翻译
+            if (!translationCache.has(this._lang)) {
+                const langPath = path.join(process.cwd(), `/locales/${this._lang}.json`)
+                const jsonStr = fs.readFileSync(langPath, 'utf-8')
+                translationCache.set(this._lang, JSON.parse(jsonStr))
+            }
+      
+            const translations = translationCache.get(this._lang)
+            return translations[key] || key
+        } catch (error) {
+            console.error(`Translation error for key "${key}":`, error.message)
             return key
         }
+    },
+  
+    // 清除缓存
+    clearCache() {
+        translationCache.clear()
     },
 }
 

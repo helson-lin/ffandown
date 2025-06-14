@@ -53,7 +53,8 @@ function createServer ({ port, oimi }) {
     }
     app.use(
         session({
-            store: new FileStore({ 
+            store: new FileStore({
+                logFn: () => {}, 
                 useAsync: false, 
                 encoding: 'utf8',
                 ttl: 86400, // 1天

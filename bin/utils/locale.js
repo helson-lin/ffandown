@@ -1,8 +1,16 @@
 const fs = require('fs')
 const path = require('path')
-
+const log = require('./log')
 // 缓存翻译文件，避免重复读取
 const translationCache = new Map()
+
+// 获取应用程序根目录
+const getAppRoot = () => {
+    if (process.env.NODE_ENV === 'development') {
+        return process.cwd()
+    }
+    return path.join(__dirname, '../../')
+}
 
 // 使用闭包创建 i18n 实例
 const createI18n = () => {
@@ -47,7 +55,7 @@ const createI18n = () => {
                 _lang = parseAcceptLanguage(systemLang)
             }
         } catch (error) {
-            console.warn('Failed to get system locale:', error)
+            log.warn('Failed to get system locale:', error)
         }
 
         _initialized = true
@@ -60,22 +68,29 @@ const createI18n = () => {
         try {
             // 检查缓存中是否有该语言的翻译
             if (!translationCache.has(_lang)) {
-                const langPath = path.join(process.cwd(), `/locales/${_lang}.json`)
+                const appRoot = getAppRoot()
+                const langPath = path.join(appRoot, 'locales', `${_lang}.json`)
+                
                 if (fs.existsSync(langPath)) {
                     const jsonStr = fs.readFileSync(langPath, 'utf-8')
                     translationCache.set(_lang, JSON.parse(jsonStr))
                 } else {
                     // 如果找不到指定语言的翻译文件，使用英语
-                    const enPath = path.join(process.cwd(), '/locales/en.json')
-                    const jsonStr = fs.readFileSync(enPath, 'utf-8')
-                    translationCache.set(_lang, JSON.parse(jsonStr))
+                    const enPath = path.join(appRoot, 'locales', 'en.json')
+                    if (fs.existsSync(enPath)) {
+                        const jsonStr = fs.readFileSync(enPath, 'utf-8')
+                        translationCache.set(_lang, JSON.parse(jsonStr))
+                    } else {
+                        // 如果连英文翻译文件都找不到，返回 key
+                        log.warn(`Translation file not found for language: ${_lang}`)
+                        return key
+                    }
                 }
             }
 
             const translations = translationCache.get(_lang)
             return translations[key] || key
         } catch (error) {
-            console.error(`Translation error for key "${key}":`, error.message)
             return key
         }
     }
@@ -113,7 +128,8 @@ const createI18n = () => {
         // 获取所有可用的语言
         getAvailableLanguages() {
             try {
-                const localesDir = path.join(process.cwd(), 'locales')
+                const appRoot = getAppRoot()
+                const localesDir = path.join(appRoot, 'locales')
                 if (!fs.existsSync(localesDir)) {
                     return ['en']
                 }
@@ -121,7 +137,7 @@ const createI18n = () => {
                     .filter(file => file.endsWith('.json'))
                     .map(file => file.replace('.json', ''))
             } catch (error) {
-                console.error('Failed to get available languages:', error)
+                log.error('Failed to get available languages:', error)
                 return ['en']
             }
         },

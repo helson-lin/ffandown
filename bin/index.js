@@ -258,9 +258,28 @@ class Oimi {
      * @returns {string} 错误代码
      */
     getFfmpegErrorCode (errorMessage) {
-        const codeMatch = errorMessage.match(/code (\d+)/)
-        const extractedCode = codeMatch ? codeMatch[1] : null
-        return extractedCode
+        if (!errorMessage) {
+            return null
+        }
+        
+        // 尝试多种可能的错误代码格式
+        const patterns = [
+            /code (\d+)/,           // 标准格式: "code 123"
+            /error code (\d+)/,     // 带error前缀: "error code 123"
+            /exit code (\d+)/,      // 退出码: "exit code 123"
+            /exit with code (\d+)/, // 带with的退出码: "exit with code 123"
+            /Error (\d+)/,          // 大写Error: "Error 123"
+        ]
+        
+        for (const pattern of patterns) {
+            const match = errorMessage.match(pattern)
+            if (match && match[1]) {
+                const code = match[1]
+                return code
+            }
+        }
+        
+        return null
     }
 
     /**
@@ -302,12 +321,14 @@ class Oimi {
                     // 任务被暂停 更新任务状态为暂停
                     this.updateMission(uid, { ...mission, status: '3', message: 'mission stopped' })
                 } else {
-                    const errorCode = this.getFfmpegErrorCode(String(e.message))
-                    const errorMessage = ERROR_CODE.includes(errorCode) 
+                    // 确保错误信息完整
+                    const errorMessage = e.message || e.toString()
+                    const errorCode = this.getFfmpegErrorCode(errorMessage)
+                    const finalErrorMessage = ERROR_CODE.includes(errorCode) 
                         ? i18n._(`ERROR_CODE_${errorCode}`) 
-                        : String(e.message)
+                        : errorMessage
                     // 更新任务状态为下载失败
-                    this.updateMission(uid, { ...mission, status: '4', message: errorMessage })
+                    this.updateMission(uid, { ...mission, status: '4', message: finalErrorMessage })
                 }
             })
             return 0
@@ -430,7 +451,7 @@ class Oimi {
     }   
     
     /**
-     * @description delete download mission / 删除下载任务v
+     * @description delete download mission / 删除下载任务
      * @param {string} uid
      */
     deleteDownload (uid) {

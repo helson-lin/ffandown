@@ -8,7 +8,7 @@ const ffmpeg = require('fluent-ffmpeg')
 const { LOG: log } = require('../utils/index')
 const os = require('os')
 
-const { execSync } = require('child_process')
+const { execSync, exec } = require('child_process')
 const path = require('path')
 const fs = require('fs')
 
@@ -487,7 +487,14 @@ class FfmpegHelper {
     setInputOption () {
         try {
             // rtmp/rtsp 直播无法通过该方式设置
-            if (['rtsp://', 'rtmp://'].some(prefix => this.INPUT_FILE.startsWith(prefix))) return
+            if (['rtsp://', 'rtmp://'].some(prefix => this.INPUT_FILE.startsWith(prefix))) {
+                // RTSP 流优化参数
+                this.ffmpegCmd.inputOption('-rtsp_transport', 'tcp')  // 使用 TCP 传输，更稳定
+                this.ffmpegCmd.inputOption('-buffer_size', '1024000') // 增加缓冲区大小
+                this.ffmpegCmd.inputOption('-probesize', '32M')       // 增加探测大小
+                this.ffmpegCmd.inputOption('-analyzeduration', '0')   // 减少分析时间
+                return
+            }
 
             // 先检查 headers 是否存在
             log.verbose('HEADERS:' + JSON.stringify(this.HEADERS))
@@ -535,9 +542,67 @@ class FfmpegHelper {
     }
 
     /**
-   * Sets the output options for ffmpeg.
-   */
-    setOutputOption () {
+     * @description 检测系统支持的硬件加速
+     * @returns {Promise<void>}
+     */
+    async detectHardwareAccel() {
+        log.info('Detecting hardware acceleration...')
+        try {
+            const ffmpegCmd = ffmpeg()
+            const libPath = await new Promise((resolve) => {
+                ffmpegCmd._getFfmpegPath((_, path) => resolve(path))
+            })
+
+            // 检查硬件加速支持
+            const hwaccelsOutput = await new Promise((resolve, reject) => {
+                exec(`${libPath} -hwaccels`, (err, stdout) => {
+                    if (err) {
+                        reject(err)
+                        return
+                    }
+                    resolve(stdout)
+                })
+            })
+
+            // 硬件加速器映射表
+            const hwAccelMap = {
+                'nvenc': { name: 'h264_nvenc', desc: 'NVIDIA GPU' },
+                'videotoolbox': { name: 'h264_videotoolbox', desc: 'Apple VideoToolbox' },
+                'vaapi': { name: 'h264_vaapi', desc: 'VAAPI' },
+                'qsv': { name: 'h264_qsv', desc: 'Intel Quick Sync' }
+            }
+
+            // 按优先级顺序检查硬件加速器
+            const hwaccels = hwaccelsOutput.toLowerCase().split('\n')
+            for (const [key, value] of Object.entries(hwAccelMap)) {
+                if (hwaccels.some(line => line.includes(key))) {
+                    this.hardwareAccel = value.name
+                    log.info(`Hardware acceleration detected: ${value.desc} (${value.name})`)
+                    return
+                }
+            }
+
+            log.info('No hardware acceleration available, using software encoding')
+        } catch (error) {
+            log.error('Error detecting hardware acceleration:', error)
+        }
+    }
+
+    /**
+     * @description 检查硬件加速是否可用
+     * @returns {Promise<boolean>}
+     */
+    async checkHardwareAccelAvailable() {
+        if (!this.hardwareAccel) {
+            await this.detectHardwareAccel()
+        }
+        return !!this.hardwareAccel
+    }
+
+    /**
+     * @description 设置输出选项
+     */
+    setOutputOption() {
         try {
             // 设置线程数
             if (this.THREADS) {
@@ -545,13 +610,15 @@ class FfmpegHelper {
                     `-threads ${this.THREADS}`,
                 ])
             }
+
             if (this.TIMEMARK) {
                 this.ffmpegCmd.seekInput(this.TIMEMARK)
             }
+
             // 设置输出的质量
             this.ffmpegCmd.outputOptions(`-preset ${this.PRESET || 'veryfast'}`)
 
-            // 添加错误处理和恢复选项（只设置一次）
+            // 添加错误处理和恢复选项
             this.ffmpegCmd.outputOptions('-err_detect ignore_err')
             this.ffmpegCmd.outputOptions('-fflags +genpts+igndts')
             this.ffmpegCmd.outputOptions('-max_error_rate 0.0')
@@ -559,31 +626,44 @@ class FfmpegHelper {
             // PROTOCOL_TYPE为预留字段
             const liveProtocol = this.PROTOCOL_TYPE
             switch (liveProtocol) {
+                case 'live':
+                    // RTSP/RTMP 流优化
+                    if (this.hardwareAccel) {
+                        // 使用硬件加速
+                        this.ffmpegCmd
+                            .outputOptions(`-c:v ${this.hardwareAccel}`)
+                            .outputOptions('-c:a copy')
+                            .outputOptions('-b:v 0')  // 自动选择最佳比特率
+                            .output(this.OUTPUT_FILE)
+                    } else {
+                        // 使用软件编码
+                        this.ffmpegCmd
+                            .outputOptions('-c:v copy')
+                            .outputOptions('-c:a copy')
+                            .output(this.OUTPUT_FILE)
+                    }
+                    break
                 default:
                     if (this.hardwareAccel) {
                         // 使用硬件加速
                         this.ffmpegCmd
-                        .outputOptions(`-c:v ${this.hardwareAccel}`)
-                        .outputOptions('-c:a copy')
-                        .outputOptions('-b:v 0') // 使用硬件加速时自动选择最佳比特率
-                        .output(this.OUTPUT_FILE)
+                            .outputOptions(`-c:v ${this.hardwareAccel}`)
+                            .outputOptions('-c:a copy')
+                            .outputOptions('-b:v 0')
+                            .output(this.OUTPUT_FILE)
                     } else {
                         // 使用软件编码
                         this.ffmpegCmd
-                        .outputOptions('-c:v copy')
-                        .outputOptions('-c:a copy')
-                        .output(this.OUTPUT_FILE)
+                            .outputOptions('-c:v copy')
+                            .outputOptions('-c:a copy')
+                            .output(this.OUTPUT_FILE)
                     }
                     break
             }
 
-            // 设置日志级别
-            // this.ffmpegCmd.outputOptions('-v warning')
-
-            // 添加队列和内存管理选项 (合并所有相关选项，避免重复)
+            // 添加队列和内存管理选项
             this.ffmpegCmd.outputOptions('-max_muxing_queue_size 1024')
-            // this.ffmpegCmd.outputOptions('-thread_queue_size 1024')
-            this.ffmpegCmd.outputOptions('-max_alloc 50000000') // 限制最大内存分配
+            this.ffmpegCmd.outputOptions('-max_alloc 50000000')
         } catch (error) {
             log.error('Error setting output options:', error)
             throw error
@@ -675,14 +755,14 @@ class FfmpegHelper {
     }
 
     /**
-    * @description 开始下载任务 Start download mission
-    * @param {Function} listenProcess 监听下载进度的回调函数 Callback function for listening to download progress
+    * @description 开始下载任务
+    * @param {Function} listenProcess 监听下载进度的回调函数
     * @returns {Promise}
     */
-    start (listenProcess) {
+    start(listenProcess) {
         return new Promise((resolve, reject) => {
-            const self = this;
-            (async () => {
+            const self = this
+            ;(async () => {
                 try {
                     // 检查 FFmpeg 兼容性
                     const isCompatible = await self.checkFFmpegCompatibility()
@@ -690,50 +770,61 @@ class FfmpegHelper {
                         throw new Error('FFmpeg compatibility check failed')
                     }
 
+                    // 检查硬件加速
+                    const hasHardwareAccel = await self.checkHardwareAccelAvailable()
+                    if (hasHardwareAccel) {
+                        log.info(`Using hardware acceleration: ${self.hardwareAccel}`)
+                    } else {
+                        log.info('No hardware acceleration available, using software encoding')
+                    }
+
                     if (!self.INPUT_FILE || !self.OUTPUT_FILE) {
                         throw new Error('You must specify the input and the output files')
                     }
 
-                    // 整合的网络测试和元数据获取（减少 ffprobe 调用）
+                    // 整合的网络测试和元数据获取
                     log.info('Start testing network connection and getting metadata...')
                     const testResult = await self.testConnectionAndGetMetadata()
                     if (!testResult) {
                         throw new Error('Network connection and metadata test failed')
                     }
-                    
+
                     self.ffmpegCmd = ffmpeg(self.INPUT_FILE)
                     self.setInputOption()
-                    if (self.INPUT_AUDIO_FILE) self.ffmpegCmd.input(self.INPUT_AUDIO_FILE)
-                    // setOutputOption is dependen on protocol type
+                    
+                    if (self.INPUT_AUDIO_FILE) {
+                        self.ffmpegCmd.input(self.INPUT_AUDIO_FILE)
+                    }
+
                     await self.setOutputOption()
-                    // set the transform file suffix
-                    // self.ffmpegCmd.format(self.OUTPUTFORMAT || 'mp4')
+
                     self.ffmpegCmd
-                    .on('progress', (progress) => {
-                        log.info('FFmpeg progress event triggered')
-                        log.verbose('Progress data:', JSON.stringify(progress))
-                        if (!listenProcess || typeof listenProcess !== 'function') {
-                            log.warn('Progress callback is not a function or not provided')
-                            return
-                        }
-                        self.handlerProcess(progress, listenProcess)
-                    })
-                    .on('stderr', function (stderrLine) {
-                        log.verbose(`URL: ${self.INPUT_FILE}/StderrLine:` + stderrLine)
-                    })
-                    .on('start', function (commandLine) {
-                        self.startTime = Date.now()
-                        log.verbose(`FFmpeg exec command: "${commandLine}"`)
-                    })
-                    .on('error', (error) => {
-                        self.handleFFmpegError(error)
-                        reject(error)
-                    })
-                    .on('end', () => {
-                        log.verbose(`Finish mission: ${self.INPUT_FILE}`)
-                        resolve('')
-                    })
-                    .run()
+                        .on('progress', (progress) => {
+                            log.info('FFmpeg progress event triggered')
+                            log.verbose('Progress data:', JSON.stringify(progress))
+                            if (!listenProcess || typeof listenProcess !== 'function') {
+                                log.warn('Progress callback is not a function or not provided')
+                                return
+                            }
+                            self.handlerProcess(progress, listenProcess)
+                        })
+                        .on('stderr', function (stderrLine) {
+                            log.verbose(`URL: ${self.INPUT_FILE}/StderrLine: ${stderrLine}`)
+                        })
+                        .on('start', function (commandLine) {
+                            self.startTime = Date.now()
+                            log.verbose(`FFmpeg exec command: "${commandLine}"`)
+                        })
+                        .on('error', (error) => {
+                            self.handleFFmpegError(error)
+                            reject(error)
+                        })
+                        .on('end', () => {
+                            log.verbose(`Finish mission: ${self.INPUT_FILE}`)
+                            resolve('')
+                        })
+
+                    self.ffmpegCmd.run()
                 } catch (e) {
                     log.error('Error in start method:', e)
                     reject(e)

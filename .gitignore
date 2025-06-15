@@ -17,3 +17,5 @@ lib/*
 .DS_Store
 database/sqlite.db
 parsers
+error-reports
+success-reports

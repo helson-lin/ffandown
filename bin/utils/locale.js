@@ -1,45 +1,140 @@
 const fs = require('fs')
 const path = require('path')
 
-const i18n = {
-    lang: 'en',
-    parseAcceptLanguage(header) {
+// 缓存翻译文件，避免重复读取
+const translationCache = new Map()
+
+// 使用闭包创建 i18n 实例
+const createI18n = () => {
+    // 私有变量
+    let _lang = 'en'
+    let _initialized = false
+
+    // 解析 Accept-Language 头部
+    const parseAcceptLanguage = (header) => {
         if (!header) {
-            return 'en' // Default language
+            return 'en'
         }
 
-        // Split the header string by comma to get individual language entries
         const languages = header.split(',')
-
-        // Extract the language code and priority in descending order of quality values
         const sortedLanguages = languages
-        .map(lang => {
-            const [code, q = 'q=1'] = lang.trim().split(';')
-            return {
-                code: code.split('-')[0], // Get language code, ignore region
-                priority: parseFloat(q.split('=')[1]),
-            }
-        })
-        .sort((a, b) => b.priority - a.priority) // Sort by priority descending
+            .map(lang => {
+                const [code, q = 'q=1'] = lang.trim().split(';')
+                return {
+                    code: code.split('-')[0], // 获取语言代码，忽略区域
+                    priority: parseFloat(q.split('=')[1]),
+                }
+            })
+            .sort((a, b) => b.priority - a.priority)
 
-        // Return the highest priority language code
         return sortedLanguages.length > 0 ? sortedLanguages[0].code : 'en'
-    },
-    setLocale(lang) {
-        if (!lang) return
-        this.lang = this.parseAcceptLanguage(lang)
-    },
-    _: function (key) { // 改为标准函数表达式
+    }
+
+    // 初始化语言设置
+    const initialize = () => {
+        if (_initialized) return
+
+        // 尝试从环境变量获取语言设置
+        const envLang = process.env.LANG || process.env.LANGUAGE
+        if (envLang) {
+            _lang = parseAcceptLanguage(envLang)
+        }
+
+        // 尝试从系统获取语言设置
         try {
-            if (!key) return ''
-            const langPath = path.join(process.cwd(), `/locales/${this.lang}.json`)
-            const jsonStr = fs.readFileSync(langPath, 'utf-8')
-            const data = JSON.parse(jsonStr)
-            return data?.[key] || key
-        } catch {
+            const systemLang = require('os').locale()
+            if (systemLang) {
+                _lang = parseAcceptLanguage(systemLang)
+            }
+        } catch (error) {
+            console.warn('Failed to get system locale:', error)
+        }
+
+        _initialized = true
+    }
+
+    // 获取翻译内容
+    const translate = (key) => {
+        if (!key) return ''
+
+        try {
+            // 检查缓存中是否有该语言的翻译
+            if (!translationCache.has(_lang)) {
+                const langPath = path.join(process.cwd(), `/locales/${_lang}.json`)
+                if (fs.existsSync(langPath)) {
+                    const jsonStr = fs.readFileSync(langPath, 'utf-8')
+                    translationCache.set(_lang, JSON.parse(jsonStr))
+                } else {
+                    // 如果找不到指定语言的翻译文件，使用英语
+                    const enPath = path.join(process.cwd(), '/locales/en.json')
+                    const jsonStr = fs.readFileSync(enPath, 'utf-8')
+                    translationCache.set(_lang, JSON.parse(jsonStr))
+                }
+            }
+
+            const translations = translationCache.get(_lang)
+            return translations[key] || key
+        } catch (error) {
+            console.error(`Translation error for key "${key}":`, error.message)
             return key
         }
-    },
+    }
+
+    // 公共 API
+    return {
+        // 设置语言
+        setLocale(value) {
+            if (value) {
+                _lang = parseAcceptLanguage(value)
+                // 清除缓存，强制重新加载翻译
+                translationCache.delete(_lang)
+            }
+        },
+
+        // 获取当前语言
+        getLocale() {
+            return _lang
+        },
+
+        // 自动检测并设置语言
+        detectAndSetLanguage() {
+            initialize()
+            return _lang
+        },
+
+        // 翻译函数
+        _: translate,
+
+        // 清除缓存
+        clearCache() {
+            translationCache.clear()
+        },
+
+        // 获取所有可用的语言
+        getAvailableLanguages() {
+            try {
+                const localesDir = path.join(process.cwd(), 'locales')
+                if (!fs.existsSync(localesDir)) {
+                    return ['en']
+                }
+                return fs.readdirSync(localesDir)
+                    .filter(file => file.endsWith('.json'))
+                    .map(file => file.replace('.json', ''))
+            } catch (error) {
+                console.error('Failed to get available languages:', error)
+                return ['en']
+            }
+        },
+
+        // 检查语言是否可用
+        isLanguageAvailable(lang) {
+            return this.getAvailableLanguages().includes(lang)
+        }
+    }
 }
 
+// 创建单例实例
+const i18n = createI18n()
+
+// 导出单例
 module.exports = i18n

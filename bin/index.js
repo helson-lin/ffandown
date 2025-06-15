@@ -8,6 +8,7 @@ const i18n = require('./utils/locale')
 const { v4: uuidv4 } = require('uuid')
 const { LOG: log } = require('./utils/index')
 const { msg } = require('./utils/message')
+const { ERROR_CODE } = require('./utils/constant')
 require('dotenv').config()
 
 class Oimi {
@@ -230,17 +231,13 @@ class Oimi {
      * @param {*} mission
      */
     async insertNewMission () {
-        log.info('insertNewMission')
         const waitingMissions = await DownloadService.queryMissionByType()
         const missionListLen = this.missionList.length
         // 插入的任务的数量
-        log.info('waitingMissions length', waitingMissions.length, 'current Mission List length', missionListLen)
         const insertMissionNum = this.maxDownloadNum - missionListLen
-        log.info('insertMissionNum: ', insertMissionNum)
         if (waitingMissions.length > 0) {
             const insertMissions = waitingMissions.slice(0, insertMissionNum)
             for (let mission of insertMissions) {
-                log.info('add new mission')
                 const ffmpegHelper = new FfmpegHelper()
                 // mission.dataValues is json data
                 this.missionList.push({ ...mission, ffmpegHelper })
@@ -253,6 +250,36 @@ class Oimi {
                 }, false)
             }
         }
+    }
+
+    /**
+     * @description get ffmpeg error code from error message / 从错误信息中获取 ffmpeg 错误代码
+     * @param {string} errorMessage 错误信息
+     * @returns {string} 错误代码
+     */
+    getFfmpegErrorCode (errorMessage) {
+        if (!errorMessage) {
+            return null
+        }
+        
+        // 尝试多种可能的错误代码格式
+        const patterns = [
+            /code (\d+)/,           // 标准格式: "code 123"
+            /error code (\d+)/,     // 带error前缀: "error code 123"
+            /exit code (\d+)/,      // 退出码: "exit code 123"
+            /exit with code (\d+)/, // 带with的退出码: "exit with code 123"
+            /Error (\d+)/,          // 大写Error: "Error 123"
+        ]
+        
+        for (const pattern of patterns) {
+            const match = errorMessage.match(pattern)
+            if (match && match[1]) {
+                const code = match[1]
+                return code
+            }
+        }
+        
+        return null
     }
 
     /**
@@ -283,10 +310,9 @@ class Oimi {
                 // todo: create download mission support downloaded callback
                 this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
             }).catch((e) => {
-                log.error('Catched downloading error:' + String(e.message))
+                log.error('Catched downloading error: ' + String(e.message))
                 // 为什么终止下载会执行多次 catch
                 // 下载中发生错误
-                log.warn('catched downloading error:' +  String(e))
                 // 以下两种错误信息都是任务被暂停 （ffmpeg-fluent 任务暂停是通过杀掉进程实现的）
                 if ([
                     'ffmpeg was killed with signal SIGKILL', 
@@ -295,8 +321,14 @@ class Oimi {
                     // 任务被暂停 更新任务状态为暂停
                     this.updateMission(uid, { ...mission, status: '3', message: 'mission stopped' })
                 } else {
+                    // 确保错误信息完整
+                    const errorMessage = e.message || e.toString()
+                    const errorCode = this.getFfmpegErrorCode(errorMessage)
+                    const finalErrorMessage = ERROR_CODE.includes(errorCode) 
+                        ? i18n._(`ERROR_CODE_${errorCode}`) 
+                        : errorMessage
                     // 更新任务状态为下载失败
-                    this.updateMission(uid, { ...mission, status: '4', message: String(e) })
+                    this.updateMission(uid, { ...mission, status: '4', message: finalErrorMessage })
                 }
             })
             return 0
@@ -419,7 +451,7 @@ class Oimi {
     }   
     
     /**
-     * @description delete download mission / 删除下载任务v
+     * @description delete download mission / 删除下载任务
      * @param {string} uid
      */
     deleteDownload (uid) {

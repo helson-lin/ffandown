@@ -4,8 +4,8 @@
   "msg_title": "ffandown download notification",
   "download_success": "Download successful",
   "download_failed": "Download failed",
-  "send_success": "Send successful",
-  "send_failed": "Send failed",
+  "send_success": "Notification send successful",
+  "send_failed": "Notification send failed",
   "name": "Name",
   "site": "Site",
   "error_reason": "Error reason",
@@ -22,5 +22,9 @@
   "login_failed": "Login failed, Please check username and password",
   "login_success": "Login successfully",
   "logout_success": "Logout successfully",
-  "videoPath_required": "videoPath is required"
+  "videoPath_required": "videoPath is required",
+  "ERROR_CODE_8": "Error with code 8: Permission denied. Try setting user-agent, host, cookie, or other headers.",
+  "ERROR_CODE_183": "Error with code 183: Failed to parse the resource. Check if it is accessible and playable.",
+  "ERROR_CODE_196": "Error with code 196: Request timed out.",
+  "ERROR_CODE_251": "Error with code 251: Check if the resource is accessible and playable."
 }

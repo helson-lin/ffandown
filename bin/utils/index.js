@@ -1,12 +1,18 @@
-const CONFIG = require('./config')
-const ENV = require('./env')
-const CORE = require('./core')
-const PROCESS = require('./process')
-const UPDATE = require('./checkUpdate')
+const CONFIG = require('./config.js')
+const PROCESS = require('./process.js')
+const SYSTEM = require('./system.js')
+const MSG = require('./message.js')
+const WSHELPER = require('./ws.js')
+const VERSION = require('./version.js')
+const LOG = require('./log.js')
+const HELPER = require('./helper.js')
 module.exports = {
     ...CONFIG,
-    ...ENV,
-    ...CORE,
     ...PROCESS,
-    UPDATE,
+    ...SYSTEM,
+    ...MSG,
+    ...WSHELPER,
+    ...VERSION,
+    HELPER,
+    LOG,
 }

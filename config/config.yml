@@ -1,8 +1,11 @@
 port: 8081
 downloadDir: /media/
-webhooks: 'https://api.day.app/wmKLMC4xdxL9djWCMc3SWP/文件下载通知/$TEXT'
-webhookType: bark
-thread: false
-downloadThread: true
+webhooks: https://nz.helson-lin.cn/message?token=A3HJgdetn8Rhh9g
+webhookType: gotify
+thread: true
 useFFmpegLib: true
-proxyUrl: 192.168.31.68:7890
+maxDownloadNum: 3
+preset: medium
+outputformat: mp4
+enableTimeSuffix: false
+secret: DJH1v3kXjV2v3oN4NHGlphZXyZGfmr3E

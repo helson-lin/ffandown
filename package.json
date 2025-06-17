@@ -1,37 +1,49 @@
 {
   "name": "ffandown",
-  "version": "4.2.2",
-  "description": "",
+  "version": "5.1.4",
+  "description": "ffandown is a m3u8 downloader",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",
   "scripts": {
-    "start": "node bootstrap.js",
-    "dev": "nodemon bootstrap.js",
+    "start": "node bootstrap.js --debug=false",
+    "dev": "nodemon",
     "clean": "rimraf dist",
-    "pkg": "pkg ./ --debug=true",
-    "gulp": "gulp",
-    "build": "npm run clean && npm run pkg",
-    "auto": "bash ./build.sh",
+    "pkg": "node build.js",
+    "build": "npm run clean && npm run cp && npm run pkg",
     "rmi": "docker rmi h55205l/ffandown:latest",
-    "build:dockerimage": "docker build . -t h55205l/ffandown:latest",
+    "build:image": "docker build . -t h55205l/ffandown:latest",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "ffmpeg",
+    "m3u8",
+    "live"
+  ],
+  "author": "heslonlin",
+  "license": "MIT",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "body-parser": "^1.20.1",
     "colors": "^1.4.0",
+    "dotenv": "^16.4.5",
     "download": "^8.0.0",
     "express": "^4.18.2",
-    "fluent-ffmpeg": "^2.1.2",
+    "express-session": "^1.18.1",
+    "express-validator": "^7.2.1",
+    "express-ws": "^5.0.2",
+    "figlet": "^1.6.0",
+    "fluent-ffmpeg": "^2.1.3",
     "fs-extra": "^11.1.0",
-    "gulp-html-minifier-terser": "^7.1.0",
     "js-yaml": "^4.1.0",
+    "node-fetch": "2",
     "pidusage": "^3.0.2",
     "request": "^2.88.2",
+    "sequelize": "^6.37.5",
+    "session-file-store": "^1.5.0",
+    "sqlite3": "^5.1.6",
     "systeminformation": "^5.17.12",
-    "winston": "^3.8.2",
+    "uuid": "^9.0.0",
+    "winston": "^3.17.0",
     "winston-daily-rotate-file": "^4.7.1",
     "yamljs": "^0.3.0"
   },
@@ -43,20 +55,22 @@
       "./bin/utils/*.js"
     ],
     "assets": [
+      "./locales/*",
       "./public/**/*",
       "./public/*",
       "./runtime/**/*.js",
       "./runtime/**/**/*.js",
-      "./runtime/*.js"
+      "./runtime/*.js",
+      "node_modules/figlet/fonts/Small Slant.flf",
+      "/node_modules/sqlite3/build/**/*",
+      "/node_modules/bcrypt/lib/binding/napi-v3/**/*"
     ],
     "targets": [
-      "node14-macos-arm64",
-      "node14-macos-x64",
-      "node14-linux-arm64",
-      "node14-windows-x64",
-      "node14-windows-arm64",
-      "node14-alpine-arm64",
-      "node14-alpine-x64"
+      "node18-macos-arm64",
+      "node18-macos-x64",
+      "node18-windows-x64",
+      "node18-linux-x64",
+      "node18-linux-arm64"
     ],
     "outputPath": "dist"
   },
@@ -65,11 +79,12 @@
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-promise": "^6.0.0",
-    "gulp": "^4.0.2",
-    "gulp-htmlmin": "^5.0.1",
-    "gulp-rename": "^2.0.0",
-    "pkg": "^5.8.0",
+    "pkg": "^5.8.1",
     "rimraf": "^4.4.0"
+  },
+  "engines": {
+    "node": "18.20.3"
   }
 }

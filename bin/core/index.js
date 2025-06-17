@@ -8,7 +8,7 @@ const ffmpeg = require('fluent-ffmpeg')
 const { LOG: log } = require('../utils/index')
 const os = require('os')
 
-const { execSync, exec } = require('child_process')
+const { execSync } = require('child_process')
 const path = require('path')
 const fs = require('fs')
 const { hardWareDetect } = require('../utils/hardwave')

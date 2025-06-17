@@ -65,7 +65,6 @@ const PluginService = {
             if (!uids || uids.length === 0) {
                 return Promise.reject('uid is required')
             } else {
-                console.warn(uids, status)
                 const pluginDtos = await SysPluginsDb.findAll({ where: { uid: { [Op.in]: uids } } })
                 if (!pluginDtos || pluginDtos.length === 0) return Promise.reject('not found any data')
                 const time = new Date().toISOString()

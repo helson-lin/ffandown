@@ -89,18 +89,6 @@ const getDirectories = async (dirPath, basePath) => {
     return directories
 }
 
-const isBase64 = (str) => {
-    try {
-        // 尝试将字符串解码为Buffer
-        const buffer = Buffer.from(str, 'base64')
-        // 如果解码成功，检查解码后的Buffer是否与原始字符串相同
-        return buffer.toString('base64') === str
-    } catch (err) {
-        // 如果解码失败，返回false
-        return false
-    }
-}
-
 /**
  * @description 获取真实的url
  * @param {string} str 

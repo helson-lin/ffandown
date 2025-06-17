@@ -18,14 +18,14 @@ const createI18n = () => {
 
         const languages = header.split(',')
         const sortedLanguages = languages
-            .map(lang => {
-                const [code, q = 'q=1'] = lang.trim().split(';')
-                return {
-                    code: code.split('-')[0], // 获取语言代码，忽略区域
-                    priority: parseFloat(q.split('=')[1]),
-                }
-            })
-            .sort((a, b) => b.priority - a.priority)
+        .map(lang => {
+            const [code, q = 'q=1'] = lang.trim().split(';')
+            return {
+                code: code.split('-')[0], // 获取语言代码，忽略区域
+                priority: parseFloat(q.split('=')[1]),
+            }
+        })
+        .sort((a, b) => b.priority - a.priority)
 
         return sortedLanguages.length > 0 ? sortedLanguages[0].code : 'en'
     }
@@ -118,8 +118,8 @@ const createI18n = () => {
                     return ['en']
                 }
                 return fs.readdirSync(localesDir)
-                    .filter(file => file.endsWith('.json'))
-                    .map(file => file.replace('.json', ''))
+                .filter(file => file.endsWith('.json'))
+                .map(file => file.replace('.json', ''))
             } catch (error) {
                 console.error('Failed to get available languages:', error)
                 return ['en']
@@ -129,7 +129,7 @@ const createI18n = () => {
         // 检查语言是否可用
         isLanguageAvailable(lang) {
             return this.getAvailableLanguages().includes(lang)
-        }
+        },
     }
 }
 

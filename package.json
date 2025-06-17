@@ -1,6 +1,6 @@
 {
   "name": "ffandown",
-  "version": "5.1.4",
+  "version": "5.1.5",
   "description": "ffandown is a m3u8 downloader",
   "main": "bootstrap.js",
   "bin": "bootstrap.js",

@@ -52,7 +52,7 @@ function createPluginRouter() {
         try {
             const pluginInfo = await getPlugin(data.url)
             // 存储数据到数据库内
-            log.verbose(JSON.stringify(pluginInfo, null, 4))
+            log.verbose(JSON.stringify(pluginInfo, null, 2))
             await PluginService.create({
                 uid: uuidv4(),
                 name: data.name || pluginInfo?.name, 

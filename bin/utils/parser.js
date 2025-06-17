@@ -203,7 +203,7 @@ const getAllParsers = async () => {
             allParsers.push({ func: parser, options: plugin?.options || '{}' })
         } catch (e) {
             // 解析器构建失败时输出错误信息
-            console.error('解析器构建失败', e)
+            log.error('Parser build failed: ' + e)
         }
     })
     return allParsers
@@ -275,7 +275,7 @@ const getPlugin = (url, localUrl) => {
                 const lossKey = []
                 const { pluginInfo,  textRemoveComments } = await extractScriptBlock(pluginContent)
                 // 2. 解析插件信息
-                console.log(pluginInfo, textRemoveComments)
+                log.verbose(pluginInfo, textRemoveComments)
                 required.forEach(requiredKey => {
                     if (pluginInfo[requiredKey] === undefined) lossKey.push(requiredKey)
                 })
@@ -283,15 +283,15 @@ const getPlugin = (url, localUrl) => {
                     reject(`Lack of annotation information: ${lossKey.join(', ')}`)
                 } else {
                     pluginInfo.url = url
-                    log.verbose('Check Plugin is available')
+                    log.info('Check Plugin is available')
                     // 1. 查看插件是否可以使用
                     const parserPlugin = makeParser(textRemoveComments)
                     if (!parserPlugin.match || !parserPlugin.parser) {
-                        log.verbose('Plugin cannot be used, missing match or parser methods')
+                        log.info('Plugin cannot be used, missing match or parser methods')
                         reject('Plugin cannot be used, missing match or parser methods')
                     } else {
                         // 2. 保存插件到本地目录
-                        log.verbose('Save Plugin to local directory')
+                        log.info('Save Plugin to local directory')
                         savePlugin(pluginInfo, textRemoveComments, localUrl)
                         resolve(pluginInfo)
                     }

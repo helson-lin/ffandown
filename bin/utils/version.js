@@ -5,7 +5,7 @@ const path = require('path')
 const download = require('download')
 const log = require('./log')
 
-const SYSYTEM_VERSION = 'v5.1.4'
+const SYSYTEM_VERSION = 'v5.1.5.2'
 
 /**
  * 获取最新版本信息 通过 github api https://ipera.oimi.space/为加速镜像
@@ -140,7 +140,7 @@ const addVersionFile = (version, msg, upd = new Date().getTime()) => {
  * 自动更新前端资源
  */
 const autoUpdateFrontEnd = async () => {
-    log.info('ready to update frontend')
+    log.info('Ready to update frontend')
     // 获取最新的 oss 版本信息
     const { version, urls } = await getLatestVersionByOss()
     const browser_download_url = urls[0]
@@ -149,7 +149,7 @@ const autoUpdateFrontEnd = async () => {
     fse.ensureDirSync(path.join(process.cwd(), 'public'))
     // 清空 public 文件夹
     fse.emptyDirSync(path.join(process.cwd(), 'public'))
-    log.info('start download frontend static file')
+    log.info('Start download frontend static file')
     // 下载前端资源并解压
     await download(browser_download_url + `?tm=${Date.now()}`, path.join(process.cwd(), 'public'), {
         filename: 'ffandown.zip',
@@ -158,8 +158,8 @@ const autoUpdateFrontEnd = async () => {
     // 移动 dist 文件夹下的文件到 public 文件夹下
     moveDistFile()
     // 添加版本信息到本地
-    addVersionFile(version, 'update successfully')
-    log.info('frontend update successfully')
+    addVersionFile(version, 'Update successfully')
+    log.info('Frontend update successfully')
 }
 
 /**

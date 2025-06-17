@@ -28,11 +28,19 @@ const SysDownloadDb = sequelize.define('sys_download', {
         type: Sequelize.STRING,
         allowNull: false,
     },
+    audioUrl: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
     useragent: {
         type: Sequelize.STRING,
         allowNull: true,
     },
     percent: {
+        type: Sequelize.STRING,
+        allowNull: true,
+    },
+    dir: {
         type: Sequelize.STRING,
         allowNull: true,
     },

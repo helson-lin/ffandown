@@ -161,7 +161,7 @@ class Oimi {
                     this.missionList = this.missionList.filter(i => i.uid !== uid)
                     this.insertNewMission()
                 } else if (!finish && status === '2') {
-                    log.info('manual stop mission')
+                    log.info('Manual stop mission')
                     // 手动停止下载
                     oldMission.status = '2'
                     await DownloadService.update(uid, { status: '2' })
@@ -214,7 +214,7 @@ class Oimi {
         for (let mission of missions) {
             const ffmpegHelper = new FfmpegHelper()
             this.missionList.push({ ...mission, ffmpegHelper })
-            log.info('initMission for start download')
+            log.info('Init mission for start download')
             await this.startDownload({ 
                 ffmpegHelper, 
                 mission, 
@@ -347,7 +347,7 @@ class Oimi {
         // let enableTimeSuffix = false
         const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix, headers } = query
         if (!url) throw new Error('url is required')
-        log.verbose(`createDownloadMission: ${JSON.stringify(query)}`)
+        log.info(`Create download mission: ${JSON.stringify(query, null, 2)}`)
         const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat, enableTimeSuffix)
         const mission = { 
             uid: uuidv4(),
@@ -355,6 +355,7 @@ class Oimi {
             url,
             status: '0',  
             filePath,
+            dir,
             percent: 0,
             message: '',
             useragent,
@@ -381,7 +382,6 @@ class Oimi {
             const ffmpegHelper = new FfmpegHelper()
             this.missionList.push({ ...mission, ffmpegHelper })
             await this.startDownload({ ffmpegHelper, mission, outputformat, preset, headers }, true)
-            // log.verbose(`current missionList have ${this.missionList.length}s missions`)
             // 发送创建任务通知消息
             msg(this.config.webhooks, 
                 this.config.webhookType, 
@@ -414,20 +414,18 @@ class Oimi {
     * @param {string} uid
     */
     async resumeDownload (uid) {
-        log.info('resumeDownload')
+        log.info('Resume download')
         // 恢复下载任务存在两种情况 missionList里面已经存在数据 直接调用kill('恢复')
         const mission = this.missionList.find(i => i.uid === uid)
         if (mission) {
             mission.ffmpegHelper.kill('SIGCONT')
-            log.info('mission in missionList')
             return { code: 0 }
         } else {
             let mission = await DownloadService.queryOne(uid)
-            log.info('resumeDownload mission', JSON.stringify(mission))
             if (mission) {
                 try {
                     mission = mission.toJSON()
-                    // log.info(JSON.stringify(mission))
+                    log.info('Resume download mission: ' + JSON.stringify(mission, null, 2))
                     const suffix = this.helper.getUrlFileExt(mission.filePath)
                     const ffmpegHelper = new FfmpegHelper()
                     this.missionList.push({ ...mission, ffmpegHelper })
@@ -439,6 +437,8 @@ class Oimi {
                         headers: mission.headers || {},
                     }, 
                     false)
+                    // 更新任务状态为初始化
+                    this.updateMission(uid, { ...mission, status: '0' })
                     return { code: 0 }
                 } catch (e) {
                     this.updateMission(uid, { ...mission, status: '4', message: String(e) })
@@ -478,7 +478,7 @@ class Oimi {
      * @param {strig} uid 
      */
     stopDownload (uid) {
-        log.info(`stopDownload Mision uid: ${uid}`)
+        log.info(`Stop download mission uid: ${uid}`)
         return new Promise((resolve, reject) => {
             try {
                 const mission = this.missionList.find(i => i.uid === uid)

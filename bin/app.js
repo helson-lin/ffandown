@@ -104,7 +104,7 @@ function createServer ({ port, oimi }) {
             }
         })
         ws.on('close', function () {
-            Utils.LOG.info('close connection')
+            Utils.LOG.info('Close connection')
         })
     })
 

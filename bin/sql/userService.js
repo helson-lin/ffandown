@@ -58,9 +58,8 @@ const UserService = {
             return Promise.reject(e)
         }
     },
-    async queryByForm (username, password) {
+    async queryByForm (username) {
         try {
-            console.log(username, password)
             const user = await SysUsersDb.findOne({ where: { username } })
             return user && user.toJSON()
         } catch (e) {

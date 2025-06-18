@@ -10,6 +10,11 @@ const downloadRouter = express.Router()
 const DownloadService = require('../sql/downloadService')
 const { query, body } = require('express-validator')
 
+/**
+ * @description create download mission
+ * @param {Object} oimi 
+ * @param {Object} options 
+ */
 async function createDonwloadMission (oimi, options) {
     const parsedData = await autoParser(options.url)
     // 解析的数据内可能存在 cookie /audioUrl 等信息

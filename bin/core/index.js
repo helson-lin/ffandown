@@ -8,9 +8,10 @@ const ffmpeg = require('fluent-ffmpeg')
 const { LOG: log } = require('../utils/index')
 const os = require('os')
 
-const { execSync, exec } = require('child_process')
+const { execSync } = require('child_process')
 const path = require('path')
 const fs = require('fs')
+const { hardWareDetect } = require('../utils/hardwave')
 
 const DEFAULT_USER_AGENT = 
 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
@@ -29,7 +30,8 @@ class FfmpegHelper {
     THREADS
     PROTOCOL_TYPE
     duration
-    hardwareAccel = null
+    hardwareAccel = null // 硬件加速器
+    hwAccelInfo = null // 硬件加速器信息
     systemInfo = null
     constructor (options) {
         if (options?.THREADS) this.THREADS = options.THREADS
@@ -83,7 +85,7 @@ class FfmpegHelper {
             try {
                 // 检查基本功能 - 使用 ffmpeg 而不是 ffprobe
                 const ffmpegCmd = ffmpeg()
-                ffmpegCmd.getAvailableFormats((err, formats) => {
+                ffmpegCmd.getAvailableFormats((err) => {
                     if (err) {
                         log.error('FFmpeg compatibility check failed:', err)
                         resolve(false)
@@ -91,7 +93,7 @@ class FfmpegHelper {
                     }
 
                     // 检查编码器支持
-                    ffmpegCmd.getAvailableEncoders((err, encoders) => {
+                    ffmpegCmd.getAvailableEncoders((err) => {
                         if (err) {
                             log.error('Failed to check encoders:', err)
                             resolve(false)
@@ -334,7 +336,7 @@ class FfmpegHelper {
                         const format_name = format ? format.format_name : undefined
                         const duration = format ? format.duration : undefined
                         this.duration = duration ?? 0
-                        log.verbose('format_name: ' + format_name + ' duration: ' + duration)
+                        log.info(`Format: ${format_name}, Duration: ${duration}s`)
                         if (format_name === 'hls') {
                             resolve('m3u8')
                         } else if (format_name && format_name.split(',').includes('mp4')) {
@@ -497,7 +499,6 @@ class FfmpegHelper {
             }
 
             // 先检查 headers 是否存在
-            log.verbose('HEADERS:' + JSON.stringify(this.HEADERS))
             const headers = this.HEADERS.map((item) => [item.key, item.value])
             
             // 设置基本请求头
@@ -523,7 +524,7 @@ class FfmpegHelper {
 
             // 设置其他请求头
             const headerString = this.headersToOptions(headers)
-            log.verbose('headers:' + headerString)
+            log.verbose('Input headers:' + headerString)
             this.ffmpegCmd.inputOption('-headers', headerString)
 
             // 添加重试和超时设置 - 只使用最基本的选项
@@ -534,69 +535,13 @@ class FfmpegHelper {
                 this.ffmpegCmd.inputOption('-reconnect', '1')
                 this.ffmpegCmd.inputOption('-reconnect_at_eof', '1')
                 this.ffmpegCmd.inputOption('-reconnect_delay_max', '4')
+                // 设置获取最高分辨率视频
+
             }
         } catch (error) {
             log.error('Error setting input options:', error)
             throw error
         }
-    }
-
-    /**
-     * @description 检测系统支持的硬件加速
-     * @returns {Promise<void>}
-     */
-    async detectHardwareAccel() {
-        log.info('Detecting hardware acceleration...')
-        try {
-            const ffmpegCmd = ffmpeg()
-            const libPath = await new Promise((resolve) => {
-                ffmpegCmd._getFfmpegPath((_, path) => resolve(path))
-            })
-
-            // 检查硬件加速支持
-            const hwaccelsOutput = await new Promise((resolve, reject) => {
-                exec(`${libPath} -hwaccels`, (err, stdout) => {
-                    if (err) {
-                        reject(err)
-                        return
-                    }
-                    resolve(stdout)
-                })
-            })
-
-            // 硬件加速器映射表
-            const hwAccelMap = {
-                'nvenc': { name: 'h264_nvenc', desc: 'NVIDIA GPU' },
-                'videotoolbox': { name: 'h264_videotoolbox', desc: 'Apple VideoToolbox' },
-                'vaapi': { name: 'h264_vaapi', desc: 'VAAPI' },
-                'qsv': { name: 'h264_qsv', desc: 'Intel Quick Sync' }
-            }
-
-            // 按优先级顺序检查硬件加速器
-            const hwaccels = hwaccelsOutput.toLowerCase().split('\n')
-            for (const [key, value] of Object.entries(hwAccelMap)) {
-                if (hwaccels.some(line => line.includes(key))) {
-                    this.hardwareAccel = value.name
-                    log.info(`Hardware acceleration detected: ${value.desc} (${value.name})`)
-                    return
-                }
-            }
-
-            log.info('No hardware acceleration available, using software encoding')
-        } catch (error) {
-            log.error('Error detecting hardware acceleration:', error)
-        }
-    }
-
-    /**
-     * @description 检查硬件加速是否可用
-     * @returns {Promise<boolean>}
-     */
-    async checkHardwareAccelAvailable() {
-        if (!this.hardwareAccel) {
-            await this.detectHardwareAccel()
-        }
-        return !!this.hardwareAccel
     }
 
     /**
@@ -623,41 +568,17 @@ class FfmpegHelper {
             this.ffmpegCmd.outputOptions('-fflags +genpts+igndts')
             this.ffmpegCmd.outputOptions('-max_error_rate 0.0')
 
+            // 获取硬件加速信息
+            const hwAccelInfo = this.hwAccelInfo
+
             // PROTOCOL_TYPE为预留字段
             const liveProtocol = this.PROTOCOL_TYPE
             switch (liveProtocol) {
                 case 'live':
-                    // RTSP/RTMP 流优化
-                    if (this.hardwareAccel) {
-                        // 使用硬件加速
-                        this.ffmpegCmd
-                            .outputOptions(`-c:v ${this.hardwareAccel}`)
-                            .outputOptions('-c:a copy')
-                            .outputOptions('-b:v 0')  // 自动选择最佳比特率
-                            .output(this.OUTPUT_FILE)
-                    } else {
-                        // 使用软件编码
-                        this.ffmpegCmd
-                            .outputOptions('-c:v copy')
-                            .outputOptions('-c:a copy')
-                            .output(this.OUTPUT_FILE)
-                    }
+                    this.setLiveStreamOptions(hwAccelInfo)
                     break
                 default:
-                    if (this.hardwareAccel) {
-                        // 使用硬件加速
-                        this.ffmpegCmd
-                            .outputOptions(`-c:v ${this.hardwareAccel}`)
-                            .outputOptions('-c:a copy')
-                            .outputOptions('-b:v 0')
-                            .output(this.OUTPUT_FILE)
-                    } else {
-                        // 使用软件编码
-                        this.ffmpegCmd
-                            .outputOptions('-c:v copy')
-                            .outputOptions('-c:a copy')
-                            .output(this.OUTPUT_FILE)
-                    }
+                    this.setRegularStreamOptions(hwAccelInfo)
                     break
             }
 
@@ -667,6 +588,64 @@ class FfmpegHelper {
         } catch (error) {
             log.error('Error setting output options:', error)
             throw error
+        }
+    }
+
+    /**
+     * @description 设置直播流选项
+     * @param {Object|null} hwAccelInfo 硬件加速信息
+     */
+    setLiveStreamOptions(hwAccelInfo) {
+        if (hwAccelInfo) {
+            log.info(`Using hardware acceleration for live stream: ${hwAccelInfo.desc}`)
+            
+            // 添加硬件加速输入选项（如果需要）
+            if (hwAccelInfo.hwaccel && hwAccelInfo.hwaccel !== 'auto') {
+                this.ffmpegCmd.inputOption('-hwaccel', hwAccelInfo.hwaccel)
+            }
+            
+            // 使用硬件加速编码
+            this.ffmpegCmd
+            .outputOptions(`-c:v ${this.hardwareAccel}`)
+            .outputOptions('-c:a copy')
+            .outputOptions('-b:v 0')  // 自动选择最佳比特率
+            .output(this.OUTPUT_FILE)
+        } else {
+            log.info('Using software encoding for live stream')
+            // 使用软件编码
+            this.ffmpegCmd
+            .outputOptions('-c:v copy')
+            .outputOptions('-c:a copy')
+            .output(this.OUTPUT_FILE)
+        }
+    }
+
+    /**
+     * @description 设置常规流选项
+     * @param {Object|null} hwAccelInfo 硬件加速信息
+     */
+    setRegularStreamOptions(hwAccelInfo) {
+        if (hwAccelInfo) {
+            log.info(`Using hardware acceleration for regular stream: ${hwAccelInfo.desc}`)
+            
+            // 添加硬件加速输入选项（如果需要）
+            if (hwAccelInfo.hwaccel && hwAccelInfo.hwaccel !== 'auto') {
+                this.ffmpegCmd.inputOption('-hwaccel', hwAccelInfo.hwaccel)
+            }
+            
+            // 使用硬件加速编码
+            this.ffmpegCmd
+            .outputOptions(`-c:v ${this.hardwareAccel}`)
+            .outputOptions('-c:a copy')
+            .outputOptions('-b:v 0')
+            .output(this.OUTPUT_FILE)
+        } else {
+            log.info('Using software encoding for regular stream')
+            // 使用软件编码
+            this.ffmpegCmd
+            .outputOptions('-c:v copy')
+            .outputOptions('-c:a copy')
+            .output(this.OUTPUT_FILE)
         }
     }
 
@@ -737,15 +716,14 @@ class FfmpegHelper {
             this.PROTOCOL_TYPE = 'live'
         }
         
-        log.verbose('Calculated percent:' + percent)
-        
         try {
+            const protocolType = Number.isNaN(percent) ? 'live' : this.PROTOCOL_TYPE
             const params = {
                 percent: percent >= 100 ? 100 : percent,
                 currentMbs,
                 timemark: progress.timemark,
                 targetSize: formatFileSize(progress.targetSize),
-                protocolType: Number.isNaN(percent) ? 'live' : 'video',
+                protocolType,
                 isLive: Number.isNaN(percent),
             }
             callback(params)
@@ -769,10 +747,12 @@ class FfmpegHelper {
                     if (!isCompatible) {
                         throw new Error('FFmpeg compatibility check failed')
                     }
-
                     // 检查硬件加速
-                    const hasHardwareAccel = await self.checkHardwareAccelAvailable()
-                    if (hasHardwareAccel) {
+                    self.hwAccelInfo = await hardWareDetect.getHardwareAccel()
+                    if (self.hwAccelInfo) {
+                        self.hardwareAccel = self.hwAccelInfo?.encoder
+                    }
+                    if (self.hardwareAccel) {
                         log.info(`Using hardware acceleration: ${self.hardwareAccel}`)
                     } else {
                         log.info('No hardware acceleration available, using software encoding')
@@ -799,30 +779,29 @@ class FfmpegHelper {
                     await self.setOutputOption()
 
                     self.ffmpegCmd
-                        .on('progress', (progress) => {
-                            log.info('FFmpeg progress event triggered')
-                            log.verbose('Progress data:', JSON.stringify(progress))
-                            if (!listenProcess || typeof listenProcess !== 'function') {
-                                log.warn('Progress callback is not a function or not provided')
-                                return
-                            }
-                            self.handlerProcess(progress, listenProcess)
-                        })
-                        .on('stderr', function (stderrLine) {
-                            log.verbose(`URL: ${self.INPUT_FILE}/StderrLine: ${stderrLine}`)
-                        })
-                        .on('start', function (commandLine) {
-                            self.startTime = Date.now()
-                            log.verbose(`FFmpeg exec command: "${commandLine}"`)
-                        })
-                        .on('error', (error) => {
-                            self.handleFFmpegError(error)
-                            reject(error)
-                        })
-                        .on('end', () => {
-                            log.verbose(`Finish mission: ${self.INPUT_FILE}`)
-                            resolve('')
-                        })
+                    .on('progress', (progress) => {
+                        if (!listenProcess || typeof listenProcess !== 'function') {
+                            log.warn('Progress callback is not a function or not provided')
+                            return
+                        }
+                        self.handlerProcess(progress, listenProcess)
+                    })
+                    .on('stderr', function (stderrLine) {
+                        log.verbose(`${stderrLine}`)
+                    })
+                    .on('start', function (commandLine) {
+                        self.startTime = Date.now()
+                        log.info(`FFmpeg exec command: ${commandLine}`)
+                    })
+                    .on('error', (error) => {
+                        self.handleFFmpegError(error)
+                        reject(error)
+                    })
+
+                    .on('end', () => {
+                        log.verbose(`Finish mission: ${self.INPUT_FILE}`)
+                        resolve('')
+                    })
 
                     self.ffmpegCmd.run()
                 } catch (e) {
@@ -910,44 +889,5 @@ class FfmpegHelper {
         }
     }
 
-    /**
-     * @description 获取报告统计信息
-     * @returns {Object} 报告统计
-     */
-    static getReportStats() {
-        try {
-            const stats = {
-                errorReports: 0,
-                successReports: 0,
-                totalSize: 0,
-            }
-            
-            const reportDirs = [
-                { name: 'error-reports', key: 'errorReports' },
-                { name: 'success-reports', key: 'successReports' },
-            ]
-            
-            reportDirs.forEach(({ name, key }) => {
-                const reportDir = path.join(process.cwd(), name)
-                if (fs.existsSync(reportDir)) {
-                    const files = fs.readdirSync(reportDir)
-                    files.forEach(file => {
-                        if (file.endsWith('.json')) {
-                            const filePath = path.join(reportDir, file)
-                            const fileStats = fs.statSync(filePath)
-                            stats[key]++
-                            stats.totalSize += fileStats.size
-                        }
-                    })
-                }
-            })
-            
-            stats.totalSizeFormatted = `${(stats.totalSize / 1024).toFixed(2)} KB`
-            return stats
-        } catch (error) {
-            console.error('Failed to get report stats:', error)
-            return null
-        }
-    }
 }
 module.exports = FfmpegHelper

@@ -232,7 +232,7 @@ class HardWareDetect {
             .filter(i => i && Object.keys(hwAccelMap).includes(i))
             const encoders = encodersOutput.toLowerCase().split('\n')
             const selectedAccel = await this.selectBestHardwareAccel(platform, hwaccels, encoders, hwAccelMap, libPath)
-            log.info(`Selected hardware acceleration: ${selectedAccel.map(i => i.encoder).join('、')}`)
+            log.info(`Selected hardware acceleration: ${selectedAccel.map(i => i.encoder).join('、') || 'None'}`)
             if (selectedAccel.length >= 1) {
                 this.hardwareAccel = selectedAccel[0]
             } else {

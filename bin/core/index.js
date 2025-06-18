@@ -749,7 +749,9 @@ class FfmpegHelper {
                     }
                     // 检查硬件加速
                     self.hwAccelInfo = await hardWareDetect.getHardwareAccel()
-                    self.hardwareAccel = self.hwAccelInfo.encoder
+                    if (self.hwAccelInfo) {
+                        self.hardwareAccel = self.hwAccelInfo?.encoder
+                    }
                     if (self.hardwareAccel) {
                         log.info(`Using hardware acceleration: ${self.hardwareAccel}`)
                     } else {

@@ -3,7 +3,7 @@ const fs = require('fs')
 const fse = require('fs-extra')
 const YAML = require('yamljs')
 const json2yaml = require('js-yaml')
-
+const { DEFAULT_OPTIONS, OUTPUTFORMAT_OPTIONS, PRESET_OPTIONS } = require('./constant')
 // 生成随机字符串
 function generateRandomString(length) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -13,24 +13,6 @@ function generateRandomString(length) {
     }
     return result
 } 
-
-const DEFAULT_OPTIONS = {
-    port: 8081,
-    downloadDir: '/media/', 
-    webhooks: '',
-    webhookType: 'bark',
-    thread: false,
-    useFFmpegLib: true,
-    maxDownloadNum: 5,
-    preset: 'medium',
-    outputformat: 'mp4',
-    enableTimeSuffix: false,
-    secret: generateRandomString(32),
-}
-// 支持的视频格式
-const OUTPUTFORMAT_OPTIONS = ['mp4', 'mov', 'flv', 'avi', 'mkv', 'ts']
-// 支持的ffmpeg preset
-const PRESET_OPTIONS = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow']
 /**
  * @description: find config.yaml location
  * @return {string}
@@ -80,34 +62,52 @@ const EnsureDonwloadPath = (_path) => {
  * @return {object} configuration object
  */
 const readConfig = (option = DEFAULT_OPTIONS) => {
+    const config = { ...option, secret: generateRandomString(32) }
+    
     const configPath = getConfigPath()
     if (!configPath) {
         console.log('[ffandown] not found config file, auto create config.yml')
-        createYml({ ...option, downloadDir: '/media/' })
-    } else {
-        const data = YAML.parse(fs.readFileSync(configPath).toString())
-        const { 
-            port, downloadDir, maxDownloadNum, webhooks, enableTimeSuffix,
-            webhookType, preset, outputformat, useFFmpegLib, debug, secret,
-        } = data
-        if (port) option.port = port
-        if (downloadDir) option.downloadDir = downloadDir
-        if (webhooks) option.webhooks = webhooks
-        if (webhookType) option.webhookType = webhookType
-        if (maxDownloadNum) option.maxDownloadNum = maxDownloadNum
-        if (useFFmpegLib !== undefined) option.useFFmpegLib = useFFmpegLib
-        // check preset and outputformat is legal
-        if (preset && PRESET_OPTIONS.includes(preset)) option.preset = preset
-        if (outputformat && OUTPUTFORMAT_OPTIONS.includes(outputformat)) option.outputformat = outputformat
-        if (enableTimeSuffix) option.enableTimeSuffix = enableTimeSuffix
-        if (secret) option.secret = secret
-        // if secret is undefined, auto create a secret
-        if (!secret) option.secret = generateRandomString(32)
-        if (debug) process.env.DEBUG = true
-        // 支持代理设置
-        if (data.proxy) option.proxy = data.proxy
+        createYml({ ...config, downloadDir: '/media/' })
+        return config
     }
-    return option
+
+    try {
+        const data = YAML.parse(fs.readFileSync(configPath, 'utf8'))
+        
+        // 定义配置字段映射，简化赋值逻辑
+        const configFields = {
+            port: (value) => value,
+            downloadDir: (value) => value,
+            webhooks: (value) => value,
+            webhookType: (value) => value,
+            maxDownloadNum: (value) => value,
+            autoInstallFFmpeg: (value) => value,
+            enableTimeSuffix: (value) => value,
+            preset: (value) => PRESET_OPTIONS.includes(value) ? value : config.preset,
+            outputformat: (value) => OUTPUTFORMAT_OPTIONS.includes(value) ? value : config.outputformat,
+            secret: (value) => value,
+            proxy: (value) => value,
+        }
+
+        // 批量处理配置字段
+        Object.entries(configFields).forEach(([key, validator]) => {
+            if (data[key] !== undefined && data[key] !== null) {
+                config[key] = validator(data[key])
+            }
+        })
+        // 特殊处理：如果没有secret，自动生成一个
+        if (!config.secret) config.secret = generateRandomString(32)
+        // 特殊处理：debug模式
+        if (data.debug) {
+            process.env.DEBUG = true
+        }
+
+        return config
+    } catch (error) {
+        console.error('[ffandown] Error reading config file:', error.message)
+        console.log('[ffandown] Using default configuration')
+        return config
+    }
 }
 
 module.exports = { readConfig, modifyYml, EnsureDonwloadPath }

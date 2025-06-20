@@ -26,6 +26,7 @@ const oimi = new Oimi(
         thread: config.thread, 
         maxDownloadNum: config.maxDownloadNum, 
         enableTimeSuffix: config.enableTimeSuffix || false,
+        autoInstallFFmpeg: config.autoInstallFFmpeg || false,
     },
 )
 // 设置日志级别

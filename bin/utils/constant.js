@@ -6,7 +6,7 @@ module.exports = {
         webhooks: '',
         webhookType: 'bark',
         thread: false,
-        useFFmpegLib: true,
+        autoInstallFFmpeg: true,
         maxDownloadNum: 5,
         preset: 'medium',
         outputformat: 'mp4',

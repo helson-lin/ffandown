@@ -19,11 +19,12 @@ class Oimi {
     parserPlugins
     helper
     dbOperation
+    autoInstallFFmpeg
     // event callback
     stopMission
     resumeMission
     eventCallback
-    constructor (OUTPUT_DIR, { thread = true, maxDownloadNum = 5, eventCallback, enableTimeSuffix }) {
+    constructor (OUTPUT_DIR, { thread = true, maxDownloadNum = 5, eventCallback, enableTimeSuffix, autoInstallFFmpeg }) {
         // helper 类
         this.helper = helper
         // 数据库操作
@@ -45,6 +46,8 @@ class Oimi {
         this.enableTimeSuffix = enableTimeSuffix
         // 回调事件
         this.eventCallback = eventCallback
+        // 是否自动安装 ffmpeg
+        this.autoInstallFFmpeg = autoInstallFFmpeg
     }
 
     /**
@@ -75,7 +78,7 @@ class Oimi {
 
     async ready () {
         // 下载依赖 ffmpeg/ffprobe
-        await this.helper.downloadDependency()
+        if (this.autoInstallFFmpeg) await this.helper.downloadDependency()
         // 同步数据库
         await this.dbOperation.sync()
         // 初始化下载任务

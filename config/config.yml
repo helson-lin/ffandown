@@ -3,7 +3,7 @@ downloadDir: /media/
 webhooks: https://nz.helson-lin.cn/message?token=A3HJgdetn8Rhh9g
 webhookType: gotify
 thread: true
-useFFmpegLib: true
+autoInstallFFmpeg: false
 maxDownloadNum: 3
 preset: medium
 outputformat: mp4

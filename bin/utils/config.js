@@ -81,7 +81,7 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
             webhooks: (value) => value,
             webhookType: (value) => value,
             maxDownloadNum: (value) => value,
-            useFFmpegLib: (value) => value,
+            autoInstallFFmpeg: (value) => value,
             enableTimeSuffix: (value) => value,
             preset: (value) => PRESET_OPTIONS.includes(value) ? value : config.preset,
             outputformat: (value) => OUTPUTFORMAT_OPTIONS.includes(value) ? value : config.outputformat,

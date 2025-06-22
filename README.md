@@ -42,6 +42,15 @@
 
 [详细使用文档地址和更新计划安排](https://ffandown.oimi.space/)
 
+## 注意⚠️
+
+如果`h55205l/ffandown:latest`版本运行之后，一直都是`ffmpeg was killed with SIGSEGV`
+
+建议使用`h55205l/ffandown:jrottenberg-ffmpeg`这个镜像，使用前请在`config/config.yml`内增加autoInstallFFmpeg字段值为 false
+
+`autoInstallFFmpeg` 字段标识是否自动下载 ffmpeg 依赖，这个镜像为了兼容性内置了ffmpeg，所以需要配置为 false
+
+
 ## 项目运行
 
 1. 依赖安装：`npm install` 
@@ -62,7 +71,7 @@ release平台可执行文件，打包仅打包了常用平台，其他平台架�
 
 ### Docker安装
 
-shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/config:/app/config -v /Uses/helson/logs:/app/logs h55205l/ffandown:v5.1.0-Beta`
+shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/config:/app/config -v /Uses/helson/logs:/app/logs h55205l/ffandown:latest`
 
 `/app/media`为下载媒体的目录、默认8081端口
 

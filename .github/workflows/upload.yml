@@ -58,7 +58,11 @@ jobs:
       - name: Prepare Inner FFmpeg Docker Tags
         id: docker_inner_ffmpeg_tags
         run: |
-              echo "::set-output name=tags::h55205l/ffandown:jrottenberg-ffmpeg"
+              if [[ "${{ env.TAG }}" == *Beta* ]]; then
+                echo "::set-output name=tags::h55205l/ffandown:jrottenberg-ffmpeg-${{ env.TAG }}"
+              else
+                echo "::set-output name=tags::h55205l/ffandown:jrottenberg-ffmpeg"
+              fi
 
       - name: Build And Push Jrottenberg-ffmpeg Docker image
         uses: docker/build-push-action@v3

@@ -58,6 +58,20 @@ jobs:
       - name: Prepare Docker Tags
         id: docker_tags
         run: |
+              echo "::set-output name=tags::h55205l/ffandown:jrottenberg-ffmpeg"
+
+      - name: Build And Push Jrottenberg-ffmpeg Docker image
+        uses: docker/build-push-action@v3
+        with:
+            context: ./
+            file: Dockerfile-jrottenberg-ffmpeg
+            push: true
+            platforms: linux/amd64
+            tags: ${{ steps.docker_tags.outputs.tags }}
+
+      - name: Prepare Docker Tags
+        id: docker_tags
+        run: |
               if [[ "${{ env.TAG }}" == *Beta* ]]; then
                 echo "::set-output name=tags::h55205l/ffandown:${{ env.TAG }}"
               else

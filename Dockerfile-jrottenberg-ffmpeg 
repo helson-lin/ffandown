@@ -1,0 +1,9 @@
+# 第一阶段：构建环境
+FROM  jrottenberg/ffmpeg:7.1-ubuntu2404 AS builder
+COPY ./dist/ffandown-linux-x64 /app/
+RUN chmod +x /app/ffandown-linux-x64
+# 第二阶段：运行环境（仅保留运行时依赖）
+FROM  jrottenberg/ffmpeg:7.1-ubuntu2404
+COPY --from=builder /app/ /app/
+WORKDIR /app
+ENTRYPOINT ["./ffandown-linux-x64"]

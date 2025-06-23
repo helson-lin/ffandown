@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 COPY ./dist/ffandown-linux-x64 /app/
 WORKDIR /app
 CMD chmod +x ffandown-linux-x64

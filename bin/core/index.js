@@ -468,8 +468,8 @@ class FfmpegHelper {
         return headers.reduce((pre, val, index) => {
             const [key, value] = val
             if (!key || !value) return pre
-            if (index === headers.length - 1)  return pre + `${key}: ${value};`
-            else return pre + `${key}: ${value};\r\n`
+            if (index === headers.length - 1)  return pre + `${key}: ${value}`
+            else return pre + `${key}: ${value}\r\n`
         }, '')
     }
 
@@ -504,12 +504,12 @@ class FfmpegHelper {
             // 设置基本请求头
             if (!this.optionsHaveKey('user-agent', headers)) {
                 const USER_AGENT = this.USER_AGENT || DEFAULT_USER_AGENT
-                headers.push(['user-agent', USER_AGENT])
+                headers.push(['User-Agent', USER_AGENT])
             }
             if (!this.optionsHaveKey('referer', headers)) {
                 const referer = new URL(this.INPUT_FILE)?.origin
                 if (referer && !['unknown', 'null'].includes(referer)) {
-                    headers.push(['referer', referer])
+                    headers.push(['Referer', referer])
                 }
             }
 
@@ -528,7 +528,7 @@ class FfmpegHelper {
             this.ffmpegCmd.inputOption('-headers', headerString)
 
             // 添加重试和超时设置 - 只使用最基本的选项
-            this.ffmpegCmd.inputOption('-timeout', '30000000') // 30 seconds timeout
+            this.ffmpegCmd.inputOption('-rw_timeout', '30000000') // 30 seconds timeout
             
             // 对于 HLS 流添加重连选项（使用 PROTOCOL_TYPE 判断更准确）
             if (this.PROTOCOL_TYPE === 'm3u8') {
@@ -770,6 +770,10 @@ class FfmpegHelper {
                     }
 
                     self.ffmpegCmd = ffmpeg(self.INPUT_FILE)
+                    // 设置 debug 模式，方便调试
+                    if (process.env.DEBUG) {
+                        self.ffmpegCmd.inputOption('-v', 'debug')
+                    }
                     self.setInputOption()
                     
                     if (self.INPUT_AUDIO_FILE) {

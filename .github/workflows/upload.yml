@@ -71,7 +71,7 @@ jobs:
             file: Dockerfile-jrottenberg-ffmpeg
             push: true
             platforms: linux/amd64
-            tags: ${{ steps.docker_tags.outputs.tags }}
+            tags: ${{ steps.docker_inner_ffmpeg_tags.outputs.tags }}
 
       - name: Prepare Docker Tags
         id: docker_tags

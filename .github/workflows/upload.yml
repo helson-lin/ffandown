@@ -55,8 +55,8 @@ jobs:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Prepare Docker Tags
-        id: docker_tags
+      - name: Prepare Inner FFmpeg Docker Tags
+        id: docker_inner_ffmpeg_tags
         run: |
               echo "::set-output name=tags::h55205l/ffandown:jrottenberg-ffmpeg"
 

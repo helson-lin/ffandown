@@ -135,7 +135,7 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
 
 ## License
 
-此项目采用创作共用署名-非商业性使用4.0国际公共许可证进行许可。详情请查阅LICENSE文件。
+此项目采用AGPLv3许可证进行许可。详情请查阅LICENSE文件。  
 
 ## 致谢
 

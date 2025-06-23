@@ -29,42 +29,114 @@
     </a>
 </p>
 
-## Release Notes
 
-suggest to use version v4.1 or higher
+## User Guide
+1. ✨ Currently supports downloading m3u8, rtsp, and rtmp live streams, as well as m3u8, mp4, and flv videos.
+2. ✨ Supports download notifications (Bark, Feishu, DingTalk, Gotify).
+3. ✨ Supports custom download transcoding formats (mp4, mov, flv, avi).
+4. ✨ Supports custom request headers.
+5. ✨ Full platform support.
+6. ✨ Supports a plugin system (official version v5.0.0).
+7. ✨ Supports proxy configuration.
 
-The release platform executable file is packaged for commonly used platforms only. For other platform architectures, please use Docker or package them yourself.
-[Release](https://github.com/helson-lin/ffandown/releases)
+## Project Setup
+1. Install dependencies: `npm install`
+2. Run the service: `npm run dev`
+
+
+## Project Packaging
+
+### PKG Packaging
+Run `npm run pkg` in the terminal.
+
+### Release Notes
+The executable files for the release platform are pre-packaged for common platforms only. For other platforms or architectures, please use Docker or package them manually.
+
+### Docker Installation
+Shell command:
+
+```shell
+docker run -d -p 8081:8081 -v /home/media:/app/media -v /home/config:/app/config -v /home/logs:/app/logs h55205l/ffandown:latest
+```
+
+- `/app/media`: Directory for downloaded media. Default port is 8081.
+- `/app/config`: Directory for configuration files.
+- `/app/logs`: Directory for log files.
+- `/app/lib`: FFmpeg、FFprobe Directory.
+- `/app/public`: Directory for frontend static files.
+- `/app/error-reports`: Error Report.
+
+## Configuration File
+```yml
+port: 8381 # Server Port
+downloadDir: /media/ # download directory
+webhooks: https://nz.helson-lin.cn/message?token=A3HJgdetn8Rhh9g # webhook website
+webhookType: gotify # webhook type: bark、gotify、FeiShu、DingDing
+thread: true # Multithreaded transcoding
+autoInstallFFmpeg: true # Auto Install FFmpeg
+maxDownloadNum: 3 # Maximum simultaneous downloads
+preset: medium # Transcoding preset
+outputformat: mp4 # convert format
+enableTimeSuffix: false # Enable timestamp suffix
+secret: DJH1v3kXjV2v3oN4NHGlphZXyZGfmr3E # Authentication secret
+proxy:  http://127.0.0.1:7897 # Proxy address
+```
+
 
 ## Usage
+After starting the service, you will see the message `server running on port: 8081`.
+Open `localhost:8081` in your browser to access the download page.
 
-[Full Usage Documentation](https://ffandown.oimi.space)
+![example](./example-en.png)
 
-After the service is started, you can see the message `server runing on port: 8081`. Simply open `localhost:8081` in a browser to see the download page.
+### Plugin List (Supported in v5.1.3 or the latest version)
+| Plugin Name | Plugin URL | Repository | Description |
+|------------|------------|------------|------------|
+| bilibili | [GitHub](https://github.com/helson-lin/ffandown-plugin/releases/download/v0.0.2/index.js) | [GitHub](https://github.com/helson-lin/ffandown-plugin) | Supports Bilibili live streams and video parsing. Without setting cookies, only 480p downloads are available. |
 
-![FireShot Capture 007 - FFandown - 192 168 31 22](https://github.com/helson-lin/ffandown/assets/84565447/f1baae09-ff0f-4c28-95d7-ea3d4acf38b0)
 
-
-
-Alternatively, you can create a download using the API interface:
-- Interface address: `http://localhost:8081/down`
-- Request method: `POST`
-- Request header: `Content-Type`: `application/json`
-- Parameters: 
+### API for Creating Download Tasks
+[API Documentation](https://apifox.com/apidoc/shared-d00c4b27-4841-4ecd-932c-b04bdc3b94cd)
+- Endpoint: `http://localhost:8081/down`
+- Method: `POST`
+- Header: `Content-Type: application/json`
+- Parameters:
     ```js
     {
         name: "videoname",
-        url: "http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8"
+        url: "http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8",
+        audioUrl: '', // Audio URL (used for merging audio and video files)
+        outputformat: "mp4",
+        preset: "medium",
+        username: "", // login user name
+        password: "", // login user password
+        dir: "/videos", // Save directory
+        headers: [
+            {
+                key: 'User-Agent',
+                value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        ]
     }
     ```
 
+### Configuring iOS Shortcuts
+[Download Shortcut ✈️](https://www.icloud.com/shortcuts/d839d5fab95c48e0ab59e72396ec8280)
+Before using, remember to edit the shortcut and update the server IP address and port.
 
-## Configuration of iOS Shortcuts
+## Disclaimer
+All risks arising from the use of this project are borne by the user. We are not responsible for any direct, indirect, incidental, special, or consequential damages caused by the use of this project, including but not limited to loss of profits, data loss, or other economic losses.
+*Limitation of Liability*: To the maximum extent permitted by applicable law, the authors and contributors of this project shall not be liable for any losses caused by the use or inability to use the project.
 
-[iOS Shortcuts download link✈️](https://www.icloud.com/shortcuts/b185d44fb6574db29c79cb193e5bb079)
+## License
+This project is licensed under the AGPLv3 License. For details, please refer to the LICENSE file.
 
-Before using it, remember to edit the instruction and modify the server's IP address and port.
+## Acknowledgments
+- [FFmpeg](https://ffmpeg.org/)
+- [node-fluent-ffmpeg](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg)
 
-## PS
+## Donations and Support
+Special thanks to **Gentle**, **Xinzai** for their donations and support, and to **jk9527** for their technical contributions.
 
-You can deploy it on Linux or other servers to download `m3u8` videos to NAS. Currently, most small website videos are `m3u8` videos.
+## Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=helson-lin/ffandown&type=Date)](https://star-history.com/#helson-lin/ffandown&Date)

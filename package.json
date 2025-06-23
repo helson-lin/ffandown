@@ -20,7 +20,7 @@
     "live"
   ],
   "author": "heslonlin",
-  "license": "MIT",
+  "license": "AGPLV3",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.1",

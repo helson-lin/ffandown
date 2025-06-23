@@ -5,32 +5,24 @@ on:
     tags:
       - 'v*.*.*'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
-
-      # Runs a single command using the runners shell
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '14.18.3'
+          node-version: '18.x'  # 考虑升级Node版本
 
-      # Runs a set of commands using the runners shell
       - name: Install Dependencies
         run: npm install
 
@@ -50,7 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
@@ -59,13 +51,13 @@ jobs:
         id: docker_inner_ffmpeg_tags
         run: |
               if [[ "${{ env.TAG }}" == *Beta* ]]; then
-                echo "::set-output name=tags::h55205l/ffandown:jrottenberg-ffmpeg-${{ env.TAG }}"
+                echo "tags=h55205l/ffandown:jrottenberg-ffmpeg-${{ env.TAG }}" >> $GITHUB_OUTPUT
               else
-                echo "::set-output name=tags::h55205l/ffandown:jrottenberg-ffmpeg"
+                echo "tags=h55205l/ffandown:jrottenberg-ffmpeg" >> $GITHUB_OUTPUT
               fi
 
       - name: Build And Push Jrottenberg-ffmpeg Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
             context: ./
             file: Dockerfile-jrottenberg-ffmpeg
@@ -77,13 +69,13 @@ jobs:
         id: docker_tags
         run: |
               if [[ "${{ env.TAG }}" == *Beta* ]]; then
-                echo "::set-output name=tags::h55205l/ffandown:${{ env.TAG }}"
+                echo "tags=h55205l/ffandown:${{ env.TAG }}" >> $GITHUB_OUTPUT
               else
-                echo "::set-output name=tags::h55205l/ffandown:latest,h55205l/ffandown:${{ env.TAG }}"
+                echo "tags=h55205l/ffandown:latest,h55205l/ffandown:${{ env.TAG }}" >> $GITHUB_OUTPUT
               fi
 
       - name: Build And Push Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
             context: ./
             file: Dockerfile
@@ -95,13 +87,13 @@ jobs:
         id: docker_arm_tags
         run: |
               if [[ "${{ env.TAG }}" == *Beta* ]]; then
-                echo "::set-output name=tags::h55205l/ffandown:arm64-${{ env.TAG }}"
+                echo "tags=h55205l/ffandown:arm64-${{ env.TAG }}" >> $GITHUB_OUTPUT
               else
-                echo "::set-output name=tags::h55205l/ffandown:arm64,h55205l/ffandown:arm64-${{ env.TAG }}"
+                echo "tags=h55205l/ffandown:arm64,h55205l/ffandown:arm64-${{ env.TAG }}" >> $GITHUB_OUTPUT
               fi
 
       - name: Build And Push Arm64 Docker image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
             context: ./
             file: Dockerfile-linux-arm

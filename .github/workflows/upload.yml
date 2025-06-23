@@ -60,7 +60,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
             context: ./
-            file: Dockerfile-jrottenberg-ffmpeg
+            file: Dockerfile-jrottenberg 
             push: true
             platforms: linux/amd64
             tags: ${{ steps.docker_inner_ffmpeg_tags.outputs.tags }}

@@ -1,4 +1,6 @@
-# <p align="center" style="display: flex;justify-content: center;"><img style="margin-right: 20px; width: 40px;" src="https://pic.kblue.site/picgo/ffandown.svg"/> FFandown</p>
+# <p align="center" style="display: flex;justify-content: center;"><img style="margin-right: 20px; width: 40px;" src="https://github.com/user-attachments/assets/c713a13a-f34c-49f3-a49d-482bd5f3b878"/> FFandown</p>
+
+
 
 <p align="center">ffandown是一个m3u8视频下载器，基于ffmpeg实现视频的下载。
 <p align="center">ffandown is a m3u8 video downloader,that base on ffmpeg</p>
@@ -146,6 +148,13 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
 ## 捐助和支持
 
 感谢**Gentle**、**鑫仔** 捐助支持、感谢**jk9527**技术贡献、
+
+## CDN
+
+<p>本项目 CDN 加速及安全防护由 Tencent EdgeOne 赞助</p>
+
+<img width="500" alt="34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b" src="https://github.com/user-attachments/assets/9866254c-1af6-41df-b8da-5cacf5b7be65" />
+
 
 ## Star History
 

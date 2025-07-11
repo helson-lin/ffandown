@@ -151,7 +151,7 @@ shell:  `docker run -d -p 8081:8081 -v /home/media:/app/media  -v /Uses/helson/c
 
 ## CDN
 
-<p>本项目 CDN 加速及安全防护由 Tencent EdgeOne 赞助</p>
+本项目 CDN 加速及安全防护由 [Tencent EdgeOne](https://edgeone.ai) 赞助
 
 <img width="500" alt="34fe3a45-492d-4ea4-ae5d-ea1087ca7b4b" src="https://github.com/user-attachments/assets/9866254c-1af6-41df-b8da-5cacf5b7be65" />
 

@@ -11,6 +11,7 @@ module.exports = {
         preset: 'medium',
         outputformat: 'mp4',
         enableTimeSuffix: false,
+        cookieMaxAge: 7 * 24 * 60 * 60 * 1000,
     },
     // 支持的视频格式
     OUTPUTFORMAT_OPTIONS: ['mp4', 'mov', 'flv', 'avi', 'mkv', 'ts'],

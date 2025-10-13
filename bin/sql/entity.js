@@ -78,6 +78,12 @@ const SysDownloadDb = sequelize.define('sys_download', {
         allowNull: true,
         comment: 'url protocol type',
     },
+    onlyTranscode: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        default: '0',
+        comment: 'only transcode 0/no 1/yes',
+    },
     status: {
         type: Sequelize.STRING,
         allowNull: false,

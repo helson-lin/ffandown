@@ -2,7 +2,11 @@ const FfmpegHelper = require('./core/index')
 const { HELPER: helper } = require('./utils/index')
 const dbOperation = require('./sql/index')
 const DownloadService = require('./sql/downloadService')
+const M3U8Downloader = require('./core/dm')
 const path = require('path')
+const https = require('https')
+const http = require('http')
+const urlModule = require('url')
 const os = require('os')
 const i18n = require('./utils/locale')
 const { v4: uuidv4 } = require('uuid')
@@ -120,7 +124,7 @@ class Oimi {
         }
         // 获取下载文件的名称
         const filePath = path.join(dirPath, getFileName())
-        return { fileName, filePath }
+        return { fileName, filePath, dirPath }
     }
     /**
      * @description update upload mission data/更新下载任务
@@ -224,6 +228,7 @@ class Oimi {
                 outputformat: mission.outputformat || 'mp4', 
                 preset: mission.preset || 'medium',
                 headers: mission.headers || {},
+                onlyTranscode: mission.onlyTranscode || '0',
             }, false)
         }
     }
@@ -250,8 +255,202 @@ class Oimi {
                     outputformat: mission.outputformat || 'mp4', 
                     preset: mission.preset || 'medium',
                     headers: mission.headers || {},
+                    onlyTranscode: mission.onlyTranscode || '0',
                 }, false)
             }
+        }
+    }
+
+    /**
+     * @description 判断 URL 是否为 m3u8 格式（同步检查）
+     * @param {string} url URL 地址
+     * @returns {boolean} 是否为 m3u8 格式
+     */
+    isM3u8Url (url) {
+        if (!url || typeof url !== 'string') {
+            return false
+        }
+        
+        // 移除查询参数，只检查路径部分
+        const urlWithoutQuery = url.split('?')[0].toLowerCase()
+        
+        // 1. 检查文件扩展名
+        if (urlWithoutQuery.endsWith('.m3u8') || urlWithoutQuery.endsWith('.m3u')) {
+            return true
+        }
+        
+        // 2. 检查 URL 中的关键词
+        const m3u8Keywords = [
+            'playlist.m3u8',
+            'index.m3u8', 
+            'master.m3u8',
+            'stream.m3u8',
+            '/m3u8/',
+            'hls/',
+            'playlist',
+            'segments'
+        ]
+        
+        const fullUrl = url.toLowerCase()
+        if (m3u8Keywords.some(keyword => fullUrl.includes(keyword))) {
+            return true
+        }
+        
+        // 3. 检查查询参数中的格式标识
+        if (fullUrl.includes('format=m3u8') || 
+            fullUrl.includes('type=hls') || 
+            fullUrl.includes('protocol=hls')) {
+            return true
+        }
+        
+        return false
+    }
+
+    /**
+     * @description 异步检查 URL 是否为 m3u8 格式（包含网络请求检查）
+     * @param {string} url URL 地址
+     * @param {object} headers 请求头
+     * @returns {Promise<boolean>} 是否为 m3u8 格式
+     */
+    async isM3u8UrlAsync (url, headers = {}) {
+        // 先进行同步检查
+        if (this.isM3u8Url(url)) {
+            return true
+        }
+        
+        try {
+            const urlObject = urlModule.parse(url)
+            const isHttps = urlObject.protocol === 'https:'
+            const requestModule = isHttps ? https : http
+            
+            return new Promise((resolve) => {
+                const requestOptions = {
+                    hostname: urlObject.hostname,
+                    port: urlObject.port || (isHttps ? 443 : 80),
+                    path: urlObject.path,
+                    method: 'HEAD',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; M3U8Detector)',
+                        ...headers
+                    },
+                    timeout: 5000
+                }
+                
+                const req = requestModule.request(requestOptions, (res) => {
+                    const contentType = res.headers['content-type'] || ''
+                    
+                    // 检查 Content-Type
+                    if (contentType.includes('application/vnd.apple.mpegurl') ||
+                        contentType.includes('application/x-mpegURL') ||
+                        contentType.includes('audio/mpegurl') ||
+                        contentType.includes('audio/x-mpegurl') ||
+                        contentType.includes('text/plain')) {
+                        resolve(true)
+                        return
+                    }
+                    
+                    // 如果是 text/plain，可能需要进一步检查内容
+                    if (contentType.includes('text/plain') || contentType.includes('text/')) {
+                        // 发送 GET 请求检查内容前几行
+                        this.checkM3u8Content(url, headers).then(resolve).catch(() => resolve(false))
+                    } else {
+                        resolve(false)
+                    }
+                })
+                
+                req.on('timeout', () => {
+                    req.abort()
+                    resolve(false)
+                })
+                
+                req.on('error', () => {
+                    resolve(false)
+                })
+                
+                req.end()
+            })
+            
+        } catch (error) {
+            log.error('M3U8 URL async check error:', error.message)
+            return false
+        }
+    }
+
+    /**
+     * @description 检查 URL 内容是否为 M3U8 格式
+     * @param {string} url URL 地址
+     * @param {object} headers 请求头
+     * @returns {Promise<boolean>} 是否为 m3u8 格式
+     */
+    async checkM3u8Content (url, headers = {}) {
+        try {
+            
+            const urlObject = urlModule.parse(url)
+            const isHttps = urlObject.protocol === 'https:'
+            const requestModule = isHttps ? https : http
+            
+            return new Promise((resolve) => {
+                const requestOptions = {
+                    hostname: urlObject.hostname,
+                    port: urlObject.port || (isHttps ? 443 : 80),
+                    path: urlObject.path,
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; M3U8Detector)',
+                        'Range': 'bytes=0-1023', // 只读取前 1KB
+                        ...headers
+                    },
+                    timeout: 10000
+                }
+                
+                const req = requestModule.request(requestOptions, (res) => {
+                    let data = ''
+                    let bytesReceived = 0
+                    const maxBytes = 1024 // 最多读取 1KB
+                    
+                    res.on('data', (chunk) => {
+                        bytesReceived += chunk.length
+                        data += chunk.toString()
+                        
+                        // 限制读取的数据量
+                        if (bytesReceived >= maxBytes) {
+                            res.destroy()
+                        }
+                    })
+                    
+                    res.on('end', () => {
+                        // 检查是否包含 M3U8 特征标识
+                        const m3u8Patterns = [
+                            '#EXTM3U',
+                            '#EXT-X-VERSION',
+                            '#EXT-X-TARGETDURATION',
+                            '#EXT-X-MEDIA-SEQUENCE',
+                            '#EXT-X-STREAM-INF',
+                            '#EXTINF'
+                        ]
+                        
+                        const hasM3u8Pattern = m3u8Patterns.some(pattern => 
+                            data.toUpperCase().includes(pattern)
+                        )
+                        
+                        resolve(hasM3u8Pattern)
+                    })
+                })
+                
+                req.on('timeout', () => {
+                    req.abort()
+                    resolve(false)
+                })
+                
+                req.on('error', () => {
+                    resolve(false)
+                })
+                
+                req.end()
+            })
+        } catch (error) {
+            log.error('M3U8 content check error:', error.message)
+            return false
         }
     }
 
@@ -286,55 +485,177 @@ class Oimi {
     }
 
     /**
+     * @description 直接下载，仅使用 ffmpeg 转码
+     * @param {*} mission 
+     */
+    downloadDirectly (options) {
+        const { mission, dirPath, headers, uid } = options
+        const postHeaders = {}
+        if (mission.useragent) {
+            postHeaders['User-Agent'] = mission.useragent
+        }
+        if (headers) {
+            for (const header of headers) {
+                postHeaders[header.key] = header.value
+            }
+        }
+        const downloader = new M3U8Downloader({
+            debug: true,
+            url: mission.url,
+            filename: mission.name,
+            outputDir: dirPath,
+            concurrency: 20,
+            headers,
+            allowInsecureHttps: true,
+        })
+        downloader.on('progress', (progress) => {
+            const currentSpeed = progress.currentSpeed;
+            const averageSpeed = progress.averageSpeed;
+            const downloadedSize = progress.downloadedBytes;
+            const currentFileSize = progress.bytes;
+            const params = {
+                percent: progress.percentage >= 100 ? 100 : progress.percentage,
+                status: progress.percentage >= 100 ? '3' : '1',
+                currentMbs: currentSpeed,
+                timemark: '',
+                targetSize: progress.currentFileSize,
+                protocolType: 'm3u8',
+            }
+            console.log(`Progress: ${progress.percentage}%  速度: 当前 ${currentSpeed} | 平均 ${averageSpeed} | 已下载: ${downloadedSize} | 当前文件: ${currentFileSize}`);
+            this.updateMission(uid, { ...mission, ...params })
+        });
+
+        downloader.on('merged', (result) => {
+            log.info(`Successfully merged task: ${mission.name}`)
+            this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
+            if (result.mergeElapsed !== undefined) {
+                log.info(`   合并耗时: ${result.mergeElapsed.toFixed(2)} 秒`);
+            }
+        });
+        downloader.on('error', (error) => {
+            log.error('Catched m3u8downloader  error: ' + String(error.message))
+            this.updateMission(uid, { ...mission, status: '4', message: String(error.message) })
+        })
+        downloader.on('merged-error', (error) => {
+            log.error('Catched merged error: ' + String(error.message))
+            this.updateMission(uid, { ...mission, status: '4', message: String(error.message) })
+        })
+        downloader.download()
+        
+        // 返回 downloader 实例以便存储到 missionList 中
+        return { downloader, result: 0 }
+    }
+
+    /**
+     * @description ffmpeg下载并转码
+     * @param {*} mission 
+     */
+    downloadWithFFmpeg (options) {
+        const { uid, mission, headers, preset, outputformat, ffmpegHelper } = options
+        // 设置 ffmpeg 参数
+        // 设置下载任务地址和用户代理
+        ffmpegHelper.setInputFile(mission.url)
+        // 如果存在 audioUrl，那么追加音频地址
+        ffmpegHelper.setInputAudioFile(mission?.audioUrl)
+        ffmpegHelper.setOutputFile(mission.filePath)
+        .setUserAgent(mission.useragent)
+        .setHeaders(headers)
+        .setThreads(this.thread)
+        .setPreset(preset)
+        .setOutputFormat(outputformat)
+        .start(params => {
+            // 实时更新任务信息
+            this.updateMission(uid, { ...mission, status: params.percent >= 100 ? '3' : '1', ...params })
+        }).then(() => {
+            log.info(`Successfully downloaded task: ${mission.name}`)
+            this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
+        }).catch((e) => {
+            log.error('Catched downloading error: ' + String(e.message))
+            // 为什么终止下载会执行多次 catch
+            // 下载中发生错误
+            // 以下两种错误信息都是任务被暂停 （ffmpeg-fluent 任务暂停是通过杀掉进程实现的）
+            if ([
+                'ffmpeg was killed with signal SIGKILL', 
+                'ffmpeg exited with code 255',
+            ].some(error => String(e).indexOf(error) !== -1)) {
+                // 任务被暂停 更新任务状态为暂停
+                this.updateMission(uid, { ...mission, status: '3', message: 'mission stopped' })
+            } else {
+                // 确保错误信息完整
+                const errorMessage = e.message || e.toString()
+                const errorCode = this.getFfmpegErrorCode(errorMessage)
+                const finalErrorMessage = ERROR_CODE.includes(errorCode) 
+                    ? i18n._(`ERROR_CODE_${errorCode}`) 
+                    : errorMessage
+                // 更新任务状态为下载失败
+                this.updateMission(uid, { ...mission, status: '4', message: finalErrorMessage })
+            }
+        })
+        return 0
+    }
+
+    /**
      * @description 开始下载任务
      *
      * */
-    async startDownload ({ mission, ffmpegHelper, outputformat, preset, headers }, isNeedInsert = true) {
+    async startDownload ({ mission, ffmpegHelper, outputformat, preset, headers, onlyTranscode, dirPath }, isNeedInsert = true) {
         const uid = mission.uid
         try {
             // isNeedInsert为 true 表示需要新增任务到数据库
             if (isNeedInsert) await DownloadService.create(mission)
-            // 设置 ffmpeg 参数
-            // 设置下载任务地址和用户代理
-            ffmpegHelper.setInputFile(mission.url)
-            // 如果存在 audioUrl，那么追加音频地址
-            ffmpegHelper.setInputAudioFile(mission?.audioUrl)
-            ffmpegHelper.setOutputFile(mission.filePath)
-            .setUserAgent(mission.useragent)
-            .setHeaders(headers)
-            .setThreads(this.thread)
-            .setPreset(preset)
-            .setOutputFormat(outputformat)
-            .start(params => {
-                // 实时更新任务信息
-                this.updateMission(uid, { ...mission, status: params.percent >= 100 ? '3' : '1', ...params })
-            }).then(() => {
-                log.info(`Successfully downloaded task: ${mission.name}`)
-                // todo: create download mission support downloaded callback
-                this.updateMission(uid, { ...mission, percent: 100, status: '3' }, true)
-            }).catch((e) => {
-                log.error('Catched downloading error: ' + String(e.message))
-                // 为什么终止下载会执行多次 catch
-                // 下载中发生错误
-                // 以下两种错误信息都是任务被暂停 （ffmpeg-fluent 任务暂停是通过杀掉进程实现的）
-                if ([
-                    'ffmpeg was killed with signal SIGKILL', 
-                    'ffmpeg exited with code 255',
-                ].some(error => String(e).indexOf(error) !== -1)) {
-                    // 任务被暂停 更新任务状态为暂停
-                    this.updateMission(uid, { ...mission, status: '3', message: 'mission stopped' })
-                } else {
-                    // 确保错误信息完整
-                    const errorMessage = e.message || e.toString()
-                    const errorCode = this.getFfmpegErrorCode(errorMessage)
-                    const finalErrorMessage = ERROR_CODE.includes(errorCode) 
-                        ? i18n._(`ERROR_CODE_${errorCode}`) 
-                        : errorMessage
-                    // 更新任务状态为下载失败
-                    this.updateMission(uid, { ...mission, status: '4', message: finalErrorMessage })
+            
+            // 如果 onlyTranscode 为 1，需要检查是否为 M3U8 格式
+            if (onlyTranscode === '1') {
+                // 先进行同步检查
+                let isM3u8 = this.isM3u8Url(mission.url)
+                
+                // 如果同步检查不通过，进行异步检查（网络请求）
+                if (!isM3u8) {
+                    log.info(`Performing async M3U8 check for URL: ${mission.url}`)
+                    
+                    // 构建请求头
+                    const requestHeaders = {}
+                    if (mission.useragent) {
+                        requestHeaders['User-Agent'] = mission.useragent
+                    }
+                    if (headers && Array.isArray(headers)) {
+                        headers.forEach(header => {
+                            if (header.key && header.value) {
+                                requestHeaders[header.key] = header.value
+                            }
+                        })
+                    }
+                    
+                    try {
+                        isM3u8 = await this.isM3u8UrlAsync(mission.url, requestHeaders)
+                        log.info(`Async M3U8 check result: ${isM3u8}`)
+                    } catch (error) {
+                        log.error('Async M3U8 check failed:', error.message)
+                        isM3u8 = false
+                    }
                 }
-            })
-            return 0
+                
+                if (isM3u8) {
+                    // 使用 M3U8Downloader 下载
+                    log.info(`Using M3U8Downloader for: ${mission.url}`)
+                    const downloadResult = this.downloadDirectly({ uid, mission, headers, preset, outputformat, dirPath })
+                    
+                    // 将 downloader 实例存储到 missionList 中
+                    const missionInList = this.missionList.find(m => m.uid === uid)
+                    if (missionInList) {
+                        missionInList.m3u8Downloader = downloadResult.downloader
+                    }
+                    
+                    return downloadResult.result
+                } else {
+                    // 虽然设置了 onlyTranscode，但不是 M3U8 格式，使用 FFmpeg
+                    log.info(`URL is not M3U8 format, using FFmpeg for: ${mission.url}`)
+                    return this.downloadWithFFmpeg({ uid, mission, headers, preset, outputformat, ffmpegHelper })
+                }
+            } else {
+                // onlyTranscode 不为 1，直接使用 FFmpeg
+                return this.downloadWithFFmpeg({ uid, mission, headers, preset, outputformat, ffmpegHelper })
+            }
         } catch (e) {
             log.error('downloading error:' + String(e))
             await this.updateMission(uid, { ...mission, status: '4', message: String(e) })
@@ -348,10 +669,10 @@ class Oimi {
      */
     async createDownloadMission (query) {
         // let enableTimeSuffix = false
-        const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix, headers } = query
+        const { name, url, outputformat, preset, useragent, dir, enableTimeSuffix, headers, onlyTranscode } = query
         if (!url) throw new Error('url is required')
         log.info(`Create download mission: ${JSON.stringify(query, null, 2)}`)
-        const { fileName, filePath } = this.getDownloadFilePathAndName(name, dir, outputformat, enableTimeSuffix)
+        const { fileName, filePath, dirPath } = this.getDownloadFilePathAndName(name, dir, outputformat, enableTimeSuffix)
         const mission = { 
             uid: uuidv4(),
             name: fileName,
@@ -366,6 +687,7 @@ class Oimi {
             outputformat,
             headers,
             audioUrl: query?.audioUrl || '',
+            onlyTranscode: onlyTranscode || '0',
         }
         // over max download mission 超过设置的最大同时下载任务
         if (this.missionList.length >= this.maxDownloadNum) {
@@ -384,7 +706,7 @@ class Oimi {
             // 创建下载任务实例
             const ffmpegHelper = new FfmpegHelper()
             this.missionList.push({ ...mission, ffmpegHelper })
-            await this.startDownload({ ffmpegHelper, mission, outputformat, preset, headers }, true)
+            await this.startDownload({ ffmpegHelper, mission, outputformat, preset, headers, onlyTranscode, dirPath }, true)
             // 发送创建任务通知消息
             msg(this.config.webhooks, 
                 this.config.webhookType, 
@@ -403,11 +725,22 @@ class Oimi {
         try {
             const mission = this.missionList.find(i => i.uid === uid) 
             if (mission) {
-                mission.ffmpegHelper.kill('SIGSTOP')
+                // 如果是 M3U8 下载任务，使用 downloader.pause()
+                if (mission.m3u8Downloader) {
+                    mission.m3u8Downloader.pause()
+                    log.info(`Paused M3U8 download: ${mission.name}`)
+                }
+                // 如果是 FFmpeg 下载任务，使用 ffmpegHelper
+                else if (mission.ffmpegHelper) {
+                    mission.ffmpegHelper.kill('SIGSTOP')
+                    log.info(`Paused FFmpeg download: ${mission.name}`)
+                }
+                
                 this.updateMission(uid, { ...mission, status: '2' })
             }
             return 'mission paused'
         } catch (e) {
+            log.error('Pause mission error:', e)
             return e
         }
     }
@@ -418,28 +751,92 @@ class Oimi {
     */
     async resumeDownload (uid) {
         log.info('Resume download')
-        // 恢复下载任务存在两种情况 missionList里面已经存在数据 直接调用kill('恢复')
+        // 恢复下载任务存在两种情况 missionList里面已经存在数据 直接调用恢复方法
         const mission = this.missionList.find(i => i.uid === uid)
         if (mission) {
-            mission.ffmpegHelper.kill('SIGCONT')
+            // 如果是 M3U8 下载任务，使用 downloader.resume()
+            if (mission.m3u8Downloader) {
+                mission.m3u8Downloader.resume()
+                log.info(`Resumed M3U8 download: ${mission.name}`)
+                this.updateMission(uid, { ...mission, status: '1' })
+            }
+            // 如果是 FFmpeg 下载任务，使用 ffmpegHelper
+            else if (mission.ffmpegHelper) {
+                mission.ffmpegHelper.kill('SIGCONT')
+                log.info(`Resumed FFmpeg download: ${mission.name}`)
+                this.updateMission(uid, { ...mission, status: '1' })
+            }
+            
             return { code: 0 }
         } else {
+            // 从数据库查找任务并重新启动
             let mission = await DownloadService.queryOne(uid)
             if (mission) {
                 try {
                     mission = mission.toJSON()
                     log.info('Resume download mission: ' + JSON.stringify(mission, null, 2))
                     const suffix = this.helper.getUrlFileExt(mission.filePath)
-                    const ffmpegHelper = new FfmpegHelper()
-                    this.missionList.push({ ...mission, ffmpegHelper })
-                    await this.startDownload({ 
-                        ffmpegHelper, 
-                        mission, 
-                        outputformat: mission.outputformat || suffix, 
-                        preset: mission.preset || 'medium',
-                        headers: mission.headers || {},
-                    }, 
-                    false)
+                    
+                    // 根据任务类型决定恢复方式
+                    if (mission.onlyTranscode === '1') {
+                        // 检查是否为 M3U8 格式（使用改进的检测方法）
+                        let isM3u8 = this.isM3u8Url(mission.url)
+                        
+                        if (!isM3u8) {
+                            // 进行异步检测
+                            const requestHeaders = {}
+                            if (mission.useragent) {
+                                requestHeaders['User-Agent'] = mission.useragent
+                            }
+                            
+                            try {
+                                isM3u8 = await this.isM3u8UrlAsync(mission.url, requestHeaders)
+                                log.info(`Resume - Async M3U8 check result for ${mission.url}: ${isM3u8}`)
+                            } catch (error) {
+                                log.error('Resume - Async M3U8 check failed:', error.message)
+                                isM3u8 = false
+                            }
+                        }
+                        
+                        if (isM3u8) {
+                            // M3U8 任务需要重新开始下载
+                            const { dirPath } = this.getDownloadFilePathAndName(mission.name, mission.dir, mission.outputformat, mission.enableTimeSuffix)
+                            this.missionList.push({ ...mission })
+                            await this.startDownload({ 
+                                mission, 
+                                outputformat: mission.outputformat || 'mp4', 
+                                preset: mission.preset || 'medium',
+                                headers: mission.headers || {},
+                                onlyTranscode: mission.onlyTranscode || '0',
+                                dirPath
+                            }, false)
+                        } else {
+                            // 虽然设置了 onlyTranscode，但不是 M3U8 格式，使用 FFmpeg
+                            const ffmpegHelper = new FfmpegHelper()
+                            this.missionList.push({ ...mission, ffmpegHelper })
+                            await this.startDownload({ 
+                                ffmpegHelper, 
+                                mission, 
+                                outputformat: mission.outputformat || suffix, 
+                                preset: mission.preset || 'medium',
+                                headers: mission.headers || {},
+                                onlyTranscode: mission.onlyTranscode || '0',
+                            }, false)
+                        }
+                    } else {
+                        // FFmpeg 任务
+                        const ffmpegHelper = new FfmpegHelper()
+                        this.missionList.push({ ...mission, ffmpegHelper })
+                        await this.startDownload({ 
+                            ffmpegHelper, 
+                            mission, 
+                            outputformat: mission.outputformat || suffix, 
+                            preset: mission.preset || 'medium',
+                            headers: mission.headers || {},
+                            onlyTranscode: mission.onlyTranscode || '0',
+                        }, false)
+                    }
+                    
                     // 更新任务状态为初始化
                     this.updateMission(uid, { ...mission, status: '0' })
                     return { code: 0 }
@@ -464,11 +861,23 @@ class Oimi {
                 const missionIndex = this.missionList.findIndex(i => i.uid === uid)
                 if (missionIndex !== -1) {
                     const mission = this.missionList[missionIndex]
-                    mission.ffmpegHelper.kill('SIGKILL')
+                    
+                    // 根据任务类型强制停止下载
+                    if (mission.m3u8Downloader) {
+                        // 强制停止 M3U8 下载任务
+                        mission.m3u8Downloader.stop()
+                        log.info(`Deleted M3U8 download: ${mission.name}`)
+                    } else if (mission.ffmpegHelper) {
+                        // 强制停止 FFmpeg 下载任务
+                        mission.ffmpegHelper.kill('SIGKILL')
+                        log.info(`Deleted FFmpeg download: ${mission.name}`)
+                    }
+                    
                     // 删除任务
                     this.missionList.splice(missionIndex, 1)
-                    // 数据库内删除
                 }
+                
+                // 数据库内删除
                 DownloadService.delete(uid).then(() => resolve()).catch(e => reject(e))
             } catch (e) {
                 reject(e)
@@ -486,14 +895,24 @@ class Oimi {
             try {
                 const mission = this.missionList.find(i => i.uid === uid)
                 if (mission) {
-                    // SIGKILL 下载， 这里需要判断下载任务的类型，才可以使用不同的终止方式
+                    // 添加到停止队列，用于回调处理
                     this.stopMission.push({
                         uid,
                         callback: () => {
                             resolve(0)
                         },
                     })
-                    mission.ffmpegHelper.kill()
+                    
+                    // 根据任务类型停止下载
+                    if (mission.m3u8Downloader) {
+                        // 停止 M3U8 下载任务
+                        mission.m3u8Downloader.stop()
+                        log.info(`Stopped M3U8 download: ${mission.name}`)
+                    } else if (mission.ffmpegHelper) {
+                        // 停止 FFmpeg 下载任务
+                        mission.ffmpegHelper.kill()
+                        log.info(`Stopped FFmpeg download: ${mission.name}`)
+                    }
                 } else {
                     // if mission is not found in missionList, to find the mission in db, change the status
                     // 还在等待中的下载任务终止，直接更新内容即可
@@ -516,7 +935,17 @@ class Oimi {
     */
     async killAll () {
         for (const mission of this.missionList) {
-            mission.ffmpegHelper.kill()
+            // 根据任务类型停止下载
+            if (mission.m3u8Downloader) {
+                // 停止 M3U8 下载任务
+                mission.m3u8Downloader.stop()
+                log.info(`Killed M3U8 download: ${mission.name}`)
+            } else if (mission.ffmpegHelper) {
+                // 停止 FFmpeg 下载任务
+                mission.ffmpegHelper.kill()
+                log.info(`Killed FFmpeg download: ${mission.name}`)
+            }
+            
             if (mission && mission.uid && mission.status === '1') {
                 try {
                     await this.updateMission(mission.uid, { ...mission, status: '2' })

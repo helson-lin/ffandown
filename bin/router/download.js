@@ -63,8 +63,9 @@ function createDownloadRouter (oimi) {
         body('useragent').optional().isString().withMessage('useragent must be a string'),
         body('enableTimeSuffix').optional().isBoolean().withMessage('enableTimeSuffix must be a boolean'),
         body('headers').optional().isArray().withMessage('headers must be an array'),
+        body('onlyTranscode').optional().isString().withMessage('onlyTranscode must be a string'),
     ])], async (req, res) => {
-        let { name, url, preset, outputformat, useragent, dir, audioUrl, enableTimeSuffix, headers } = req.body
+        let { name, url, preset, outputformat, useragent, dir, audioUrl, enableTimeSuffix, headers, onlyTranscode } = req.body
         // if the config option have preset and outputformat, and body have't will auto replace
         // 如果没有 preset/outputformat那么采用配置文件
         if (!preset && oimi.config?.preset) preset = oimi.config.preset
@@ -86,6 +87,7 @@ function createDownloadRouter (oimi) {
                             useragent, 
                             outputformat,
                             headers,
+                            onlyTranscode,
                         })
                     }
                 } else {
@@ -100,6 +102,7 @@ function createDownloadRouter (oimi) {
                         useragent,
                         outputformat, 
                         headers,
+                        onlyTranscode,
                     })
                 }
                 res.send({ code: 0, message: `${url}: ${i18n._('create_success')}` })

@@ -87,6 +87,7 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
             outputformat: (value) => OUTPUTFORMAT_OPTIONS.includes(value) ? value : config.outputformat,
             secret: (value) => value,
             proxy: (value) => value,
+            cookieMaxAge: (value) => Number(value),
         }
 
         // 批量处理配置字段

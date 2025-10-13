@@ -1,11 +1,12 @@
 port: 8081
-downloadDir: /media/
+downloadDir: "/media"
 webhooks: https://nz.helson-lin.cn/message?token=A3HJgdetn8Rhh9g
 webhookType: gotify
 thread: true
-autoInstallFFmpeg: false
+autoInstallFFmpeg: true
 maxDownloadNum: 3
 preset: medium
 outputformat: mp4
 enableTimeSuffix: false
 secret: DJH1v3kXjV2v3oN4NHGlphZXyZGfmr3E
+cookieMaxAge: 604800000

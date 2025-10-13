@@ -67,7 +67,7 @@ function createServer ({ port, oimi }) {
             saveUninitialized: false, // 只保存已修改的会话
             cookie: {
                 sameSite: 'lax',
-                maxAge: 24 * 60 * 60 * 1000, // 设置 cookie 有效期为 1 天（免登录时长）
+                maxAge: Number(oimi.config?.cookieMaxAge ?? (7 * 24 * 60 * 60 * 1000)), // 支持从配置自定义免登录时长
             },
         }),
     )

@@ -11,7 +11,7 @@ const os = require('os')
 const { execSync } = require('child_process')
 const path = require('path')
 const fs = require('fs')
-const { hardWareDetect } = require('../utils/hardwave')
+// 硬件加速已移除
 
 const DEFAULT_USER_AGENT = 
 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
@@ -30,8 +30,7 @@ class FfmpegHelper {
     THREADS
     PROTOCOL_TYPE
     duration
-    hardwareAccel = null // 硬件加速器
-    hwAccelInfo = null // 硬件加速器信息
+    // 硬件加速相关已移除
     systemInfo = null
     constructor (options) {
         if (options?.THREADS) this.THREADS = options.THREADS
@@ -134,7 +133,7 @@ class FfmpegHelper {
         const configurationInfo = {
             userAgent: this.USER_AGENT || DEFAULT_USER_AGENT,
             headers: this.HEADERS || [],
-            hardwareAccel: this.hardwareAccel || 'none',
+            // 硬件加速信息已移除
             protocolType: this.PROTOCOL_TYPE || 'unknown',
             timeMark: this.TIMEMARK || 'none',
             duration: this.duration || 0,
@@ -436,6 +435,16 @@ class FfmpegHelper {
                         // 设置持续时间
                         this.duration = duration ?? 0
                         
+                        // 解析视频/音频编码器信息
+                        try {
+                            const streams = Array.isArray(metadata?.streams) ? metadata.streams : []
+                            const videoStream = streams.find(s => s.codec_type === 'video')
+                            const audioStream = streams.find(s => s.codec_type === 'audio')
+                            this.videoCodec = videoStream?.codec_name || 'unknown'
+                            this.audioCodec = audioStream?.codec_name || 'unknown'
+                            log.info(`Detected codecs - video: ${this.videoCodec}, audio: ${this.audioCodec}`)
+                        } catch {}
+
                         // 确定协议类型
                         if (format_name === 'hls') {
                             this.PROTOCOL_TYPE = 'm3u8'
@@ -549,27 +558,21 @@ class FfmpegHelper {
      */
     setOutputOption() {
         try {
-            // 设置线程数
-            if (this.THREADS) {
-                this.ffmpegCmd.outputOptions([
-                    `-threads ${this.THREADS}`,
-                ])
-            }
+            // 流拷贝下不设置线程数
 
             if (this.TIMEMARK) {
                 this.ffmpegCmd.seekInput(this.TIMEMARK)
             }
 
-            // 设置输出的质量
-            this.ffmpegCmd.outputOptions(`-preset ${this.PRESET || 'veryfast'}`)
+            // 流拷贝无需设置编码预设
 
             // 添加错误处理和恢复选项
             this.ffmpegCmd.outputOptions('-err_detect ignore_err')
             this.ffmpegCmd.outputOptions('-fflags +genpts+igndts')
             this.ffmpegCmd.outputOptions('-max_error_rate 0.0')
 
-            // 获取硬件加速信息
-            const hwAccelInfo = this.hwAccelInfo
+            // 硬件加速已禁用
+            const hwAccelInfo = null
 
             // PROTOCOL_TYPE为预留字段
             const liveProtocol = this.PROTOCOL_TYPE
@@ -596,28 +599,8 @@ class FfmpegHelper {
      * @param {Object|null} hwAccelInfo 硬件加速信息
      */
     setLiveStreamOptions(hwAccelInfo) {
-        if (hwAccelInfo) {
-            log.info(`Using hardware acceleration for live stream: ${hwAccelInfo.desc}`)
-            
-            // 添加硬件加速输入选项（如果需要）
-            if (hwAccelInfo.hwaccel && hwAccelInfo.hwaccel !== 'auto') {
-                this.ffmpegCmd.inputOption('-hwaccel', hwAccelInfo.hwaccel)
-            }
-            
-            // 使用硬件加速编码
-            this.ffmpegCmd
-            .outputOptions(`-c:v ${this.hardwareAccel}`)
-            .outputOptions('-c:a copy')
-            .outputOptions('-b:v 0')  // 自动选择最佳比特率
-            .output(this.OUTPUT_FILE)
-        } else {
-            log.info('Using software encoding for live stream')
-            // 使用软件编码
-            this.ffmpegCmd
-            .outputOptions('-c:v copy')
-            .outputOptions('-c:a copy')
-            .output(this.OUTPUT_FILE)
-        }
+        // 统一根据容器与编解码器兼容性设置
+        this.applyContainerStrategy('live')
     }
 
     /**
@@ -625,27 +608,86 @@ class FfmpegHelper {
      * @param {Object|null} hwAccelInfo 硬件加速信息
      */
     setRegularStreamOptions(hwAccelInfo) {
-        if (hwAccelInfo) {
-            log.info(`Using hardware acceleration for regular stream: ${hwAccelInfo.desc}`)
-            
-            // 添加硬件加速输入选项（如果需要）
-            if (hwAccelInfo.hwaccel && hwAccelInfo.hwaccel !== 'auto') {
-                this.ffmpegCmd.inputOption('-hwaccel', hwAccelInfo.hwaccel)
+        // 统一根据容器与编解码器兼容性设置
+        this.applyContainerStrategy('regular')
+    }
+
+    /**
+     * @description 根据目标容器与现有编解码器选择 copy/必要转码/必要 bitstream filter
+     */
+    applyContainerStrategy(scene) {
+        try {
+            const targetExt = (this.OUTPUTFORMAT || 'mp4').toLowerCase()
+            const v = (this.videoCodec || '').toLowerCase()
+            const a = (this.audioCodec || '').toLowerCase()
+
+            // 容器兼容性矩阵（简化版）
+            const support = {
+                mp4:    { video: ['h264', 'hevc', 'h265', 'av1'], audio: ['aac', 'mp3'] },
+                mov:    { video: ['h264', 'hevc', 'h265', 'prores'], audio: ['aac', 'pcm_s16le'] },
+                flv:    { video: ['h264'], audio: ['aac', 'mp3'] },
+                avi:    { video: ['mpeg4', 'h264'], audio: ['mp3', 'pcm_s16le'] },
+                mkv:    { video: ['h264', 'hevc', 'h265', 'av1', 'mpeg4'], audio: ['aac', 'mp3', 'ac3', 'opus'] },
+                ts:     { video: ['h264', 'hevc', 'h265', 'mpeg2video'], audio: ['aac', 'mp2', 'ac3', 'mp3'] },
             }
-            
-            // 使用硬件加速编码
-            this.ffmpegCmd
-            .outputOptions(`-c:v ${this.hardwareAccel}`)
-            .outputOptions('-c:a copy')
-            .outputOptions('-b:v 0')
-            .output(this.OUTPUT_FILE)
-        } else {
-            log.info('Using software encoding for regular stream')
-            // 使用软件编码
+
+            const allow = support[targetExt] || support.mp4
+
+            // 默认尝试 copy
+            let videoCopy = true
+            let audioCopy = true
+            const outputOpts = []
+
+            if (!allow.video.includes(v)) videoCopy = false
+            if (!allow.audio.includes(a)) audioCopy = false
+
+            // bitstream filter 处理（常见容器间 H.264/H.265 搬运问题）
+            const needH264Bsf = ['mp4', 'mov'].includes(targetExt) && v === 'h264'
+            const needHevcBsf = ['mp4', 'mov'].includes(targetExt) && (v === 'hevc' || v === 'h265')
+
+            if (videoCopy) {
+                outputOpts.push('-c:v copy')
+                if (needH264Bsf) outputOpts.push('-bsf:v h264_mp4toannexb')
+                if (needHevcBsf) outputOpts.push('-bsf:v hevc_mp4toannexb')
+            } else {
+                // 不兼容则最小化转码到通用目标
+                const fallbackVideo = targetExt === 'flv' ? 'libx264' : 'libx264'
+                outputOpts.push(`-c:v ${fallbackVideo}`)
+                // 发生转码时，尊重用户设置的 preset（仅视频编码适用）
+                if (this.PRESET) {
+                    outputOpts.push(`-preset ${this.PRESET}`)
+                }
+                outputOpts.push('-movflags +faststart')
+            }
+
+            if (audioCopy) {
+                outputOpts.push('-c:a copy')
+            } else {
+                const fallbackAudio = targetExt === 'avi' ? 'mp3' : 'aac'
+                outputOpts.push(`-c:a ${fallbackAudio}`)
+            }
+
+            // 容器专属 flags
+            if (targetExt === 'mp4' || targetExt === 'mov') {
+                outputOpts.push('-movflags +faststart')
+            }
+
+            // 应用 options
+            for (const opt of outputOpts) {
+                const [flag, val] = opt.split(' ')
+                if (val) this.ffmpegCmd.outputOptions(`${flag} ${val}`)
+                else this.ffmpegCmd.outputOptions(flag)
+            }
+
+            this.ffmpegCmd.output(this.OUTPUT_FILE)
+            log.info(`Container strategy(${scene}): target=${targetExt}, v=${v}(${videoCopy?'copy':'transcode'}), a=${a}(${audioCopy?'copy':'transcode'})`)
+        } catch (e) {
+            // 回退到最保守：全部 copy
             this.ffmpegCmd
             .outputOptions('-c:v copy')
             .outputOptions('-c:a copy')
             .output(this.OUTPUT_FILE)
+            log.warn('Container strategy failed, fallback to copy copy:', e?.message)
         }
     }
 
@@ -747,16 +789,7 @@ class FfmpegHelper {
                     if (!isCompatible) {
                         throw new Error('FFmpeg compatibility check failed')
                     }
-                    // 检查硬件加速
-                    self.hwAccelInfo = await hardWareDetect.getHardwareAccel()
-                    if (self.hwAccelInfo) {
-                        self.hardwareAccel = self.hwAccelInfo?.encoder
-                    }
-                    if (self.hardwareAccel) {
-                        log.info(`Using hardware acceleration: ${self.hardwareAccel}`)
-                    } else {
-                        log.info('No hardware acceleration available, using software encoding')
-                    }
+                    // 硬件加速逻辑已移除，统一走流拷贝
 
                     if (!self.INPUT_FILE || !self.OUTPUT_FILE) {
                         throw new Error('You must specify the input and the output files')

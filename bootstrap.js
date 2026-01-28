@@ -51,12 +51,14 @@ oimi.ready().then(async () => {
 
 process.on('SIGTERM', async () => {
     await oimi.killAll()
+    oimi.stopMemoryCleanup()
     process.exit(1)
 })
 
 process.on('SIGINT', async function () {
     if (cluster.isMaster) {
         await oimi.killAll()
+        oimi.stopMemoryCleanup()
         process.exit(0)
     }
 })
@@ -64,5 +66,6 @@ process.on('SIGINT', async function () {
 process.on('exit', async () => {
     // 退出之前，杀掉进程
     await oimi.killAll()
+    oimi.stopMemoryCleanup()
     console.log('\n[ffandown] Server stop')
 })

@@ -15,7 +15,7 @@ lib/*
 **/.DS_Store
 *.swp
 .DS_Store
-database/sqlite.db
+database
 parsers
 error-reports
 success-reports

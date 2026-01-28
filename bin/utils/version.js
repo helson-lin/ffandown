@@ -5,7 +5,7 @@ const path = require('path')
 const download = require('download')
 const log = require('./log')
 
-const SYSYTEM_VERSION = 'v5.1.5'
+const SYSYTEM_VERSION = 'v5.1.7'
 
 /**
  * 获取最新版本信息 通过 github api https://ipera.oimi.space/为加速镜像

@@ -6,7 +6,6 @@ const Utils = require('../utils/index')
 const validate = require('../middleware/validate')
 const log = require('../utils/log')
 const jsonParser = bodyParser.json()
-const downloadRouter = express.Router()
 const DownloadService = require('../sql/downloadService')
 const { query, body } = require('express-validator')
 
@@ -53,6 +52,7 @@ async function createDonwloadMission (oimi, options) {
  * @returns 
  */
 function createDownloadRouter (oimi) {
+    const downloadRouter = express.Router()
     // create download mission
     downloadRouter.post('/down', [jsonParser, validate([
         body('name').optional().isString(),
@@ -145,31 +145,51 @@ function createDownloadRouter (oimi) {
     ]), async (req, res) => {
         const { current, pageSize, status, order, sort } = req.query
         // 1. 设置 SSE 必需的响应头
-        res.setHeader('Content-Type', 'text/event-stream')
-        res.setHeader('Cache-Control', 'no-cache')
+        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-cache, no-transform')
         res.setHeader('Connection', 'keep-alive')
-        res.flushHeaders() // 立即发送头
+        res.setHeader('X-Accel-Buffering', 'no') // 禁用 nginx 缓冲
+        
+        // 发送一个初始注释以确保连接建立
+        res.write(': heartbeat\n\n')
+        res.flushHeaders()
+
+        let isConnectionAlive = true // 连接状态标志
+
         async function sendData () {
+            if (!isConnectionAlive) {
+                console.log('[SSE] Connection closed, skipping send')
+                return
+            }
             try {
                 const list =  await DownloadService.queryByPage({
-                    pageNumber: current, 
-                    pageSize, 
+                    pageNumber: Number(current), 
+                    pageSize: Number(pageSize), 
                     status, 
                     sortField: sort || 'crt_tm', 
                     sortOrder: order || 'DESC',
                 })
-                res.write(`data: ${JSON.stringify({ code: 0, data: list })}\n\n`)
+                if (isConnectionAlive) {
+                    const message = { code: 0, data: list }
+                    const dataStr = JSON.stringify(message)
+                    // 使用标准 SSE 格式
+                    res.write('data: ' + dataStr + '\n\n')
+                }
             } catch (e) {
                 Utils.LOG.error(e)
-                res.write(`data: ${JSON.stringify({ code: 1, message: String(e) })}\n\n`)
+                if (isConnectionAlive) {
+                    res.write('data: ' + JSON.stringify({ code: 1, message: String(e) }) + '\n\n')
+                }
             }
         }
+        
+        sendData() // 立即发送一次
         const intervalId = setInterval(sendData, 2000)
-        sendData()
+        
         // 4. 客户端断开连接时清理
         req.on('close', () => {
+            isConnectionAlive = false
             clearInterval(intervalId)
-            res.write('event: end\ndata: send error\n\n')
             res.end()
         })
     })
@@ -212,7 +232,7 @@ function createDownloadRouter (oimi) {
         query('uid').notEmpty().isString().withMessage('uid is required'),
     ]), async (req, res) => {
         let uid = req.query?.uid
-        if (uid && uid.indexOf(',')) {
+        if (uid && uid.includes(',')) {
             uid = uid.split(',')
         }
         if (!uid || uid === undefined) {

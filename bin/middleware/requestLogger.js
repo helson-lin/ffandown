@@ -35,7 +35,11 @@ function requestLogger(req, res, next) {
     res.on('close', () => {
         if (!res.finished) {
             const duration = Date.now() - start
-            Utils.LOG.error(`[${requestId}] Request interrupted: ${req.method} ${req.originalUrl} - ${duration}ms`)
+            // SSE 连接关闭是正常行为，记录为 info 而不是 error
+            const isSSE = req.originalUrl.includes('/sse') || res.getHeader('Content-Type') === 'text/event-stream'
+            const logLevel = isSSE ? 'info' : 'error'
+            const message = isSSE ? 'SSE connection closed' : 'Request interrupted'
+            Utils.LOG[logLevel](`[${requestId}] ${message}: ${req.method} ${req.originalUrl} - ${duration}ms`)
         }
     })
     

@@ -22,6 +22,7 @@
   "login_failed": "Login failed, Please check username and password",
   "login_success": "Login successfully",
   "logout_success": "Logout successfully",
+  "too_many_requests": "Too many requests, please try again later.",
   "videoPath_required": "videoPath is required",
   "ERROR_CODE_8": "Error with code 8: Permission denied. Try setting user-agent, host, cookie, or other headers.",
   "ERROR_CODE_183": "Error with code 183: Failed to parse the resource. Check if it is accessible and playable.",

@@ -1,17 +1,56 @@
 const Sequelize = require('sequelize')
 const sqlite3 = require('sqlite3')
 const path = require('path')
+const { DATABASE } = require('../utils/constants')
+
 const dbFile = path.join(process.cwd(), '/database/sqlite.db')
 
 const sequelize = new Sequelize('database', null, null, {
     dialect: 'sqlite',
     storage: dbFile,
+
+    // Optimized connection pool configuration 优化的连接池配置
+    pool: {
+        // Maximum number of connections in pool
+        max: DATABASE.POOL.max,
+
+        // Minimum number of connections in pool
+        min: DATABASE.POOL.min,
+
+        // Maximum time (ms) to acquire a connection before throwing error
+        acquire: DATABASE.POOL.acquire,
+
+        // Maximum time (ms) a connection can be idle before being released
+        idle: DATABASE.POOL.idle,
+
+        // Maximum time (ms) that a connection can be idle before being evicted
+        evict: DATABASE.POOL.evict,
+
+        // Connection retry configuration
+        retry: DATABASE.POOL.retry,
+    },
+
+    // Database timeout configurations
+    retry: {
+        match: [/SQLITE_BUSY/],
+        max: DATABASE.POOL.retry.max,
+    },
+
     define: {
         timestamps: false,
         freezeTableName: true,
     },
+
     logging: false,
+
     dialectModule: sqlite3,
+
+    // Additional optimization settings
+    // Disable tracking of database changes (better performance)
+    omitNull: true,
+
+    // Native binding is not available for SQLite
+    native: false,
 })
 
 const SysDownloadDb = sequelize.define('sys_download', {

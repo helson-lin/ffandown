@@ -6,9 +6,9 @@ const path = require('path')
 const validate = require('../middleware/validate')
 const { query } = require('express-validator')
 const jsonParser = bodyParser.json()
-const systemRouter = express.Router()
 
 function createSystemRouter (oimi) {
+    const systemRouter = express.Router()
     // 子路由
     systemRouter.get('/config', async (req, res) => {
         res.send({ code: 0, data: oimi.config })

@@ -1,5 +1,4 @@
 const express = require('express')
-const userRouter = express.Router()
 const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json()
 const UserService = require('../sql/userService')
@@ -10,6 +9,7 @@ const { body } = require('express-validator')
 const i18n = require('../utils/locale')
 
 function createUserRouter () {
+    const userRouter = express.Router()
     userRouter.post('/register', [jsonParser, validate([
         body('username').isString().notEmpty().withMessage('username is required'),
         body('password').isString().notEmpty().withMessage('password is required'),

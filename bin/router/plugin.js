@@ -9,13 +9,13 @@ const bodyParser = require('body-parser')
 const log = require('../utils/log')
 const jsonParser = bodyParser.json()
 const PluginService = require('../sql/pluginService')
-const pluginRouter = express.Router()
 
 /**
  * @description 创建插件路由
  * @returns 
  */
 function createPluginRouter() {
+    const pluginRouter = express.Router()
     // 查询插件列表
     pluginRouter.get('/list', validate([
         query('current').isInt().notEmpty().withMessage('current is required'),

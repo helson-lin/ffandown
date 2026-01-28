@@ -3,7 +3,7 @@ const fs = require('fs')
 const fse = require('fs-extra')
 const YAML = require('yamljs')
 const json2yaml = require('js-yaml')
-const { DEFAULT_OPTIONS, OUTPUTFORMAT_OPTIONS, PRESET_OPTIONS } = require('./constant')
+const { DEFAULT_OPTIONS, OUTPUT_FORMAT_OPTIONS, PRESET_OPTIONS, SESSION } = require('./constants')
 // 生成随机字符串
 function generateRandomString(length) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -84,10 +84,10 @@ const readConfig = (option = DEFAULT_OPTIONS) => {
             autoInstallFFmpeg: (value) => value,
             enableTimeSuffix: (value) => value,
             preset: (value) => PRESET_OPTIONS.includes(value) ? value : config.preset,
-            outputformat: (value) => OUTPUTFORMAT_OPTIONS.includes(value) ? value : config.outputformat,
+            outputformat: (value) => OUTPUT_FORMAT_OPTIONS.includes(value) ? value : config.outputformat,
             secret: (value) => value,
             proxy: (value) => value,
-            cookieMaxAge: (value) => Number(value),
+            cookieMaxAge: (value) => Number(value) || SESSION.COOKIE_MAX_AGE,
         }
 
         // 批量处理配置字段

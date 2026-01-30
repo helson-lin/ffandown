@@ -1,6 +1,5 @@
 const express = require('express')
 const compression = require('compression')
-const helmet = require('helmet')
 const rateLimit = require('express-rate-limit')
 const ws = require('express-ws')
 const session = require('express-session')
@@ -61,25 +60,10 @@ function createServer ({ port, oimi }) {
         },
     }))
 
-    // Helmet 安全头中间件 - 提供更全面的安全头配置
-    app.use(helmet({
-        contentSecurityPolicy: {
-            directives: {
-                defaultSrc: ['\'self\''],
-                styleSrc: ['\'self\'', '\'unsafe-inline\''],
-                scriptSrc: ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\''],
-                imgSrc: ['\'self\'', 'data:', 'https:'],
-                fontSrc: ['\'self\''],
-                connectSrc: ['\'self\'', 'ws:', 'wss:'],
-            },
-        },
-        crossOriginEmbedderPolicy: false, // 禁用以防止与 WebSocket 冲突
-    }))
-
     // Rate Limiter - 限制 API 请求频率
     const limiter = rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 分钟
-        max: 100, // 每个 IP 最多 100 个请求
+        windowMs: 1 * 60 * 1000, // 1 分钟
+        max: 500, // 每个 IP 最多 300 个请求
         message: {
             code: 429,
             message: 'Too many requests from this IP, please try again later.',
